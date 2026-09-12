@@ -38,6 +38,32 @@ interface CachedGameResponse {
 const app = express();
 const PORT = 3000;
 
+// Transparent RoProxy Failover for Roblox API calls in cloud/serverless environments (bypasses 403 Forbidden)
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async function (input: any, init?: any) {
+  const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input?.url || '';
+  if (urlStr.includes('.roblox.com')) {
+    try {
+      const res = await originalFetch(input, init);
+      // If direct connection succeeds and not blocked, return immediately
+      if (res.ok || (res.status !== 403 && res.status !== 429)) {
+        return res;
+      }
+    } catch (e) {}
+
+    // Fallback to roproxy gateway
+    const proxyUrl = urlStr
+      .replace('https://games.roblox.com', 'https://games.roproxy.com')
+      .replace('https://thumbnails.roblox.com', 'https://thumbnails.roproxy.com')
+      .replace('https://users.roblox.com', 'https://users.roproxy.com')
+      .replace('https://apis.roblox.com', 'https://apis.roproxy.com')
+      .replace('https://friends.roblox.com', 'https://friends.roproxy.com');
+
+    return originalFetch(proxyUrl, init);
+  }
+  return originalFetch(input, init);
+};
+
 // Security Hardening (Pilar 2 OWASP Top 10): Hide Express banner
 app.disable('x-powered-by');
 
@@ -60,6 +86,33 @@ app.use((req, res, next) => {
     "font-src 'self' https://fonts.gstatic.com data:; " +
     "connect-src 'self' https://apis.roblox.com https://apis.roproxy.com https://games.roblox.com https://thumbnails.roblox.com https://*.turso.io;"
   );
+  next();
+});
+
+// Auto-initialize DB on first request & preserve URL path in Vercel serverless rewrites
+let isDbInitialized = false;
+let dbInitPromise: Promise<void> | null = null;
+
+app.use(async (req, res, next) => {
+  // In Vercel serverless rewrites, ensure req.url preserves the actual requested API path
+  const rawUrl = req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || (req as any).originalUrl;
+  if (typeof rawUrl === 'string' && rawUrl.startsWith('/api')) {
+    req.url = rawUrl;
+  }
+
+  if (!isDbInitialized) {
+    if (!dbInitPromise) {
+      dbInitPromise = initDatabase()
+        .then(() => {
+          isDbInitialized = true;
+        })
+        .catch(err => {
+          console.error('[Database Init Error]:', err);
+          isDbInitialized = true;
+        });
+    }
+    await dbInitPromise;
+  }
   next();
 });
 

@@ -7,12 +7,17 @@ import { INITIAL_GAMES } from '../data/initialGames';
 
 dotenv.config();
 
-const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
-const tursoToken = process.env.TURSO_AUTH_TOKEN?.trim();
+const cleanEnv = (val?: string) => val ? val.trim().replace(/^["']|["']$/g, '') : undefined;
+const tursoUrl = cleanEnv(process.env.TURSO_DATABASE_URL);
+const tursoToken = cleanEnv(process.env.TURSO_AUTH_TOKEN);
 
-// Dual-mode: Turso Cloud if URL is provided, otherwise fallback to local SQLite file
-const isTursoCloud = Boolean(tursoUrl && tursoUrl.startsWith('libsql://'));
-const localDbPath = path.join(process.cwd(), 'bloxboxd.db');
+// Dual-mode: Turso Cloud if URL is provided (libsql:// or https://), otherwise fallback to local SQLite file
+const isTursoCloud = Boolean(
+  tursoUrl && (tursoUrl.startsWith('libsql://') || tursoUrl.startsWith('https://'))
+);
+const localDbPath = process.env.VERCEL
+  ? path.join('/tmp', 'bloxboxd.db')
+  : path.join(process.cwd(), 'bloxboxd.db');
 
 export const db: Client = createClient({
   url: isTursoCloud ? tursoUrl! : `file:${localDbPath}`,
