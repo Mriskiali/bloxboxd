@@ -1,0 +1,6 @@
+{
+  "name": "Bloxboxd",
+  "description": "Roblox game tracking and social catalog platform to log played games, rate, review, maintain a diary, and curate lists.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

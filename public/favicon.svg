@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Dark Modern Background with rounded squircle -->
+  <rect width="64" height="64" rx="16" fill="#14181c"/>
+  <rect x="0.5" y="0.5" width="63" height="63" rx="15.5" stroke="#26323f"/>
+
+  <!-- Glowing background ambient light -->
+  <circle cx="32" cy="30" r="18" fill="#00E59B" fill-opacity="0.15"/>
+
+  <!-- Isometric Blox Cube -->
+  <!-- Top Face (Vibrant Bloxboxd Emerald) -->
+  <path d="M32 11L52 22.5L32 34L12 22.5Z" fill="#00E59B"/>
+  
+  <!-- Left Face (Neon Cyan / Electric Blue) -->
+  <path d="M12 22.5L32 34V53.5L12 42Z" fill="#00A2FF"/>
+  
+  <!-- Right Face (Deep Shadow Emerald) -->
+  <path d="M32 34L52 22.5V42L32 53.5Z" fill="#007a52"/>
+
+  <!-- 3D Raised Stud (Roblox Blox Signature Icon) -->
+  <!-- Stud Left Face -->
+  <path d="M24 19.5L32 24.1V27.1L24 22.5Z" fill="#008a5c"/>
+  <!-- Stud Right Face -->
+  <path d="M32 24.1L40 19.5V22.5L32 27.1Z" fill="#00573a"/>
+  <!-- Stud Top Face -->
+  <path d="M32 14.9L40 19.5L32 24.1L24 19.5Z" fill="#E8FFF7"/>
+</svg>

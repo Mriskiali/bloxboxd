@@ -1,0 +1,408 @@
+[
+  {
+    "id": "game-doors",
+    "placeId": 6516141723,
+    "name": "DOORS",
+    "genre": "Horror",
+    "universeId": 2440500124
+  },
+  {
+    "id": "game-dress-to-impress",
+    "placeId": 15101393044,
+    "name": "Dress To Impress (DTI)",
+    "genre": "Social / Fashion",
+    "universeId": 5203828273
+  },
+  {
+    "id": "game-blox-fruits",
+    "placeId": 2753915549,
+    "name": "Blox Fruits",
+    "genre": "Anime / RPG",
+    "universeId": 994732206
+  },
+  {
+    "id": "game-pressure",
+    "placeId": 12411473842,
+    "name": "Pressure",
+    "genre": "Horror",
+    "universeId": 4367208330
+  },
+  {
+    "id": "game-deepwoken",
+    "placeId": 4111023553,
+    "name": "Deepwoken",
+    "genre": "Hardcore RPG",
+    "universeId": 1359573625
+  },
+  {
+    "id": "game-blade-ball",
+    "placeId": 13772394625,
+    "name": "Blade Ball",
+    "genre": "Action / Arcade",
+    "universeId": 4777817887
+  },
+  {
+    "id": "game-rivals",
+    "placeId": 17625359962,
+    "name": "RIVALS",
+    "genre": "FPS / Shooter",
+    "universeId": 6035872082
+  },
+  {
+    "id": "game-fisch",
+    "placeId": 16732694052,
+    "name": "Fisch",
+    "genre": "Adventure / Simulation",
+    "universeId": 5750914919
+  },
+  {
+    "id": "game-tower-of-hell",
+    "placeId": 1962086868,
+    "name": "Tower of Hell",
+    "genre": "Obby / Platformer",
+    "universeId": 703124385
+  },
+  {
+    "id": "game-murder-mystery-2",
+    "placeId": 142823291,
+    "name": "Murder Mystery 2",
+    "genre": "Survival / Mystery",
+    "universeId": 66654135
+  },
+  {
+    "id": "game-item-asylum",
+    "placeId": 5670218884,
+    "name": "item asylum",
+    "genre": "Arena / Chaos",
+    "universeId": 1998835206
+  },
+  {
+    "id": "game-the-mimic",
+    "placeId": 6243699076,
+    "name": "The Mimic",
+    "genre": "Horror",
+    "universeId": 2294168059
+  },
+  {
+    "id": "game-brookhaven",
+    "placeId": 4924922222,
+    "name": "Brookhaven RP",
+    "genre": "Social / Roleplay",
+    "universeId": 1686885941
+  },
+  {
+    "id": "game-adopt-me",
+    "placeId": 920587237,
+    "name": "Adopt Me!",
+    "genre": "Social / Pets",
+    "universeId": 383310974
+  },
+  {
+    "id": "game-arsenal",
+    "placeId": 286090429,
+    "name": "Arsenal",
+    "genre": "FPS / Shooter",
+    "universeId": 111958650
+  },
+  {
+    "id": "game-jailbreak",
+    "placeId": 60680041,
+    "name": "Jailbreak",
+    "genre": "Action / Open World",
+    "universeId": 27634066
+  },
+  {
+    "id": "game-pet-simulator-99",
+    "placeId": 8737899170,
+    "name": "Pet Simulator 99",
+    "genre": "Simulator / Collecting",
+    "universeId": 3317771874
+  },
+  {
+    "id": "game-bedwars",
+    "placeId": 6872265039,
+    "name": "BedWars",
+    "genre": "Action / Strategy",
+    "universeId": 2619619496
+  },
+  {
+    "id": "game-tower-defense-simulator",
+    "placeId": 3260590327,
+    "name": "Tower Defense Simulator",
+    "genre": "Strategy / Defense",
+    "universeId": 1176784616
+  },
+  {
+    "id": "game-da-hood",
+    "placeId": 2788229376,
+    "name": "Da Hood",
+    "genre": "Action / Sandbox",
+    "universeId": 1008451066
+  },
+  {
+    "id": "game-bloxburg",
+    "placeId": 185655149,
+    "name": "Welcome to Bloxburg",
+    "genre": "Simulation / Roleplay",
+    "universeId": 88070565
+  },
+  {
+    "id": "game-natural-disaster",
+    "placeId": 189707,
+    "name": "Natural Disaster Survival",
+    "genre": "Survival / Classic",
+    "universeId": 65241
+  },
+  {
+    "id": "game-strongest-battlegrounds",
+    "placeId": 10449761463,
+    "name": "The Strongest Battlegrounds",
+    "genre": "Action / Anime",
+    "universeId": 3808081382
+  },
+  {
+    "id": "game-dandys-world",
+    "placeId": 16146832113,
+    "name": "Dandy's World",
+    "genre": "Horror / Survival",
+    "universeId": 5578556129
+  },
+  {
+    "id": "game-evade",
+    "placeId": 9872472334,
+    "name": "Evade",
+    "genre": "Horror / Survival",
+    "universeId": 3647333358
+  },
+  {
+    "id": "game-slap-battles",
+    "placeId": 6403373529,
+    "name": "Slap Battles",
+    "genre": "Action / Arena",
+    "universeId": 2380077519
+  },
+  {
+    "id": "game-royale-high",
+    "placeId": 735030788,
+    "name": "Royale High",
+    "genre": "Social / Fantasy",
+    "universeId": 321778215
+  },
+  {
+    "id": "game-build-a-boat",
+    "placeId": 537413528,
+    "name": "Build A Boat For Treasure",
+    "genre": "Adventure / Building",
+    "universeId": 210851291
+  },
+  {
+    "id": "game-bee-swarm",
+    "placeId": 1537690962,
+    "name": "Bee Swarm Simulator",
+    "genre": "Simulator / Adventure",
+    "universeId": 601130232
+  },
+  {
+    "id": "game-work-at-pizza",
+    "placeId": 192800,
+    "name": "Work at a Pizza Place",
+    "genre": "Simulation / Classic",
+    "universeId": 47545
+  },
+  {
+    "id": "game-theme-park-2",
+    "placeId": 69184822,
+    "name": "Theme Park Tycoon 2",
+    "genre": "Tycoon / Building",
+    "universeId": 31970568
+  },
+  {
+    "id": "game-piggy",
+    "placeId": 4623386862,
+    "name": "Piggy",
+    "genre": "Horror / Puzzle",
+    "universeId": 1516533665
+  },
+  {
+    "id": "game-grand-piece-online",
+    "placeId": 1730877806,
+    "name": "Grand Piece Online",
+    "genre": "Anime / Adventure",
+    "universeId": 648454481
+  },
+  {
+    "id": "game-king-legacy",
+    "placeId": 4520749081,
+    "name": "King Legacy",
+    "genre": "Anime / RPG",
+    "universeId": 1451439645
+  },
+  {
+    "id": "game-type-soul",
+    "placeId": 14069678431,
+    "name": "Type Soul",
+    "genre": "Anime / Action",
+    "universeId": 4871329703
+  },
+  {
+    "id": "game-anime-defenders",
+    "placeId": 17017769292,
+    "name": "Anime Defenders",
+    "genre": "Tower Defense",
+    "universeId": 5836869368
+  },
+  {
+    "id": "game-driving-empire",
+    "placeId": 3351674303,
+    "name": "Driving Empire",
+    "genre": "Racing / Driving",
+    "universeId": 1202096104
+  },
+  {
+    "id": "game-speed-run-4",
+    "placeId": 183364845,
+    "name": "Speed Run 4",
+    "genre": "Obby / Speedrun",
+    "universeId": 83858907
+  },
+  {
+    "id": "game-phantom-forces",
+    "placeId": 292439477,
+    "name": "Phantom Forces",
+    "genre": "FPS / Tactical",
+    "universeId": 113491250
+  },
+  {
+    "id": "game-combat-warriors",
+    "placeId": 4282985734,
+    "name": "Combat Warriors",
+    "genre": "Fighting / Action",
+    "universeId": 1390601379
+  },
+  {
+    "id": "game-flee-the-facility",
+    "placeId": 893973440,
+    "name": "Flee the Facility",
+    "genre": "Horror / Survival",
+    "universeId": 372226183
+  },
+  {
+    "id": "game-lumber-tycoon-2",
+    "placeId": 13822889,
+    "name": "Lumber Tycoon 2",
+    "genre": "Tycoon / Classic",
+    "universeId": 2471084
+  },
+  {
+    "id": "game-restaurant-tycoon-2",
+    "placeId": 3182142378,
+    "name": "Restaurant Tycoon 2",
+    "genre": "Tycoon / Management",
+    "universeId": 1148990834
+  },
+  {
+    "id": "game-jujutsu-shenanigans",
+    "placeId": 9391468976,
+    "universeId": 3508322461,
+    "name": "Jujutsu Shenanigans",
+    "genre": "Action / Fighting"
+  },
+  {
+    "id": "game-berry-avenue",
+    "placeId": 8481844229,
+    "universeId": 3240075297,
+    "name": "Berry Avenue RP",
+    "genre": "Social / Roleplay"
+  },
+  {
+    "id": "game-car-driving-indonesia",
+    "placeId": 5057064376,
+    "universeId": 1749382609,
+    "name": "Car Driving Indonesia (CDID)",
+    "genre": "Simulation / Driving"
+  },
+  {
+    "id": "game-emergency-response",
+    "placeId": 2534724415,
+    "universeId": 903807016,
+    "name": "Emergency Response: Liberty County",
+    "genre": "Roleplay / Police"
+  },
+  {
+    "id": "game-all-star-td",
+    "placeId": 4996049426,
+    "universeId": 1720936166,
+    "name": "All Star Tower Defense",
+    "genre": "Tower Defense"
+  },
+  {
+    "id": "game-anime-last-stand",
+    "placeId": 12886143095,
+    "universeId": 4509896324,
+    "name": "Anime Last Stand",
+    "genre": "Tower Defense"
+  },
+  {
+    "id": "game-catalog-avatar",
+    "placeId": 7041939546,
+    "universeId": 2711375305,
+    "name": "Catalog Avatar Creator",
+    "genre": "Social / Avatar"
+  },
+  {
+    "id": "game-tower-heroes",
+    "placeId": 4646477729,
+    "universeId": 1531130248,
+    "name": "Tower Heroes",
+    "genre": "Tower Defense"
+  },
+  {
+    "id": "game-sharkbite-2",
+    "placeId": 10178703304,
+    "universeId": 3734056789,
+    "name": "SharkBite 2",
+    "genre": "Survival / Action"
+  },
+  {
+    "id": "game-hide-and-seek",
+    "placeId": 205224386,
+    "universeId": 93740418,
+    "name": "Hide and Seek Extreme",
+    "genre": "Social / Party"
+  },
+  {
+    "id": "game-epic-minigames",
+    "placeId": 277751860,
+    "universeId": 110181652,
+    "name": "Epic Minigames",
+    "genre": "Party / Minigames"
+  },
+  {
+    "id": "game-rogue-lineage",
+    "placeId": 3016661674,
+    "universeId": 1087859240,
+    "name": "Rogue Lineage",
+    "genre": "Hardcore RPG"
+  },
+  {
+    "id": "game-phighting",
+    "placeId": 4056244170,
+    "universeId": 1350874835,
+    "name": "Phighting!",
+    "genre": "Action / Arena"
+  },
+  {
+    "id": "game-frontlines",
+    "placeId": 5938036553,
+    "universeId": 2132866904,
+    "name": "FRONTLINES",
+    "genre": "FPS / Tactical"
+  },
+  {
+    "id": "game-total-drama",
+    "placeId": 11776823908,
+    "universeId": 4168973058,
+    "name": "Total Roblox Drama",
+    "genre": "Social / Reality TV"
+  }
+]
