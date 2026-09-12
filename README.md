@@ -110,7 +110,7 @@ Sebelum menjalankan project secara lokal, pastikan perangkat Anda telah terpasan
 
 1. Kloning repositori ini ke komputer Anda:
    ```bash
-   git clone https://github.com/username-anda/bloxboxd.git
+   git clone https://github.com/Mriskiali/bloxboxd.git
    cd bloxboxd
    ```
 
