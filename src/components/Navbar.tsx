@@ -15,14 +15,13 @@ import {
   Settings,
   ShieldCheck,
   LogOut,
-  SlidersHorizontal,
   X,
   Loader2,
-  Users
+  Users,
+  Globe
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { Game, safeImgSrc, safeAvatarSrc } from '../types';
-import { SearchFilterModal } from './SearchFilterModal';
+import { Game, safeImgSrc, safeAvatarSrc, UserProfile } from '../types';
 import { BloxboxdLogo } from './BloxboxdLogo';
 
 export const Navbar: React.FC = () => {
@@ -34,22 +33,23 @@ export const Navbar: React.FC = () => {
     viewGame, 
     searchQuery,
     setSearchQuery,
-    selectedGenre,
-    sortBy,
-    minRating,
-    minPlayers,
     setUrlImportModalOpen,
     setLoginModalOpen,
     setEditProfileModalOpen,
     logoutRobloxAccount,
-    setActiveProfileTab
+    setActiveProfileTab,
+    viewUserProfile,
+    setSelectedUserId,
+    language,
+    setLanguage,
+    t
   } = useApp();
 
   const [query, setQuery] = useState(searchQuery || '');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [apiResults, setApiResults] = useState<Game[]>([]);
+  const [userResults, setUserResults] = useState<UserProfile[]>([]);
   const [isSearchingApi, setIsSearchingApi] = useState(false);
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -61,18 +61,12 @@ export const Navbar: React.FC = () => {
     setQuery(searchQuery);
   }, [searchQuery]);
 
-  // Active filters count
-  const activeFiltersCount = 
-    (selectedGenre !== 'All' ? 1 : 0) +
-    (sortBy !== 'popular' ? 1 : 0) +
-    (minRating > 0 ? 1 : 0) +
-    (minPlayers > 0 ? 1 : 0);
-
-  // Debounced live Roblox API search
+  // Debounced live Roblox and Bloxboxd user search
   useEffect(() => {
     const q = query.trim();
     if (!q) {
       setApiResults([]);
+      setUserResults([]);
       setIsSearchingApi(false);
       return;
     }
@@ -80,15 +74,26 @@ export const Navbar: React.FC = () => {
     const timer = setTimeout(async () => {
       try {
         setIsSearchingApi(true);
-        const res = await fetch(`/api/roblox/search?q=${encodeURIComponent(q)}`);
-        if (res.ok) {
-          const json = await res.json();
+        const [robloxRes, usersRes] = await Promise.all([
+          fetch(`/api/roblox/search?q=${encodeURIComponent(q)}`).catch(() => null),
+          fetch(`/api/users/search?q=${encodeURIComponent(q)}`).catch(() => null)
+        ]);
+
+        if (robloxRes && robloxRes.ok) {
+          const json = await robloxRes.json();
           if (Array.isArray(json.results)) {
             setApiResults(json.results);
           }
         }
+
+        if (usersRes && usersRes.ok) {
+          const json = await usersRes.json();
+          if (Array.isArray(json.users)) {
+            setUserResults(json.users);
+          }
+        }
       } catch (err) {
-        console.warn('Live Roblox search error:', err);
+        console.warn('Live search error:', err);
       } finally {
         setIsSearchingApi(false);
       }
@@ -133,7 +138,6 @@ export const Navbar: React.FC = () => {
         mobileSearchContainerRef.current && !mobileSearchContainerRef.current.contains(target)
       ) {
         setIsSearchOpen(false);
-        setIsFilterModalOpen(false);
       }
       if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
         setProfileMenuOpen(false);
@@ -146,6 +150,12 @@ export const Navbar: React.FC = () => {
   const handleSelectGame = (game: Game) => {
     viewGame(game.id, game);
     setIsSearchOpen(false);
+  };
+
+  const handleSelectUser = (userId: string) => {
+    viewUserProfile(userId);
+    setIsSearchOpen(false);
+    setQuery('');
   };
 
   const handleCommitSearch = (textOverride?: string) => {
@@ -197,25 +207,23 @@ export const Navbar: React.FC = () => {
             {/* Input field */}
             <input
               type="text"
-              aria-label="Cari game Roblox, creator, atau place ID"
-              placeholder="Cari judul game Roblox, creator, ID..."
+              aria-label={t('nav_search_placeholder')}
+              placeholder={t('nav_search_placeholder')}
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
                 setIsSearchOpen(true);
-                setIsFilterModalOpen(false);
               }}
               onFocus={() => {
                 setIsSearchOpen(true);
-                setIsFilterModalOpen(false);
               }}
               onKeyDown={handleKeyDown}
-              className="w-full pl-10 pr-24 py-2 text-xs sm:text-sm bg-[#1b222a] border border-[#2c3744] focus:border-[#00E59B] rounded-full text-white placeholder:text-gray-500 outline-none transition-all shadow-inner"
+              className="w-full pl-10 pr-10 py-2 text-xs sm:text-sm bg-[#1b222a] border border-[#2c3744] focus:border-[#00E59B] rounded-full text-white placeholder:text-gray-500 outline-none transition-all shadow-inner"
             />
 
-            {/* Right Controls inside Search Bar: Clear & Filter Button */}
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-              {query && (
+            {/* Right Controls inside Search Bar: Clear Button */}
+            {query && (
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
                 <button 
                   onClick={() => {
                     setQuery('');
@@ -223,50 +231,13 @@ export const Navbar: React.FC = () => {
                     setApiResults([]);
                   }}
                   className="p-1 text-gray-400 hover:text-white rounded-full transition-colors text-xs"
-                  title="Hapus ketikan"
+                  title={language === 'id' ? 'Hapus ketikan' : 'Clear search'}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
-              )}
-
-              {/* Integrated Filter Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsFilterModalOpen(!isFilterModalOpen);
-                  setIsSearchOpen(false);
-                }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
-                  activeFiltersCount > 0
-                    ? 'bg-[#00E59B] text-black shadow-[0_0_10px_rgba(0,229,155,0.4)]'
-                    : isFilterModalOpen
-                      ? 'bg-[#00E59B]/20 text-[#00E59B] border border-[#00E59B]/50'
-                      : 'bg-[#26303d] text-gray-300 hover:text-white hover:bg-[#303c4c]'
-                }`}
-                title="Buka Filter & Urutkan Game"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">Filter</span>
-                {activeFiltersCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-black text-[#00E59B] text-[10px] font-black flex items-center justify-center">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </button>
-            </div>
+              </div>
+            )}
           </div>
-
-          {/* Desktop Filter Dropdown Popover (Anchored right under Search Bar) */}
-          {isFilterModalOpen && (
-            <SearchFilterModal 
-              isOpen={isFilterModalOpen} 
-              onClose={() => setIsFilterModalOpen(false)}
-              onApply={() => {
-                handleCommitSearch();
-              }}
-              variant="popover"
-            />
-          )}
 
           {/* Autocomplete / Live Search Results Dropdown */}
           {isSearchOpen && query.trim().length > 0 && (
@@ -282,17 +253,58 @@ export const Navbar: React.FC = () => {
                 >
                   <div className="flex items-center gap-2">
                     <LinkIcon className="w-4 h-4" />
-                    <span>Roblox link / Place ID terdeteksi: Ambil data resmi & Buka Langsung!</span>
+                    <span>{t('nav_url_detected')}</span>
                   </div>
                   <ChevronRight className="w-4 h-4" />
+                </div>
+              )}
+
+              {/* Bloxboxd Users Section */}
+              {userResults.length > 0 && (
+                <div className="bg-[#151b22]">
+                  <div className="px-3.5 py-1.5 text-[10px] font-bold text-[#00E59B] uppercase tracking-wider bg-[#12161c] flex items-center justify-between border-b border-[#242e3a]">
+                    <span className="flex items-center gap-1.5">
+                      <Users className="w-3 h-3 text-[#00E59B]" />
+                      {t('nav_users_section')} ({userResults.length})
+                    </span>
+                  </div>
+                  <div className="divide-y divide-[#1e2632]">
+                    {userResults.map((u) => (
+                      <div
+                        key={u.id}
+                        onClick={() => handleSelectUser(u.id)}
+                        className="p-2.5 px-3.5 hover:bg-[#1f2834] cursor-pointer flex items-center gap-3 transition-colors group"
+                      >
+                        <img
+                          src={safeAvatarSrc(u.avatarUrl)}
+                          alt={u.username}
+                          className="w-9 h-9 rounded-full object-cover bg-black/40 border border-white/10 group-hover:ring-2 group-hover:ring-[#00E59B] transition-all flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="text-xs font-bold text-white group-hover:text-[#00E59B] transition-colors truncate">
+                              {u.displayName || u.username}
+                            </p>
+                            <span className="text-[10px] font-mono text-gray-400">@{u.handle || u.username}</span>
+                          </div>
+                          <p className="text-[11px] text-gray-400 truncate">
+                            {u.bio || (language === 'id' ? 'Pemain Roblox di Bloxboxd' : 'Roblox gamer on Bloxboxd')}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-semibold text-[#00E59B] bg-[#00E59B]/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+                          {t('nav_view_profile')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {combinedResults.length > 0 ? (
                 <div>
                   <div className="px-3.5 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider bg-[#14181c] flex items-center justify-between">
-                    <span>Hasil Pencarian ({combinedResults.length})</span>
-                    {isSearchingApi && <span className="text-[#00E59B] text-[10px]">Mencari live Roblox API...</span>}
+                    <span>{t('nav_games_section')} ({combinedResults.length})</span>
+                    {isSearchingApi && <span className="text-[#00E59B] text-[10px]">{t('nav_searching_live')}</span>}
                   </div>
                   {combinedResults.map((game) => (
                     <div
@@ -332,24 +344,24 @@ export const Navbar: React.FC = () => {
                   >
                     <div className="flex items-center gap-2">
                       <Search className="w-3.5 h-3.5" />
-                      <span>Tekan Enter atau klik di sini untuk mencari "{query}" di seluruh katalog</span>
+                      <span>{t('nav_search_in_catalog_full', { query })}</span>
                     </div>
                     <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
               ) : (
-                !isRobloxUrl && (
+                !isRobloxUrl && userResults.length === 0 && (
                   <div className="p-4 text-center text-xs text-gray-400">
                     {isSearchingApi ? (
-                      <span className="text-[#00E59B]">Mencari di official server Roblox...</span>
+                      <span className="text-[#00E59B]">{t('nav_searching_servers')}</span>
                     ) : (
                       <div>
-                        <p>Tidak ada hasil instan untuk "{query}".</p>
+                        <p>{t('nav_no_instant_results', { query })}</p>
                         <button
                           onClick={() => handleCommitSearch()}
                           className="mt-2 text-xs font-bold text-[#00E59B] hover:underline"
                         >
-                          Cari "{query}" di katalog & server Roblox ➔
+                          {t('nav_search_catalog_btn')}
                         </button>
                       </div>
                     )}
@@ -370,10 +382,10 @@ export const Navbar: React.FC = () => {
                 ? 'text-[#00E59B] bg-[#00E59B]/10' 
                 : 'text-gray-300 hover:text-white hover:bg-[#202730]'
             }`}
-            title="Experiences"
+            title={t('nav_games')}
           >
             <Compass className="w-4 h-4" />
-            <span className="hidden sm:inline">Experiences</span>
+            <span className="hidden sm:inline">{t('nav_games')}</span>
           </button>
 
           {/* Curated Lists Tab */}
@@ -384,10 +396,10 @@ export const Navbar: React.FC = () => {
                 ? 'text-[#00A2FF] bg-[#00A2FF]/10' 
                 : 'text-gray-300 hover:text-white hover:bg-[#202730]'
             }`}
-            title="Lists"
+            title={t('nav_lists')}
           >
             <ListOrdered className="w-4 h-4" />
-            <span className="hidden sm:inline">Lists</span>
+            <span className="hidden sm:inline">{t('nav_lists')}</span>
           </button>
 
           {/* Diary Tab */}
@@ -398,10 +410,10 @@ export const Navbar: React.FC = () => {
                 ? 'text-[#00E59B] bg-[#00E59B]/10' 
                 : 'text-gray-300 hover:text-white hover:bg-[#202730]'
             }`}
-            title="Diary"
+            title={t('nav_diary')}
           >
             <Calendar className="w-4 h-4" />
-            <span className="hidden sm:inline">Diary</span>
+            <span className="hidden sm:inline">{t('nav_diary')}</span>
           </button>
 
           {/* Community Tab */}
@@ -412,20 +424,33 @@ export const Navbar: React.FC = () => {
                 ? 'text-[#a855f7] bg-[#a855f7]/10' 
                 : 'text-gray-300 hover:text-white hover:bg-[#202730]'
             }`}
-            title="Community"
+            title={t('nav_community')}
           >
             <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">Community</span>
+            <span className="hidden sm:inline">{t('nav_community')}</span>
           </button>
 
           {/* Tambah Game Button */}
           <button
             onClick={() => setUrlImportModalOpen(true)}
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#00E59B]/10 hover:bg-[#00E59B]/20 border border-[#00E59B]/30 hover:border-[#00E59B] text-[#00E59B] text-xs font-bold transition-all shadow-sm group flex-shrink-0"
-            title="Tambah game Roblox ke Bloxboxd via Link atau Place ID"
+            title={language === 'id' ? 'Tambah game Roblox ke Bloxboxd via Link atau Place ID' : 'Add Roblox game to Bloxboxd via Link or Place ID'}
           >
             <Plus className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-            <span className="hidden md:inline">Tambah Game</span>
+            <span className="hidden md:inline">{t('nav_add_game')}</span>
+          </button>
+
+          {/* Language Switcher Toggle */}
+          <button
+            type="button"
+            onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg bg-[#18212a] hover:bg-[#202c38] border border-[#2b3947] hover:border-[#00E59B]/50 text-xs font-bold transition-all text-gray-200 shadow-sm flex-shrink-0 cursor-pointer"
+            title={language === 'id' ? 'Switch language to English' : 'Ganti bahasa ke Indonesia'}
+          >
+            <Globe className="w-3.5 h-3.5 text-[#00E59B]" />
+            <span className="font-mono text-[10px] sm:text-[11px] font-black text-white">
+              {language === 'id' ? 'ID' : 'EN'}
+            </span>
           </button>
 
           {/* Exactly ONE Profile / Auth button next to Tambah Game */}
@@ -433,11 +458,11 @@ export const Navbar: React.FC = () => {
             <button
               onClick={() => setLoginModalOpen(true)}
               className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#00E59B] hover:bg-[#00c988] text-black font-extrabold text-xs transition-all shadow-md active:scale-95 whitespace-nowrap flex-shrink-0"
-              title="Masuk akun Roblox asli"
+              title={language === 'id' ? 'Masuk akun Roblox asli' : 'Sign in with official Roblox account'}
             >
               <User className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="hidden sm:inline">Masuk Roblox</span>
-              <span className="sm:hidden">Masuk</span>
+              <span className="hidden sm:inline">{t('nav_login_roblox')}</span>
+              <span className="sm:hidden">{t('nav_login_short')}</span>
             </button>
           ) : (
             <div className="relative" ref={profileMenuRef}>
@@ -468,7 +493,7 @@ export const Navbar: React.FC = () => {
                     <p className="text-[11px] text-gray-400 truncate font-mono">@{user.username}</p>
                     {user.isVerifiedOwner && (
                       <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-[#00E59B] bg-[#00E59B]/10 px-2 py-0.5 rounded-full">
-                        <ShieldCheck className="w-3 h-3" /> Akun Terverifikasi
+                        <ShieldCheck className="w-3 h-3" /> {t('nav_verified')}
                       </span>
                     )}
                   </div>
@@ -476,6 +501,7 @@ export const Navbar: React.FC = () => {
                   <div className="pt-1 space-y-0.5">
                     <button
                       onClick={() => {
+                        setSelectedUserId(null);
                         setActiveTab('profile');
                         setActiveProfileTab('overview');
                         setProfileMenuOpen(false);
@@ -483,11 +509,12 @@ export const Navbar: React.FC = () => {
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-200 hover:text-white hover:bg-[#202732] rounded-xl transition-colors text-left"
                     >
                       <User className="w-3.5 h-3.5 text-[#00E59B]" />
-                      <span>Lihat Profil Saya</span>
+                      <span>{t('nav_my_profile')}</span>
                     </button>
 
                     <button
                       onClick={() => {
+                        setSelectedUserId(null);
                         setActiveTab('profile');
                         setActiveProfileTab('games');
                         setProfileMenuOpen(false);
@@ -495,7 +522,7 @@ export const Navbar: React.FC = () => {
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-200 hover:text-white hover:bg-[#202732] rounded-xl transition-colors text-left"
                     >
                       <Compass className="w-3.5 h-3.5 text-[#00A2FF]" />
-                      <span>Koleksi Game & Backlog</span>
+                      <span>{t('nav_my_collection')}</span>
                     </button>
 
                     <button
@@ -506,7 +533,7 @@ export const Navbar: React.FC = () => {
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-200 hover:text-white hover:bg-[#202732] rounded-xl transition-colors text-left"
                     >
                       <ShieldCheck className="w-3.5 h-3.5 text-[#00A2FF]" />
-                      <span>Ganti / Hubungkan Akun</span>
+                      <span>{t('nav_switch_account')}</span>
                     </button>
 
                     <button
@@ -517,7 +544,22 @@ export const Navbar: React.FC = () => {
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-200 hover:text-white hover:bg-[#202732] rounded-xl transition-colors text-left"
                     >
                       <Settings className="w-3.5 h-3.5 text-gray-400" />
-                      <span>Edit Bio & 4 Favorit</span>
+                      <span>{t('nav_edit_profile')}</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setLanguage(language === 'id' ? 'en' : 'id');
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-200 hover:text-white hover:bg-[#202732] rounded-xl transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Globe className="w-3.5 h-3.5 text-[#00E59B]" />
+                        <span>{t('nav_lang_toggle')}</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold bg-[#00E59B]/10 text-[#00E59B] px-1.5 py-0.5 rounded">
+                        {language === 'id' ? 'ID (Indonesia)' : 'EN (English)'}
+                      </span>
                     </button>
                   </div>
 
@@ -530,7 +572,7 @@ export const Navbar: React.FC = () => {
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors text-left"
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      <span>Putuskan Akun Roblox</span>
+                      <span>{t('nav_logout')}</span>
                     </button>
                   </div>
                 </div>
@@ -540,71 +582,82 @@ export const Navbar: React.FC = () => {
         </nav>
       </div>
 
-      {/* Mobile Search Bar & Integrated Filter Button */}
+      {/* Mobile Search Bar */}
       <div ref={mobileSearchContainerRef} className="relative p-2.5 px-4 md:hidden border-t border-[#202731] bg-[#161a20]">
-        <div className="relative flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              aria-label="Cari game Roblox"
-              placeholder="Cari game Roblox, creator, ID..."
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setIsSearchOpen(true);
-              }}
-              onFocus={() => setIsSearchOpen(true)}
-              onKeyDown={handleKeyDown}
-              className="w-full pl-9 pr-8 py-2 text-xs bg-[#1b222a] border border-[#2c3744] focus:border-[#00E59B] rounded-xl text-white outline-none transition-colors"
-            />
-            {query && (
-              <button
-                onClick={() => {
-                  setQuery('');
-                  setSearchQuery('');
-                  setApiResults([]);
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Mobile Filter Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setIsFilterModalOpen(!isFilterModalOpen);
-              setIsSearchOpen(false);
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            aria-label={t('nav_search_placeholder')}
+            placeholder={t('nav_search_placeholder')}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setIsSearchOpen(true);
             }}
-            className={`flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
-              activeFiltersCount > 0
-                ? 'bg-[#00E59B] text-black border-[#00E59B]'
-                : isFilterModalOpen
-                  ? 'bg-[#00E59B]/20 text-[#00E59B] border-[#00E59B]/50'
-                  : 'bg-[#1b222a] border-[#2c3744] text-gray-300'
-            }`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Filter</span>
-            {activeFiltersCount > 0 && (
-              <span className="w-4 h-4 rounded-full bg-black text-[#00E59B] text-[10px] font-black flex items-center justify-center">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
+            onFocus={() => setIsSearchOpen(true)}
+            onKeyDown={handleKeyDown}
+            className="w-full pl-9 pr-8 py-2 text-xs bg-[#1b222a] border border-[#2c3744] focus:border-[#00E59B] rounded-xl text-white outline-none transition-colors"
+          />
+          {query && (
+            <button
+              onClick={() => {
+                setQuery('');
+                setSearchQuery('');
+                setApiResults([]);
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         {/* Mobile Search Results Dropdown */}
         {isSearchOpen && query.trim().length > 0 && (
           <div className="absolute left-4 right-4 top-full mt-1.5 bg-[#181e24] border border-[#2b3644] rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-[#242e3a] max-h-80 overflow-y-auto">
+            {/* Mobile Users from Bloxboxd */}
+            {userResults.length > 0 && (
+              <div className="bg-[#151b22]">
+                <div className="px-3 py-1.5 text-[10px] font-bold text-[#00E59B] uppercase tracking-wider bg-[#12161c] flex items-center justify-between border-b border-[#242e3a]">
+                  <span className="flex items-center gap-1.5">
+                    <Users className="w-3 h-3 text-[#00E59B]" />
+                    {t('nav_users_section')} ({userResults.length})
+                  </span>
+                </div>
+                <div className="divide-y divide-[#1e2632]">
+                  {userResults.map((u) => (
+                    <div
+                      key={u.id}
+                      onClick={() => handleSelectUser(u.id)}
+                      className="p-2.5 px-3 hover:bg-[#1f2834] active:bg-[#1f2834] cursor-pointer flex items-center gap-3 transition-colors"
+                    >
+                      <img
+                        src={safeAvatarSrc(u.avatarUrl)}
+                        alt={u.username}
+                        className="w-8 h-8 rounded-full object-cover bg-black/40 border border-white/10 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-xs font-bold text-white truncate">{u.displayName || u.username}</p>
+                          <span className="text-[10px] text-gray-400 font-mono">@{u.handle || u.username}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 truncate">{u.bio || (language === 'id' ? 'Pemain Roblox di Bloxboxd' : 'Roblox gamer on Bloxboxd')}</p>
+                      </div>
+                      <span className="text-[10px] text-[#00E59B] bg-[#00E59B]/10 px-2 py-0.5 rounded font-semibold whitespace-nowrap">
+                        {t('nav_view_profile')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {combinedResults.length > 0 ? (
               <div>
                 <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-[#14181c] flex items-center justify-between">
-                  <span>Hasil ({combinedResults.length})</span>
-                  {isSearchingApi && <span className="text-[#00E59B] text-[10px]">Mencari live...</span>}
+                  <span>{t('nav_games_section')} ({combinedResults.length})</span>
+                  {isSearchingApi && <span className="text-[#00E59B] text-[10px]">{t('nav_searching_live')}</span>}
                 </div>
                 {combinedResults.map((game) => (
                   <div
@@ -633,30 +686,18 @@ export const Navbar: React.FC = () => {
                   onClick={() => handleCommitSearch()}
                   className="p-2.5 bg-[#161c22] text-[#00E59B] text-xs font-bold flex items-center justify-between border-t border-[#252f3c]"
                 >
-                  <span>Cari "{query}" di katalog</span>
+                  <span>{t('nav_search_in_catalog', { query })}</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </div>
               </div>
             ) : (
-              <div className="p-3 text-center text-xs text-gray-400">
-                {isSearchingApi ? 'Mencari di server Roblox...' : `Tidak ada hasil untuk "${query}"`}
-              </div>
+              userResults.length === 0 && (
+                <div className="p-3 text-center text-xs text-gray-400">
+                  {isSearchingApi ? t('nav_searching_servers') : t('nav_no_instant_results', { query })}
+                </div>
+              )
             )}
           </div>
-        )}
-      </div>
-
-      {/* Mobile Filter Modal (safely padded, never clipped) */}
-      <div className="md:hidden">
-        {isFilterModalOpen && (
-          <SearchFilterModal 
-            isOpen={isFilterModalOpen} 
-            onClose={() => setIsFilterModalOpen(false)}
-            onApply={() => {
-              handleCommitSearch();
-            }}
-            variant="modal"
-          />
         )}
       </div>
     </header>

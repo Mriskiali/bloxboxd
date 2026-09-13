@@ -59,25 +59,20 @@ const MainAppContent: React.FC = () => {
     games, 
     activeTab, 
     setActiveTab, 
-    selectedGenre, 
-    setSelectedGenre, 
     searchQuery,
     setSearchQuery,
     sortBy,
     setSortBy,
-    minRating,
-    setMinRating,
-    minPlayers,
-    setMinPlayers,
     isRealtimeSyncing,
     lastSyncTimestamp,
     refreshRealtimeStats,
-    resetAllFilters,
     setUrlImportModalOpen, 
     viewGame,
     addGameToCatalog,
     addGamesToCatalog,
-    userLogs
+    userLogs,
+    language,
+    t
   } = useApp();
 
   const userLogMap = useMemo(() => {
@@ -101,39 +96,19 @@ const MainAppContent: React.FC = () => {
   const [isFetchingLiveBatch, setIsFetchingLiveBatch] = useState(false);
   const [initialGenreLoading, setInitialGenreLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
-
-  const genres = GENRE_CATEGORIES;
+  const lastDiscoverAttemptRef = useRef(0);
 
   // Ensure unique games list to prevent duplicate keys across render cycles
   const uniqueGames = useMemo(() => deduplicateGames(games), [games]);
 
-  // Compute live game counts for each genre tab
-  const genreCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    genres.forEach(cat => {
-      counts[cat] = cat === 'All' ? uniqueGames.length : uniqueGames.filter(g => isGameInGenreCategory(g, cat)).length;
-    });
-    return counts;
-  }, [uniqueGames, genres]);
-
-  // Filter and sort games for the catalog
+  // Display and search games for the catalog (filters removed, showing all experiences directly)
   const filteredGames = uniqueGames.filter(g => {
-    // Check genre match using intuitive Roblox category matching
-    const matchesGenre = isGameInGenreCategory(g, selectedGenre);
-    if (!matchesGenre) return false;
-
-    // Minimum rating filter
-    if (minRating > 0 && (g.ratingAverage || 0) < minRating) return false;
-
-    // Minimum player count filter
-    if (minPlayers > 0 && (g.playerCount || 0) < minPlayers) return false;
-
     // Check search query match across name, creator, genre, tags, and placeId
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase().trim();
     const matchesName = g.name.toLowerCase().includes(q);
     const matchesCreator = g.creatorName?.toLowerCase().includes(q);
-    const matchesGenreText = g.genre?.toLowerCase().includes(q);
+    const matchesGenreText = g.genre?.toLowerCase().includes(q) || g.subgenre?.toLowerCase().includes(q);
     const matchesTags = Array.isArray(g.tags) && g.tags.some(t => t.toLowerCase().includes(q));
     const matchesPlace = g.rootPlaceId?.toString().includes(q) || g.universeId?.toString().includes(q);
 
@@ -149,27 +124,18 @@ const MainAppContent: React.FC = () => {
     return (b.playerCount || 0) - (a.playerCount || 0);
   });
 
-  // When genre changes, reset tokens and fetch live games for this genre
+  // Auto-fetch fresh live Roblox games on startup if catalog has few games
   useEffect(() => {
-    setVisibleCount(INITIAL_VISIBLE_COUNT);
-    setOnlineSearchError(null);
-    setNextPageToken(undefined);
-    setHasMoreLive(true);
-
-    // Auto-fetch fresh live Roblox games for the selected genre
-    if (!searchQuery.trim()) {
-      const existingInGenre = uniqueGames.filter(g => isGameInGenreCategory(g, selectedGenre)).length;
-      if (existingInGenre < 12 || selectedGenre !== 'All') {
-        fetchNextDiscoverBatch(selectedGenre, undefined, existingInGenre === 0);
-      }
+    if (!searchQuery.trim() && uniqueGames.length < 20) {
+      fetchNextDiscoverBatch('All', undefined, uniqueGames.length === 0);
     }
-  }, [selectedGenre]);
+  }, []);
 
-  // Reset pagination on search query or other filter changes
+  // Reset pagination on search query or sort changes
   useEffect(() => {
     setVisibleCount(INITIAL_VISIBLE_COUNT);
     setOnlineSearchError(null);
-  }, [searchQuery, sortBy, minRating, minPlayers]);
+  }, [searchQuery, sortBy]);
 
   // Search live Roblox online across all Roblox games by name/ID/link
   const handleSearchRobloxLive = async (customQuery?: string) => {
@@ -214,7 +180,15 @@ const MainAppContent: React.FC = () => {
   // Load next batch of live discover games from Roblox Explore / Omni-Search with cursor
   const fetchNextDiscoverBatch = async (customGenre?: string, customToken?: string, isInitial: boolean = false) => {
     if (isFetchingLiveBatch) return;
-    const targetGenre = customGenre !== undefined ? customGenre : selectedGenre;
+
+    // Rate-limit & throttling protection: minimal 2.5 detik jeda antar panggilan discover
+    const now = Date.now();
+    if (!isInitial && (now - lastDiscoverAttemptRef.current) < 2500) {
+      return;
+    }
+    lastDiscoverAttemptRef.current = now;
+
+    const targetGenre = customGenre !== undefined ? customGenre : 'All';
     const targetToken = customToken !== undefined ? customToken : nextPageToken;
 
     setIsFetchingLiveBatch(true);
@@ -232,18 +206,23 @@ const MainAppContent: React.FC = () => {
         if (Array.isArray(data.games) && data.games.length > 0) {
           addGamesToCatalog(data.games);
           setNextPageToken(data.nextPageToken || undefined);
-          setHasMoreLive(Boolean(data.hasMore));
+          setHasMoreLive(Boolean(data.hasMore) && Boolean(data.nextPageToken));
           if (isInitial) {
             setVisibleCount(INITIAL_VISIBLE_COUNT);
           } else {
-            setVisibleCount(prev => prev + data.games.length);
+            // Naikkan visibleCount agar langsung menampilkan batch game yang baru saja ditarik
+            setVisibleCount(prev => prev + BATCH_SIZE);
           }
         } else {
           setHasMoreLive(false);
         }
+      } else {
+        // Jika server Roblox atau RoProxy rate limit (429) atau error, stop live stream agar tidak looping
+        setHasMoreLive(false);
       }
     } catch (e) {
       console.error('Failed to fetch next discover batch:', e);
+      setHasMoreLive(false);
     } finally {
       setIsFetchingLiveBatch(false);
       if (isInitial) setInitialGenreLoading(false);
@@ -268,16 +247,15 @@ const MainAppContent: React.FC = () => {
               setVisibleCount(prev => Math.min(prev + BATCH_SIZE, sortedGames.length));
               setIsLoadingMore(false);
             }, 100);
-          }
-          // If we're nearing the end of currently loaded games, fetch next batch seamlessly
-          if (visibleCount >= sortedGames.length - 8 && !searchQuery.trim() && hasMoreLive) {
+          } else if (!searchQuery.trim() && hasMoreLive) {
+            // Hanya panggil live batch berikutnya jika semua game lokal sudah tampil
             fetchNextDiscoverBatch();
           }
         }
       },
       {
         root: null,
-        rootMargin: '450px',
+        rootMargin: '300px',
         threshold: 0.05
       }
     );
@@ -288,7 +266,7 @@ const MainAppContent: React.FC = () => {
     return () => {
       if (el) observer.unobserve(el);
     };
-  }, [hasMore, isLoadingMore, isFetchingLiveBatch, visibleCount, sortedGames.length, hasMoreLive, searchQuery, selectedGenre, nextPageToken]);
+  }, [hasMore, isLoadingMore, isFetchingLiveBatch, visibleCount, sortedGames.length, hasMoreLive, searchQuery, nextPageToken]);
 
   // Cross-Genre Dynamic Spotlight: Showcases the #1 TOP experience from EACH genre
   // Completely independent of the catalog's selected genre filter
@@ -409,8 +387,8 @@ const MainAppContent: React.FC = () => {
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>
                           {spotlightGenre === 'Platform Trending'
-                            ? '🔥 #1 Trending di Roblox'
-                            : `✨ #1 Top di Genre ${spotlightGenre}`}
+                            ? (language === 'id' ? '🔥 #1 Trending di Roblox' : '🔥 #1 Trending on Roblox')
+                            : (language === 'id' ? `✨ #1 Top di Genre ${spotlightGenre}` : `✨ #1 Top in ${spotlightGenre}`)}
                         </span>
                       </div>
 
@@ -424,7 +402,7 @@ const MainAppContent: React.FC = () => {
                               setIsSpotlightPaused(prev => !prev);
                             }}
                             className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-[#252f3b] transition-colors cursor-pointer"
-                            title={isSpotlightPaused ? "Lanjutkan auto-rotate" : "Jeda auto-rotate"}
+                            title={isSpotlightPaused ? (language === 'id' ? "Lanjutkan auto-rotate" : "Resume slideshow") : (language === 'id' ? "Jeda auto-rotate" : "Pause slideshow")}
                             aria-label={isSpotlightPaused ? "Play slideshow" : "Pause slideshow"}
                           >
                             {isSpotlightPaused ? (
@@ -439,7 +417,7 @@ const MainAppContent: React.FC = () => {
                           <button
                             onClick={handlePrevSpotlight}
                             className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-[#252f3b] transition-colors cursor-pointer"
-                            title="Lihat genre spotlight sebelumnya"
+                            title={language === 'id' ? "Lihat genre spotlight sebelumnya" : "View previous spotlight"}
                             aria-label="Previous Spotlight"
                           >
                             <ChevronLeft className="w-4 h-4" />
@@ -459,7 +437,7 @@ const MainAppContent: React.FC = () => {
                                     : 'w-1.5 bg-gray-600 hover:bg-gray-400'
                                 }`}
                                 title={`#1 ${c.genreCategory}: ${c.game.name}`}
-                                aria-label={`Lihat #1 ${c.genreCategory}: ${c.game.name}`}
+                                aria-label={`#1 ${c.genreCategory}: ${c.game.name}`}
                               />
                             ))}
                           </div>
@@ -467,7 +445,7 @@ const MainAppContent: React.FC = () => {
                           <button
                             onClick={handleNextSpotlight}
                             className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-[#252f3b] transition-colors cursor-pointer"
-                            title="Lihat genre spotlight berikutnya"
+                            title={language === 'id' ? "Lihat genre spotlight berikutnya" : "View next spotlight"}
                             aria-label="Next Spotlight"
                           >
                             <ChevronRight className="w-4 h-4" />
@@ -481,7 +459,7 @@ const MainAppContent: React.FC = () => {
                     </h1>
 
                     <p className="text-sm sm:text-base text-gray-300 leading-relaxed line-clamp-3">
-                      {spotlightGame.description || 'Pengalaman Roblox seru dan terpopuler di Bloxboxd.'}
+                      {spotlightGame.description || t('hero_desc')}
                     </p>
 
                     <div className="flex flex-wrap items-center gap-3 text-xs font-semibold pt-1">
@@ -490,29 +468,21 @@ const MainAppContent: React.FC = () => {
                         <span>{spotlightGame.ratingAverage.toFixed(1)} / 5.0</span>
                       </div>
 
-                      <button
-                        onClick={() => {
-                          if (spotlightGenre !== 'Platform Trending') {
-                            setSelectedGenre(spotlightGenre);
-                          }
-                        }}
-                        className="text-gray-300 bg-[#1e2630] hover:bg-[#283341] hover:text-white px-3 py-1.5 rounded-lg border border-[#2b3542] text-xs font-semibold cursor-pointer transition-colors"
-                        title={spotlightGenre !== 'Platform Trending' ? `Klik untuk filter katalog ke genre ${spotlightGenre}` : undefined}
-                      >
+                      <span className="text-gray-300 bg-[#1e2630] px-3 py-1.5 rounded-lg border border-[#2b3542] text-xs font-semibold">
                         {spotlightGenre}
-                      </button>
+                      </span>
 
                       <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
                         <span className="relative flex h-2 w-2">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00E59B] opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00E59B]"></span>
                         </span>
-                        <span>{(spotlightGame.playerCount || 0).toLocaleString()} pemain online</span>
+                        <span>{(spotlightGame.playerCount || 0).toLocaleString(language === 'id' ? 'id-ID' : 'en-US')} {t('card_online')}</span>
                       </div>
 
                       {spotlightGame.creatorName && (
                         <span className="text-gray-400 text-xs py-1.5 hidden sm:inline-block">
-                          Oleh <strong className="text-gray-200">{spotlightGame.creatorName}</strong>
+                          {language === 'id' ? 'Oleh' : 'By'} <strong className="text-gray-200">{spotlightGame.creatorName}</strong>
                         </span>
                       )}
                     </div>
@@ -522,7 +492,7 @@ const MainAppContent: React.FC = () => {
                         onClick={() => viewGame(spotlightGame.id)}
                         className="px-5 py-2.5 rounded-xl bg-[#00E59B] hover:bg-[#00c988] text-black font-extrabold text-xs transition-all shadow-[0_0_20px_rgba(0,229,155,0.4)] flex items-center justify-center gap-2 cursor-pointer"
                       >
-                        <span>View Details & Log</span>
+                        <span>{language === 'id' ? 'Lihat Detail & Log' : 'View Details & Log'}</span>
                         <ChevronRight className="w-4 h-4" />
                       </button>
 
@@ -533,7 +503,7 @@ const MainAppContent: React.FC = () => {
                         className="px-4 py-2.5 rounded-xl bg-[#1e2630] hover:bg-[#283341] text-white text-xs font-bold transition-colors border border-[#2e3947] flex items-center justify-center gap-2"
                       >
                         <Gamepad2 className="w-4 h-4 text-[#00E59B]" />
-                        <span>Main di Roblox</span>
+                        <span>{t('detail_play_roblox')}</span>
                         <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                       </a>
 
@@ -542,7 +512,7 @@ const MainAppContent: React.FC = () => {
                         className="px-4 py-2.5 rounded-xl bg-[#222a33]/60 hover:bg-[#2c3642] text-gray-300 hover:text-white text-xs font-bold transition-colors border border-[#313c49] text-center flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <PlusCircle className="w-4 h-4 text-gray-400" />
-                        <span>Import Game</span>
+                        <span>{language === 'id' ? 'Impor Game' : 'Import Game'}</span>
                       </button>
                     </div>
                   </div>
@@ -564,7 +534,7 @@ const MainAppContent: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                         <span className="text-[11px] font-bold text-[#00E59B] flex items-center gap-1">
-                          <span>Buka Detail</span>
+                          <span>{language === 'id' ? 'Buka Detail' : 'View Details'}</span>
                           <ChevronRight className="w-3 h-3" />
                         </span>
                       </div>
@@ -600,10 +570,12 @@ const MainAppContent: React.FC = () => {
                   <div>
                     <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
                       <Compass className="w-5 h-5 text-[#00E59B]" />
-                      <span>Browse Roblox Experiences</span>
+                      <span>{t('catalog_title')}</span>
                     </h2>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      Jelajahi, beri log dan ulasan pada pengalaman Roblox dengan data resmi real-time
+                      {language === 'id' 
+                        ? 'Jelajahi, beri log dan ulasan pada pengalaman Roblox dengan data resmi real-time' 
+                        : 'Explore, log and review Roblox experiences with official real-time data'}
                     </p>
                   </div>
 
@@ -612,7 +584,7 @@ const MainAppContent: React.FC = () => {
                     {/* Live Roblox API Indicator */}
                     <div 
                       className="flex items-center gap-2 bg-[#182028] border border-[#273341] px-3 py-1.5 rounded-xl text-xs"
-                      title="Bloxboxd selalu terhubung langsung dengan official Roblox API"
+                      title={language === 'id' ? "Bloxboxd selalu terhubung langsung dengan official Roblox API" : "Bloxboxd connects directly with official Roblox API"}
                     >
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00E59B] opacity-75"></span>
@@ -620,13 +592,13 @@ const MainAppContent: React.FC = () => {
                       </span>
                       <span className="text-gray-300 font-semibold hidden sm:inline">Roblox API Live Sync</span>
                       <span className="text-[11px] text-[#00E59B] font-mono font-bold">
-                        {isRealtimeSyncing ? 'Memperbarui...' : '🟢 Realtime'}
+                        {isRealtimeSyncing ? (language === 'id' ? 'Memperbarui...' : 'Updating...') : '🟢 Realtime'}
                       </span>
                       <button
                         onClick={() => refreshRealtimeStats()}
                         disabled={isRealtimeSyncing}
                         className="p-1 hover:text-[#00E59B] text-gray-400 rounded transition-colors"
-                        title="Segarkan data realtime dari Roblox sekarang"
+                        title={language === 'id' ? "Segarkan data realtime dari Roblox sekarang" : "Refresh realtime Roblox stats now"}
                       >
                         <RotateCcw className={`w-3.5 h-3.5 ${isRealtimeSyncing ? 'animate-spin text-[#00E59B]' : ''}`} />
                       </button>
@@ -635,7 +607,7 @@ const MainAppContent: React.FC = () => {
                     {/* Quick Sort Selector */}
                     <div className="flex items-center gap-1.5 bg-[#182028] border border-[#273341] px-2.5 py-1.5 rounded-xl text-xs">
                       <SlidersHorizontal className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-gray-400 font-semibold hidden sm:inline">Urut:</span>
+                      <span className="text-gray-400 font-semibold hidden sm:inline">{t('catalog_sort_by')}</span>
                       <select
                         value={sortBy}
                         onChange={(e) => {
@@ -644,113 +616,49 @@ const MainAppContent: React.FC = () => {
                             setSortBy(val);
                           });
                         }}
-                        aria-label="Urutkan pengalaman"
+                        aria-label={t('catalog_sort_by')}
                         className="bg-transparent text-xs font-bold text-white outline-none cursor-pointer pr-1"
                       >
-                        <option value="popular" className="bg-[#182028] text-white">Paling Ramai</option>
-                        <option value="rating" className="bg-[#182028] text-white">Rating Tertinggi ★</option>
-                        <option value="visits" className="bg-[#182028] text-white">Total Kunjungan</option>
-                        <option value="newest" className="bg-[#182028] text-white">Rilis Terbaru</option>
-                        <option value="az" className="bg-[#182028] text-white">Abjad (A - Z)</option>
+                        <option value="popular" className="bg-[#182028] text-white">{t('sort_popular')}</option>
+                        <option value="rating" className="bg-[#182028] text-white">{t('sort_rating')}</option>
+                        <option value="visits" className="bg-[#182028] text-white">{t('sort_visits')}</option>
+                        <option value="newest" className="bg-[#182028] text-white">{t('sort_newest')}</option>
+                        <option value="az" className="bg-[#182028] text-white">{t('sort_az')}</option>
                       </select>
                     </div>
                   </div>
                 </div>
 
-                {/* Genre Tabs with Dynamic Counts */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[#232b35] no-scrollbar smooth-touch-scroll">
-                  {genres.map(genre => {
-                    const count = genreCounts[genre] || 0;
-                    return (
-                      <button
-                        key={genre}
-                        onClick={() => {
-                          startTransition(() => {
-                            setSelectedGenre(genre);
-                            setVisibleCount(INITIAL_VISIBLE_COUNT);
-                          });
-                        }}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                          selectedGenre === genre
-                            ? 'bg-[#00E59B] text-black shadow-md'
-                            : 'bg-[#1a2026] text-gray-300 hover:text-white hover:bg-[#222a33] border border-[#27323e]'
-                        }`}
-                      >
-                        <span>{genre}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                          selectedGenre === genre ? 'bg-black/20 text-black' : 'bg-[#232b35] text-gray-400'
-                        }`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Active Filter Chips & Summary */}
-                {(searchQuery.trim() || selectedGenre !== 'All' || minRating > 0 || minPlayers > 0 || sortBy !== 'popular') && (
-                  <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
-                    <span className="text-xs text-gray-400 font-medium">Filter aktif:</span>
-                    {searchQuery.trim() && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-[#00E59B]/15 text-[#00E59B] border border-[#00E59B]/30 font-semibold">
-                        <span>Pencarian: "{searchQuery}"</span>
-                        <button onClick={() => setSearchQuery('')} className="hover:text-white">✕</button>
-                      </span>
-                    )}
-                    {selectedGenre !== 'All' && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-[#00A2FF]/15 text-[#00A2FF] border border-[#00A2FF]/30 font-semibold">
-                        <span>Genre: {selectedGenre}</span>
-                        <button onClick={() => setSelectedGenre('All')} className="hover:text-white">✕</button>
-                      </span>
-                    )}
-                    {minRating > 0 && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 font-semibold">
-                        <span>Rating: {minRating}+ ★</span>
-                        <button onClick={() => setMinRating(0)} className="hover:text-white">✕</button>
-                      </span>
-                    )}
-                    {minPlayers > 0 && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-purple-500/15 text-purple-400 border border-purple-500/30 font-semibold">
-                        <span>Pemain: {minPlayers.toLocaleString()}+</span>
-                        <button onClick={() => setMinPlayers(0)} className="hover:text-white">✕</button>
-                      </span>
-                    )}
-                    {sortBy !== 'popular' && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-gray-700/50 text-gray-300 border border-gray-600 font-semibold">
-                        <span>Urut: {sortBy === 'rating' ? 'Rating' : sortBy === 'visits' ? 'Visits' : sortBy === 'newest' ? 'Terbaru' : 'A-Z'}</span>
-                        <button onClick={() => setSortBy('popular')} className="hover:text-white">✕</button>
-                      </span>
-                    )}
-                    <button
-                      onClick={resetAllFilters}
-                      className="text-xs text-red-400 hover:text-red-300 underline font-semibold ml-1 cursor-pointer"
-                    >
-                      Reset Semua
-                    </button>
-                  </div>
-                )}
-
-                {/* Experiences Count Banner */}
-                <div className="flex items-center justify-between text-xs text-gray-400 px-0.5">
+                {/* Experiences Count Banner & Active Search Query */}
+                <div className="flex items-center justify-between text-xs text-gray-400 px-0.5 pt-1 border-t border-[#232b35]/60">
                   <div>
                     {searchQuery.trim() ? (
-                      <span>
-                        Ditemukan <strong className="text-white">{sortedGames.length}</strong> pengalaman cocok dengan "<strong className="text-[#00E59B]">{searchQuery}</strong>"
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span>
+                          {language === 'id' ? (
+                            <>Ditemukan <strong className="text-white">{sortedGames.length}</strong> pengalaman cocok dengan "<strong className="text-[#00E59B]">{searchQuery}</strong>"</>
+                          ) : (
+                            <>Found <strong className="text-white">{sortedGames.length}</strong> experiences matching "<strong className="text-[#00E59B]">{searchQuery}</strong>"</>
+                          )}
+                        </span>
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="px-2 py-0.5 rounded-full bg-[#242d38] hover:bg-[#303c4a] text-gray-300 hover:text-white text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                        >
+                          <span>✕</span>
+                          <span>{language === 'id' ? 'Hapus' : 'Clear'}</span>
+                        </button>
+                      </div>
                     ) : (
                       <span>
-                        Menampilkan <strong className="text-white">{sortedGames.length}</strong> pengalaman {selectedGenre !== 'All' ? `kategori ${selectedGenre}` : 'di Roblox'}
+                        {language === 'id' ? (
+                          <>Menampilkan <strong className="text-white">{sortedGames.length}</strong> pengalaman di Roblox</>
+                        ) : (
+                          <>Showing <strong className="text-white">{sortedGames.length}</strong> experiences on Roblox</>
+                        )}
                       </span>
                     )}
                   </div>
-                  {(searchQuery.trim() || selectedGenre !== 'All' || minRating > 0 || minPlayers > 0) && (
-                    <button
-                      onClick={resetAllFilters}
-                      className="text-[#00E59B] hover:underline font-semibold"
-                    >
-                      Reset filter
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -783,12 +691,23 @@ const MainAppContent: React.FC = () => {
                   {/* Progress Indicator */}
                   <div className="flex flex-col items-center gap-1.5 text-xs text-gray-400">
                     <div className="flex items-center gap-2">
-                      <span>Menampilkan <strong className="text-white">{visibleGames.length}</strong> dari <strong className="text-white">{sortedGames.length}</strong> game {selectedGenre !== 'All' ? `(${selectedGenre})` : ''}</span>
-                      {hasMore && (
+                      <span>
+                        {language === 'id' ? (
+                          <>Menampilkan <strong className="text-white">{visibleGames.length}</strong> dari <strong className="text-white">{sortedGames.length}</strong> game</>
+                        ) : (
+                          <>Showing <strong className="text-white">{visibleGames.length}</strong> of <strong className="text-white">{sortedGames.length}</strong> games</>
+                        )}
+                      </span>
+                      {sortedGames.length > visibleGames.length ? (
                         <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#1e2630] border border-[#2b3542] text-[#00E59B] font-semibold">
-                          +{sortedGames.length - visibleCount} lagi
+                          +{sortedGames.length - visibleGames.length} {language === 'id' ? 'lagi' : 'more'}
                         </span>
-                      )}
+                      ) : hasMoreLive && !searchQuery.trim() ? (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#1e2630] border border-[#2b3542] text-[#00E59B] font-semibold flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00E59B] animate-pulse" />
+                          {language === 'id' ? 'Live Stream Roblox' : 'Roblox Live Stream'}
+                        </span>
+                      ) : null}
                     </div>
                     {/* Visual progress bar */}
                     <div className="w-48 sm:w-64 h-1.5 bg-[#1e2630] rounded-full overflow-hidden">
@@ -811,7 +730,7 @@ const MainAppContent: React.FC = () => {
                               setIsLoadingMore(false);
                             }, 100);
                           } else if (!searchQuery.trim() && hasMoreLive) {
-                            fetchNextDiscoverBatch(selectedGenre, nextPageToken);
+                            fetchNextDiscoverBatch('All', nextPageToken);
                           }
                         }}
                         disabled={isLoadingMore || isFetchingLiveBatch}
@@ -820,27 +739,35 @@ const MainAppContent: React.FC = () => {
                         {(isLoadingMore || isFetchingLiveBatch) ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin text-[#00E59B]" />
-                            <span>Menghubungi server Roblox...</span>
+                            <span>{t('catalog_loading_more')}</span>
                           </>
                         ) : (
                           <>
                             <span>
-                              {visibleCount < sortedGames.length 
-                                ? `Muat Lebih Banyak Game (${sortedGames.length - visibleCount} lagi)` 
-                                : `Jelajahi Lebih Banyak Game ${selectedGenre !== 'All' ? selectedGenre : 'Roblox'}`}
+                              {visibleGames.length < sortedGames.length 
+                                ? (language === 'id' 
+                                    ? `Muat Lebih Banyak Game (${Math.max(0, sortedGames.length - visibleGames.length)} lagi)` 
+                                    : `Load More Games (${Math.max(0, sortedGames.length - visibleGames.length)} remaining)`) 
+                                : t('catalog_explore_more_all')}
                             </span>
                             <ChevronDown className="w-4 h-4 text-[#00E59B] group-hover:translate-y-0.5 transition-transform" />
                           </>
                         )}
                       </button>
                       <p className="text-[11px] text-gray-500">
-                        Atau scroll ke bawah terus — sistem akan menyedot game baru secara otomatis
+                        {language === 'id' 
+                          ? 'Atau scroll ke bawah terus — sistem akan menyedot game baru secara otomatis' 
+                          : 'Or keep scrolling — the catalog will discover more games automatically'}
                       </p>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 bg-[#171d24] px-4 py-2 rounded-full border border-[#232b35]">
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#00E59B]" />
-                      <span>Semua {sortedGames.length} game telah dimuat</span>
+                      <span>
+                        {language === 'id' 
+                          ? `Semua ${sortedGames.length} game telah dimuat` 
+                          : `All ${sortedGames.length} games loaded`}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -859,10 +786,14 @@ const MainAppContent: React.FC = () => {
                   {searchQuery.trim() ? (
                     <>
                       <p className="text-base font-bold text-white">
-                        Tidak ada game lokal yang cocok dengan "{searchQuery}".
+                        {language === 'id' 
+                          ? `Tidak ada game lokal yang cocok dengan "${searchQuery}".`
+                          : `No local experiences match "${searchQuery}".`}
                       </p>
                       <p className="text-xs text-gray-400 max-w-md mx-auto">
-                        Kamu bisa mencari langsung ke seluruh platform database Roblox via tombol di bawah ini:
+                        {language === 'id'
+                          ? 'Kamu bisa mencari langsung ke seluruh platform database Roblox via tombol di bawah ini:'
+                          : 'You can search across the entire Roblox platform database via the button below:'}
                       </p>
 
                       {onlineSearchError && (
@@ -880,12 +811,16 @@ const MainAppContent: React.FC = () => {
                           {isSearchingOnline ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Mencari di Roblox...</span>
+                              <span>{language === 'id' ? 'Mencari di Roblox...' : 'Searching Roblox...'}</span>
                             </>
                           ) : (
                             <>
                               <Globe2 className="w-4 h-4" />
-                              <span>Cari "{searchQuery}" di Seluruh Game Roblox</span>
+                              <span>
+                                {language === 'id' 
+                                  ? `Cari "${searchQuery}" di Seluruh Game Roblox` 
+                                  : `Search "${searchQuery}" across all Roblox games`}
+                              </span>
                             </>
                           )}
                         </button>
@@ -893,39 +828,27 @@ const MainAppContent: React.FC = () => {
                           onClick={() => setUrlImportModalOpen(true)}
                           className="px-4 py-2.5 bg-[#222a33] text-gray-200 hover:text-white font-bold text-xs rounded-xl border border-[#313c49]"
                         >
-                          Buka Dialog Import / Link / ID
+                          {language === 'id' ? 'Buka Dialog Import / Link / ID' : 'Open Import Link / ID Dialog'}
                         </button>
                         <button
-                          onClick={() => {
-                            setSearchQuery('');
-                            setSelectedGenre('All');
-                          }}
+                          onClick={() => setSearchQuery('')}
                           className="px-4 py-2.5 bg-transparent text-gray-400 hover:text-white text-xs font-semibold"
                         >
-                          Reset Filter
+                          {language === 'id' ? 'Hapus Pencarian' : 'Clear Search'}
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
                       <p className="text-base font-bold text-white">
-                        Belum ada game lokal untuk kategori "{selectedGenre}".
-                      </p>
-                      <p className="text-xs text-gray-400 max-w-md mx-auto">
-                        Klik tombol di bawah untuk menyedot game kategori {selectedGenre} langsung dari platform Roblox:
+                        {language === 'id' ? 'Katalog sedang dimuat...' : 'Catalog is loading...'}
                       </p>
                       <div className="flex items-center justify-center gap-3 pt-2">
                         <button
-                          onClick={() => fetchNextDiscoverBatch(selectedGenre, undefined, true)}
+                          onClick={() => fetchNextDiscoverBatch('All', undefined, true)}
                           className="px-5 py-2.5 bg-[#00E59B] hover:bg-[#00c988] text-black font-extrabold text-xs rounded-xl shadow-lg transition-all"
                         >
-                          Muat Game {selectedGenre} dari Roblox
-                        </button>
-                        <button
-                          onClick={() => setSelectedGenre('All')}
-                          className="px-4 py-2.5 bg-[#222a33] text-gray-200 hover:text-white font-bold text-xs rounded-xl border border-[#313c49]"
-                        >
-                          Kembali ke Semua Game
+                          {language === 'id' ? 'Tarik Game dari Roblox' : 'Fetch Games from Roblox'}
                         </button>
                       </div>
                     </>
@@ -938,35 +861,35 @@ const MainAppContent: React.FC = () => {
 
         {/* View: Game Details */}
         {activeTab === 'game-detail' && (
-          <Suspense fallback={<ViewLoader text="Memuat detail pengalaman..." />}>
+          <Suspense fallback={<ViewLoader text={language === 'id' ? "Memuat detail pengalaman..." : "Loading experience details..."} />}>
             <GameDetailView />
           </Suspense>
         )}
 
         {/* View: User Profile */}
         {activeTab === 'profile' && (
-          <Suspense fallback={<ViewLoader text="Memuat profil pengguna..." />}>
+          <Suspense fallback={<ViewLoader text={language === 'id' ? "Memuat profil pengguna..." : "Loading user profile..."} />}>
             <ProfileView />
           </Suspense>
         )}
 
         {/* View: Diary */}
         {activeTab === 'diary' && (
-          <Suspense fallback={<ViewLoader text="Memuat catatan diary..." />}>
+          <Suspense fallback={<ViewLoader text={language === 'id' ? "Memuat catatan diary..." : "Loading diary..."} />}>
             <DiaryView />
           </Suspense>
         )}
 
         {/* View: Lists */}
         {(activeTab === 'lists' || activeTab === 'list-detail') && (
-          <Suspense fallback={<ViewLoader text="Memuat koleksi lists..." />}>
+          <Suspense fallback={<ViewLoader text={language === 'id' ? "Memuat koleksi lists..." : "Loading lists..."} />}>
             <ListsView />
           </Suspense>
         )}
 
         {/* View: Community */}
         {activeTab === 'community' && (
-          <Suspense fallback={<ViewLoader text="Memuat feed komunitas..." />}>
+          <Suspense fallback={<ViewLoader text={language === 'id' ? "Memuat feed komunitas..." : "Loading community feed..."} />}>
             <CommunityView />
           </Suspense>
         )}

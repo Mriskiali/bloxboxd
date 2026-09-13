@@ -20,7 +20,7 @@ interface ReviewCommentsModalProps {
 }
 
 export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review, isOpen, onClose }) => {
-  const { user, setLoginModalOpen } = useApp();
+  const { user, setLoginModalOpen, incrementReviewCommentsCount, viewUserProfile, language, t } = useApp();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -77,6 +77,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
         if (data.comment) {
           setComments(prev => [...prev, data.comment]);
           setNewComment('');
+          incrementReviewCommentsCount(review.id);
         }
       }
     } catch (err) {
@@ -100,10 +101,12 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
             </div>
             <div>
               <h3 className="text-sm font-bold text-white">
-                Komentar Ulasan
+                {t('comments_modal_title')}
               </h3>
               <p className="text-xs text-gray-400 truncate max-w-xs">
-                Ulasan {review.username} tentang {review.gameTitle}
+                {language === 'id' 
+                  ? `Ulasan ${review.username} tentang ${review.gameTitle}` 
+                  : `${review.username}'s review on ${review.gameTitle}`}
               </p>
             </div>
           </div>
@@ -120,11 +123,23 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
           <img 
             src={safeAvatarSrc(review.userAvatar)} 
             alt={review.username} 
-            className="w-8 h-8 rounded-full object-cover bg-black/40 flex-shrink-0 border border-white/10"
+            onClick={() => {
+              onClose();
+              viewUserProfile(review.userId);
+            }}
+            className="w-8 h-8 rounded-full object-cover bg-black/40 flex-shrink-0 border border-white/10 hover:border-[#00E59B] cursor-pointer transition-colors"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-bold text-white">{review.username}</span>
+              <span 
+                onClick={() => {
+                  onClose();
+                  viewUserProfile(review.userId);
+                }}
+                className="font-bold text-white hover:text-[#00E59B] cursor-pointer transition-colors"
+              >
+                {review.username}
+              </span>
               {review.rating && (
                 <span className="text-[#00E59B] font-mono font-bold">★ {review.rating.toFixed(1)}</span>
               )}
@@ -140,7 +155,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
           {isLoading ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-gray-400 text-xs">
               <Loader2 className="w-5 h-5 animate-spin text-[#00E59B]" />
-              <span>Memuat komentar...</span>
+              <span>{t('comments_modal_loading')}</span>
             </div>
           ) : comments.length > 0 ? (
             comments.map((c) => (
@@ -148,13 +163,25 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
                 <img 
                   src={safeAvatarSrc(c.userAvatar)} 
                   alt={c.username}
-                  className="w-7 h-7 rounded-full object-cover bg-black/40 flex-shrink-0 border border-white/10 mt-0.5" 
+                  onClick={() => {
+                    onClose();
+                    viewUserProfile(c.userId);
+                  }}
+                  className="w-7 h-7 rounded-full object-cover bg-black/40 flex-shrink-0 border border-white/10 hover:border-[#00E59B] cursor-pointer transition-colors mt-0.5" 
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-bold text-white">{c.username}</span>
+                    <span 
+                      onClick={() => {
+                        onClose();
+                        viewUserProfile(c.userId);
+                      }}
+                      className="font-bold text-white hover:text-[#00E59B] cursor-pointer transition-colors"
+                    >
+                      {c.username}
+                    </span>
                     <span className="text-[10px] text-gray-500">
-                      {new Date(c.createdAt).toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(c.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <p className="text-gray-200 leading-relaxed break-words bg-[#131920] p-2.5 rounded-xl border border-[#232c37]">
@@ -165,8 +192,12 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
             ))
           ) : (
             <div className="py-12 text-center text-gray-400 text-xs space-y-1">
-              <p className="font-semibold text-gray-300">Belum ada komentar.</p>
-              <p className="text-gray-500">Jadilah yang pertama mengomentari ulasan ini!</p>
+              <p className="font-semibold text-gray-300">
+                {language === 'id' ? 'Belum ada komentar.' : 'No comments yet.'}
+              </p>
+              <p className="text-gray-500">
+                {language === 'id' ? 'Jadilah yang pertama mengomentari ulasan ini!' : 'Be the first to reply to this review!'}
+              </p>
             </div>
           )}
         </div>
@@ -177,7 +208,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
             <>
               <input
                 type="text"
-                placeholder="Tulis komentar kamu..."
+                placeholder={t('comments_modal_ph')}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 maxLength={300}
@@ -187,7 +218,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
                 type="submit"
                 disabled={isSubmitting || !newComment.trim()}
                 className="p-2 bg-[#00E59B] hover:bg-[#00c988] disabled:opacity-50 text-black rounded-xl transition-all font-bold flex-shrink-0 active:scale-95"
-                title="Kirim komentar"
+                title={t('comments_modal_send')}
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -198,7 +229,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
             </>
           ) : (
             <div className="w-full flex items-center justify-between px-2 py-1 text-xs">
-              <span className="text-gray-400">Masuk untuk menulis komentar</span>
+              <span className="text-gray-400">{t('comments_modal_login_prompt')}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -207,7 +238,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
                 }}
                 className="px-3 py-1 bg-[#00E59B] text-black font-bold rounded-lg text-xs hover:bg-[#00c988] transition-colors"
               >
-                Masuk Roblox
+                {t('nav_login_roblox')}
               </button>
             </div>
           )}

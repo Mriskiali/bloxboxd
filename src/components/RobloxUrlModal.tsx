@@ -15,7 +15,7 @@ import { useApp } from '../context/AppContext';
 import { Game, safeImgSrc, DEFAULT_ICON_URL } from '../types';
 
 export const RobloxUrlModal: React.FC = () => {
-  const { urlImportModalOpen, setUrlImportModalOpen, importGame, viewGame, games } = useApp();
+  const { urlImportModalOpen, setUrlImportModalOpen, importGame, viewGame, games, language, t } = useApp();
 
   const [inputUrl, setInputUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -162,10 +162,10 @@ export const RobloxUrlModal: React.FC = () => {
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
-                Tambah Game ke Bloxboxd
+                {t('url_modal_title')}
               </h3>
               <p className="text-[11px] text-gray-400">
-                Impor dan tambahkan game Roblox baru menggunakan link atau Place ID
+                {t('url_modal_desc')}
               </p>
             </div>
           </div>
@@ -180,7 +180,7 @@ export const RobloxUrlModal: React.FC = () => {
         {/* Form Tambah Game */}
         <form onSubmit={(e) => handleResolveUrl(e)} className="space-y-3">
           <label className="block text-xs font-bold text-gray-300">
-            Link Game Roblox atau Place ID
+            {t('url_modal_link_label')}
           </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -188,7 +188,8 @@ export const RobloxUrlModal: React.FC = () => {
               <input
                 type="text"
                 autoFocus
-                aria-label="Link Game Roblox atau Place ID"
+                aria-label={t('url_modal_link_label')}
+                placeholder={t('url_modal_input_ph')}
                 value={inputUrl}
                 onChange={(e) => setInputUrl(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-[#14181c] border border-[#2b3542] focus:border-[#00E59B] rounded-xl text-xs sm:text-sm text-white outline-none transition-all shadow-inner"
@@ -202,12 +203,12 @@ export const RobloxUrlModal: React.FC = () => {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Mengambil...</span>
+                  <span>{t('url_modal_fetching_btn')}</span>
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  <span>Ambil Data</span>
+                  <span>{t('url_modal_fetch_btn')}</span>
                 </>
               )}
             </button>
@@ -215,7 +216,7 @@ export const RobloxUrlModal: React.FC = () => {
 
           {/* Quick suggestions / examples */}
           <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px] text-gray-400">
-            <span>Contoh cepat:</span>
+            <span>{t('url_modal_quick_examples')}</span>
             {placeExamples.map((ex) => (
               <button
                 key={ex.id}
@@ -260,8 +261,8 @@ export const RobloxUrlModal: React.FC = () => {
                 </div>
 
                 <p className="text-xs text-gray-400 mt-1 truncate">
-                  Oleh <strong className="text-gray-200 font-semibold">{resolvedData.creatorName}</strong>
-                  {resolvedData.releaseYear ? ` • Rilis ${resolvedData.releaseYear}` : ''}
+                  {t('url_modal_by')} <strong className="text-gray-200 font-semibold">{resolvedData.creatorName}</strong>
+                  {resolvedData.releaseYear ? ` • ${t('url_modal_released')} ${resolvedData.releaseYear}` : ''}
                 </p>
 
                 <div className="flex items-center gap-3 text-xs text-gray-400 mt-2 flex-wrap">
@@ -269,9 +270,9 @@ export const RobloxUrlModal: React.FC = () => {
                     ★ {resolvedData.ratingAverage?.toFixed(1) || '4.5'}
                   </span>
                   <span>•</span>
-                  <span>👥 {(resolvedData.playerCount || 0).toLocaleString()} Aktif</span>
+                  <span>👥 {(resolvedData.playerCount || 0).toLocaleString()} {t('url_modal_active_players')}</span>
                   <span>•</span>
-                  <span>👁️ {resolvedData.totalVisits || '1M+'} Kunjungan</span>
+                  <span>👁️ {resolvedData.totalVisits || '1M+'} {t('url_modal_visits')}</span>
                 </div>
               </div>
             </div>
@@ -289,7 +290,7 @@ export const RobloxUrlModal: React.FC = () => {
                 className="w-full sm:flex-1 py-3 bg-[#00E59B] hover:bg-[#00c988] active:scale-[0.99] text-black font-black text-xs sm:text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
-                <span>Tambah ke Katalog Bloxboxd</span>
+                <span>{t('url_modal_add_catalog')}</span>
               </button>
 
               {resolvedData.rootPlaceId ? (
@@ -299,7 +300,7 @@ export const RobloxUrlModal: React.FC = () => {
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto px-4 py-3 bg-[#202832] hover:bg-[#283340] text-gray-200 text-xs font-bold rounded-xl border border-[#2d3846] transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <span>Buka di Roblox</span>
+                  <span>{t('url_modal_open_roblox')}</span>
                   <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                 </a>
               ) : null}

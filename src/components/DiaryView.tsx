@@ -5,7 +5,7 @@ import { GameCard } from './GameCard';
 import { safeImgSrc } from '../types';
 
 export const DiaryView: React.FC = () => {
-  const { userLogs, getGameById, viewGame, openLogModal, user, setLoginModalOpen } = useApp();
+  const { userLogs, getGameById, viewGame, openLogModal, user, setLoginModalOpen, language, t } = useApp();
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   const logsWithDate = userLogs
@@ -20,7 +20,7 @@ export const DiaryView: React.FC = () => {
   const groupedLogs: { [key: string]: typeof logsWithDate } = {};
   logsWithDate.forEach(log => {
     const d = new Date(log.loggedDate);
-    const monthYear = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const monthYear = d.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { month: 'long', year: 'numeric' });
     if (!groupedLogs[monthYear]) {
       groupedLogs[monthYear] = [];
     }
@@ -35,11 +35,11 @@ export const DiaryView: React.FC = () => {
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-[#00E59B]" />
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Roblox Play Diary
+              {t('diary_title')}
             </h1>
           </div>
           <p className="text-xs text-gray-400 mt-1">
-            A chronological timeline of every experience you played, rated, and logged
+            {t('diary_desc')}
           </p>
         </div>
 
@@ -50,7 +50,7 @@ export const DiaryView: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a2128] border border-[#27323e] text-xs font-semibold text-gray-300 hover:text-white transition-colors"
           >
             <ArrowUpDown className="w-3.5 h-3.5" />
-            <span>{sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
+            <span>{sortOrder === 'desc' ? t('diary_sort_newest') : t('diary_sort_oldest')}</span>
           </button>
         </div>
       </div>
@@ -60,16 +60,16 @@ export const DiaryView: React.FC = () => {
         <div className="text-center py-16 px-4 bg-[#181e24] rounded-2xl border border-[#252f3b] space-y-4">
           <Calendar className="w-12 h-12 text-[#00E59B] mx-auto opacity-70" />
           <div className="space-y-1">
-            <h3 className="text-base font-bold text-white">Masuk Akun untuk Membuat Diary</h3>
+            <h3 className="text-base font-bold text-white">{t('diary_login_title')}</h3>
             <p className="text-xs text-gray-400 max-w-sm mx-auto">
-              Hubungkan akun Roblox kamu untuk mencatat riwayat bermain, tanggal bermain, serta review pribadi.
+              {t('diary_login_desc')}
             </p>
           </div>
           <button
             onClick={() => setLoginModalOpen(true)}
             className="px-6 py-2.5 bg-[#00E59B] hover:bg-[#00c988] text-black font-extrabold text-xs rounded-xl transition-all shadow-md"
           >
-            Masuk Roblox
+            {t('diary_login_btn')}
           </button>
         </div>
       ) : Object.keys(groupedLogs).length > 0 ? (
@@ -89,7 +89,7 @@ export const DiaryView: React.FC = () => {
 
                   const dateObj = new Date(log.loggedDate);
                   const dayNum = dateObj.getDate();
-                  const weekday = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+                  const weekday = dateObj.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { weekday: 'short' });
 
                   return (
                     <div
@@ -157,7 +157,7 @@ export const DiaryView: React.FC = () => {
                           onClick={() => openLogModal(game)}
                           className="text-xs font-semibold text-gray-400 hover:text-white px-3 py-1.5 rounded-lg bg-[#222a33] hover:bg-[#2b3541] transition-colors"
                         >
-                          Edit
+                          {t('diary_edit_log')}
                         </button>
                       </div>
                     </div>
@@ -168,8 +168,9 @@ export const DiaryView: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 bg-[#181e24] rounded-2xl border border-[#252f3b] text-gray-400 text-xs">
-          Your diary is empty. Log a game with a date to build your diary!
+        <div className="text-center py-20 bg-[#181e24] rounded-2xl border border-[#252f3b] text-gray-400 text-xs space-y-1">
+          <p className="font-semibold text-gray-300">{t('diary_empty_title')}</p>
+          <p className="text-gray-500">{t('diary_empty_desc')}</p>
         </div>
       )}
     </div>

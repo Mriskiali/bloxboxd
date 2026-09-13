@@ -11,7 +11,7 @@ interface GameCardProps {
 }
 
 const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', userLog: propUserLog, priority = false }) => {
-  const { viewGame, getUserLogForGame, toggleGameStatus, toggleLike, openLogModal } = useApp();
+  const { viewGame, getUserLogForGame, toggleGameStatus, toggleLike, openLogModal, language, t } = useApp();
   const userLog = propUserLog !== undefined ? propUserLog : getUserLogForGame(game.id);
 
   const isPlayed = userLog?.status === 'played';
@@ -87,15 +87,15 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
               'bg-gray-700/80 text-gray-200'
             }`}>
               {isPlayed && <Eye className="w-3 h-3" />}
-              {isPlaying && 'Playing'}
-              {isBacklog && 'Backlog'}
-              {isPlayed && 'Played'}
+              {isPlaying && t('card_playing')}
+              {isBacklog && t('card_backlog')}
+              {isPlayed && t('card_played')}
             </span>
           )}
 
           {!userLog && (
-            <span className="text-[11px] font-medium text-gray-300 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full">
-              {game.genre}
+            <span className="text-[11px] font-medium text-gray-300 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full truncate max-w-[140px]" title={game.subgenre && game.subgenre !== game.genre ? `${game.genre} • ${game.subgenre}` : game.genre}>
+              {game.genre}{game.subgenre && game.subgenre !== game.genre ? ` • ${game.subgenre}` : ''}
             </span>
           )}
 
@@ -114,7 +114,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
           {/* Quick Played Toggle */}
           <button
             onClick={() => toggleGameStatus(game.id, 'played')}
-            title={isPlayed ? 'Marked as Played' : 'Mark as Played'}
+            title={isPlayed ? t('card_marked_played') : t('card_mark_played')}
             className={`p-2 rounded-lg backdrop-blur-md transition-all ${
               isPlayed 
                 ? 'bg-[#00E59B] text-black shadow-[0_0_12px_rgba(0,229,155,0.4)]' 
@@ -127,7 +127,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
           {/* Quick Backlog Toggle */}
           <button
             onClick={() => toggleGameStatus(game.id, 'backlog')}
-            title={isBacklog ? 'In Backlog' : 'Add to Backlog'}
+            title={isBacklog ? t('card_in_backlog') : t('card_add_backlog')}
             className={`p-2 rounded-lg backdrop-blur-md transition-all ${
               isBacklog 
                 ? 'bg-amber-400 text-black shadow-[0_0_12px_rgba(251,191,36,0.4)]' 
@@ -140,7 +140,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
           {/* Quick Like Toggle */}
           <button
             onClick={() => toggleLike(game.id)}
-            title={isLiked ? 'Liked' : 'Like'}
+            title={isLiked ? t('card_liked') : t('card_like')}
             className={`p-2 rounded-lg backdrop-blur-md transition-all ${
               isLiked 
                 ? 'bg-rose-500 text-white shadow-[0_0_12px_rgba(244,63,94,0.4)]' 
@@ -153,11 +153,11 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
           {/* Open Detailed Log Modal */}
           <button
             onClick={() => openLogModal(game)}
-            title="Log or Review"
+            title={t('detail_log_review')}
             className="flex items-center gap-1 px-2.5 py-2 rounded-lg bg-[#00A2FF] text-white hover:bg-[#0090e3] text-xs font-bold transition-all shadow-[0_0_12px_rgba(0,162,255,0.4)]"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Log</span>
+            <span>{t('card_log_btn')}</span>
           </button>
         </div>
       </div>
@@ -181,16 +181,16 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
           {userRating ? (
             <div className="flex items-center gap-1 text-[#00E59B] font-bold">
               <Star className="w-3 h-3 fill-[#00E59B]" />
-              <span className="text-[10px] sm:text-xs">You: {userRating.toFixed(1)} ★</span>
+              <span className="text-[10px] sm:text-xs">{t('card_you_rated')} {userRating.toFixed(1)} ★</span>
             </div>
           ) : (
             <span className="text-gray-300 text-[10px] sm:text-[11px] font-mono">
-              {game.playerCount ? `${(game.playerCount).toLocaleString()} online` : 'Active'}
+              {game.playerCount ? `${(game.playerCount).toLocaleString(language === 'id' ? 'id-ID' : 'en-US')} ${t('card_online')}` : t('card_active')}
             </span>
           )}
 
           <span className="text-gray-300 text-[10px] sm:text-[11px]">
-            {game.totalVisits || '0'} visits
+            {game.totalVisits || '0'} {t('card_visits')}
           </span>
         </div>
       </div>
@@ -205,6 +205,8 @@ export const GameCard = memo(GameCardComponent, (prevProps, nextProps) => {
   if (prevProps.game.playerCount !== nextProps.game.playerCount) return false;
   if (prevProps.game.totalVisits !== nextProps.game.totalVisits) return false;
   if (prevProps.game.name !== nextProps.game.name) return false;
+  if (prevProps.game.genre !== nextProps.game.genre) return false;
+  if (prevProps.game.subgenre !== nextProps.game.subgenre) return false;
   if (prevProps.game.iconUrl !== nextProps.game.iconUrl) return false;
   if (prevProps.userLog?.status !== nextProps.userLog?.status) return false;
   if (prevProps.userLog?.rating !== nextProps.userLog?.rating) return false;

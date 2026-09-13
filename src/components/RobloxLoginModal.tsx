@@ -63,7 +63,8 @@ export const RobloxLoginModal: React.FC = () => {
     setLoginModalOpen, 
     user, 
     loginWithRobloxAccount, 
-    logoutRobloxAccount 
+    logoutRobloxAccount,
+    t
   } = useApp();
 
   const [query, setQuery] = useState('');
@@ -128,13 +129,13 @@ export const RobloxLoginModal: React.FC = () => {
       } else {
         setFeedbackMessage({
           success: false,
-          message: data?.error || data?.message || 'Gagal memulai sesi verifikasi. Silakan coba lagi.'
+          message: data?.error || data?.message || t('login_modal_err_network')
         });
       }
     } catch (e) {
       setFeedbackMessage({
         success: false,
-        message: 'Gagal menghubungi server untuk sesi verifikasi.'
+        message: t('login_modal_err_network')
       });
     } finally {
       setChallengeLoading(false);
@@ -162,7 +163,7 @@ export const RobloxLoginModal: React.FC = () => {
       const userData = await userRes.json();
 
       if (!userRes.ok || !userData.success || !userData.user) {
-        setError(userData.error || 'Akun Roblox tidak ditemukan. Pastikan username atau ID valid.');
+        setError(userData.error || t('login_modal_err_not_found'));
         setLoading(false);
         return;
       }
@@ -191,7 +192,7 @@ export const RobloxLoginModal: React.FC = () => {
         startVerificationChallenge(userData.user, 'avatar');
       }
     } catch (err) {
-      setError('Gagal menghubungi server Roblox. Periksa koneksi internet kamu.');
+      setError(t('login_modal_err_network'));
     } finally {
       setLoading(false);
     }
@@ -224,7 +225,7 @@ export const RobloxLoginModal: React.FC = () => {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setFeedbackMessage({ success: true, message: 'Autentikasi berhasil! Selamat datang kembali.' });
+        setFeedbackMessage({ success: true, message: t('login_modal_auth_success') });
         setTimeout(() => {
           loginWithRobloxAccount({
             userId: foundUser.userId,
@@ -242,11 +243,11 @@ export const RobloxLoginModal: React.FC = () => {
       } else {
         setFeedbackMessage({
           success: false,
-          message: data.message || 'PIN Keamanan salah! Akun ini dilindungi sehingga orang lain tidak dapat menggunakannya.'
+          message: data.message || t('login_modal_pin_incorrect')
         });
       }
     } catch (e) {
-      setFeedbackMessage({ success: false, message: 'Gagal menghubungi server untuk autentikasi PIN.' });
+      setFeedbackMessage({ success: false, message: t('login_modal_err_network') });
     } finally {
       setVerifying(false);
     }
@@ -258,12 +259,12 @@ export const RobloxLoginModal: React.FC = () => {
     if (!foundUser || !challengeData) return;
 
     if (!newPin.trim() || newPin.trim().length < 4) {
-      setFeedbackMessage({ success: false, message: 'PIN Keamanan harus minimal 4 angka untuk melindungi akun kamu.' });
+      setFeedbackMessage({ success: false, message: t('login_modal_pin_min_err') });
       return;
     }
 
     if (newPin !== confirmPin) {
-      setFeedbackMessage({ success: false, message: 'Konfirmasi PIN tidak cocok dengan PIN yang dimasukkan.' });
+      setFeedbackMessage({ success: false, message: t('login_modal_pin_match_err') });
       return;
     }
 
@@ -286,7 +287,7 @@ export const RobloxLoginModal: React.FC = () => {
       if (res.ok && data?.success) {
         setFeedbackMessage({ 
           success: true, 
-          message: 'Verifikasi kepemilikan berhasil! Akun kamu kini resmi terdaftar dan terkunci aman dengan PIN.' 
+          message: t('login_modal_verify_success') 
         });
 
         setTimeout(() => {
@@ -306,11 +307,11 @@ export const RobloxLoginModal: React.FC = () => {
       } else {
         setFeedbackMessage({
           success: false,
-          message: data?.message || data?.error || 'Verifikasi belum terpenuhi. Pastikan instruksi tantangan sudah diterapkan pada akun Roblox kamu.'
+          message: data?.message || data?.error || t('login_modal_verify_pending')
         });
       }
     } catch (e) {
-      setFeedbackMessage({ success: false, message: 'Koneksi terputus saat memverifikasi. Silakan coba klik verifikasi lagi.' });
+      setFeedbackMessage({ success: false, message: t('login_modal_err_network_verify') });
     } finally {
       setVerifying(false);
     }
@@ -343,13 +344,13 @@ export const RobloxLoginModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-1.5">
-                <span>Login Akun Roblox</span>
+                <span>{t('login_modal_title')}</span>
                 <span className="text-[10px] bg-[#00E59B] text-black font-extrabold px-1.5 py-0.2 rounded">
-                  Resmi & Aman
+                  {t('login_modal_badge_safe')}
                 </span>
               </h2>
               <p className="text-[11px] text-gray-400">
-                Hubungkan identitas Roblox aslimu tanpa risiko pembajakan akun
+                {t('login_modal_subtitle')}
               </p>
             </div>
           </div>
@@ -375,12 +376,12 @@ export const RobloxLoginModal: React.FC = () => {
                   <p className="text-xs font-bold text-white truncate">{user.username}</p>
                   {user.isRobloxVerified && (
                     <span className="text-[9px] bg-[#00E59B]/20 text-[#00E59B] px-1.5 py-0.2 rounded font-bold">
-                      Verified
+                      {t('nav_verified')}
                     </span>
                   )}
                 </div>
                 <p className="text-[11px] text-gray-400 truncate">
-                  Akun aktif: @{user.robloxUsername} (ID: {user.robloxUserId})
+                  {t('login_modal_active_account', { username: user.robloxUsername, id: user.robloxUserId })}
                 </p>
               </div>
             </div>
@@ -390,7 +391,7 @@ export const RobloxLoginModal: React.FC = () => {
               className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Keluar</span>
+              <span>{t('login_modal_logout_btn')}</span>
             </button>
           </div>
         )}
@@ -398,12 +399,13 @@ export const RobloxLoginModal: React.FC = () => {
         {/* Search Input Form */}
         <form onSubmit={(e) => handleSearch(e)} className="space-y-2">
           <label className="block text-xs font-bold text-gray-300">
-            Cari Akun Roblox Kamu
+            {t('login_modal_search_label')}
           </label>
           <div className="flex gap-2">
             <input
               type="text"
-              aria-label="Username Roblox atau User ID"
+              placeholder={t('login_modal_search_ph')}
+              aria-label={t('login_modal_search_ph')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1 bg-[#14181c] border border-[#2c3746] focus:border-[#00E59B] rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all shadow-inner"
@@ -414,7 +416,7 @@ export const RobloxLoginModal: React.FC = () => {
               className="px-5 py-2.5 bg-[#00E59B] hover:bg-[#00c988] disabled:opacity-50 text-black font-extrabold text-xs rounded-xl shadow transition-all flex items-center gap-2 whitespace-nowrap"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <User className="w-4 h-4" />}
-              <span>Cari Akun</span>
+              <span>{t('login_modal_search_btn')}</span>
             </button>
           </div>
         </form>
@@ -456,12 +458,12 @@ export const RobloxLoginModal: React.FC = () => {
                   {accountStatus?.hasPin ? (
                     <span className="text-[10px] font-bold text-[#00E59B] bg-[#00E59B]/10 px-2 py-0.5 rounded border border-[#00E59B]/30 flex items-center gap-1">
                       <Lock className="w-2.5 h-2.5" />
-                      <span>Akun Terdaftar & Terkunci</span>
+                      <span>{t('login_modal_status_locked')}</span>
                     </span>
                   ) : (
                     <span className="text-[10px] font-bold text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/30 flex items-center gap-1">
                       <ShieldCheck className="w-2.5 h-2.5" />
-                      <span>Belum Terdaftar (Klaim Pemilik)</span>
+                      <span>{t('login_modal_status_unclaimed')}</span>
                     </span>
                   )}
                 </div>
@@ -471,13 +473,13 @@ export const RobloxLoginModal: React.FC = () => {
                   {foundUser.joinedYear && (
                     <>
                       <span>•</span>
-                      <span>Bergabung {foundUser.joinedYear}</span>
+                      <span>{t('profile_joined')} {foundUser.joinedYear}</span>
                     </>
                   )}
                   {foundUser.friendsCount > 0 && (
                     <>
                       <span>•</span>
-                      <span>{foundUser.friendsCount} Teman</span>
+                      <span>{foundUser.friendsCount} {t('profile_friends')}</span>
                     </>
                   )}
                 </p>
@@ -489,7 +491,7 @@ export const RobloxLoginModal: React.FC = () => {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-[11px] text-[#00E59B] hover:underline font-semibold"
                   >
-                    <span>Buka profil Roblox.com</span>
+                    <span>{t('login_modal_open_roblox_profile')}</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
 
@@ -502,7 +504,7 @@ export const RobloxLoginModal: React.FC = () => {
                           selectedAvatarType === 'headshot' ? 'bg-[#00E59B] text-black' : 'text-gray-400 hover:text-white'
                         }`}
                       >
-                        Headshot
+                        {t('login_modal_headshot_tab')}
                       </button>
                       <button
                         type="button"
@@ -511,7 +513,7 @@ export const RobloxLoginModal: React.FC = () => {
                           selectedAvatarType === 'bust' ? 'bg-[#00E59B] text-black' : 'text-gray-400 hover:text-white'
                         }`}
                       >
-                        3D Avatar
+                        {t('login_modal_avatar3d_tab')}
                       </button>
                     </div>
                   )}
@@ -541,16 +543,16 @@ export const RobloxLoginModal: React.FC = () => {
                 <div className="bg-[#11151a] p-3 rounded-xl border border-[#26313f] space-y-1">
                   <div className="flex items-center gap-2 text-xs font-bold text-white">
                     <Lock className="w-4 h-4 text-[#00E59B]" />
-                    <span>Akun Dilindungi PIN Keamanan</span>
+                    <span>{t('login_modal_pin_protected')}</span>
                   </div>
                   <p className="text-[11px] text-gray-400 leading-relaxed">
-                    Akun ini telah terdaftar dan dilindungi. Masukkan PIN Keamanan akun kamu untuk masuk. Orang lain tidak dapat masuk tanpa PIN ini.
+                    {t('login_modal_pin_desc')}
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-gray-300">
-                    Masukkan PIN Keamanan Kamu
+                    {t('login_modal_enter_pin')}
                   </label>
                   <div className="relative">
                     <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -558,7 +560,7 @@ export const RobloxLoginModal: React.FC = () => {
                       type={showPin ? 'text' : 'password'}
                       autoFocus
                       autoComplete="current-password"
-                      aria-label="PIN akun"
+                      aria-label={t('login_modal_enter_pin')}
                       value={inputPin}
                       onChange={(e) => setInputPin(e.target.value)}
                       className="w-full pl-10 pr-10 py-2.5 bg-[#1b222a] border border-[#2c3746] focus:border-[#00E59B] rounded-xl text-sm text-white outline-none"
@@ -581,12 +583,12 @@ export const RobloxLoginModal: React.FC = () => {
                   {verifying ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Memeriksa PIN...</span>
+                      <span>{t('login_modal_checking_pin')}</span>
                     </>
                   ) : (
                     <>
                       <Lock className="w-4 h-4" />
-                      <span>Masuk dengan PIN Keamanan</span>
+                      <span>{t('login_modal_login_pin_btn')}</span>
                     </>
                   )}
                 </button>
@@ -601,7 +603,7 @@ export const RobloxLoginModal: React.FC = () => {
                     }}
                     className="text-xs text-gray-400 hover:text-[#00A2FF] underline transition-colors"
                   >
-                    Lupa PIN? Verifikasi ulang kepemilikan akun untuk ganti PIN
+                    {t('login_modal_forgot_pin')}
                   </button>
                 </div>
               </form>
@@ -614,7 +616,7 @@ export const RobloxLoginModal: React.FC = () => {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-white">
                       <ShieldCheck className="w-4 h-4 text-[#00E59B]" />
-                      <span>Sesi Verifikasi Kepemilikan Asli (Anti-Bypass)</span>
+                      <span>{t('login_modal_challenge_header')}</span>
                     </div>
                     {countdown > 0 && (
                       <span className="text-[11px] font-mono text-[#00E59B] bg-[#00E59B]/10 border border-[#00E59B]/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
@@ -624,7 +626,7 @@ export const RobloxLoginModal: React.FC = () => {
                     )}
                   </div>
                   <p className="text-[11px] text-gray-300 leading-relaxed">
-                    Sistem menggunakan sesi challenge dinamis berbatas waktu. Tidak ada yang bisa menebak atau menyalahgunakan akunmu. Pilih metode verifikasi di bawah:
+                    {t('login_modal_challenge_desc')}
                   </p>
                 </div>
 
@@ -644,7 +646,7 @@ export const RobloxLoginModal: React.FC = () => {
                     }`}
                   >
                     <Shirt className="w-4 h-4" />
-                    <span>Tantangan Avatar (0% Sensor)</span>
+                    <span>{t('login_modal_tab_avatar')}</span>
                   </button>
 
                   <button
@@ -661,7 +663,7 @@ export const RobloxLoginModal: React.FC = () => {
                     }`}
                   >
                     <Sparkles className="w-4 h-4" />
-                    <span>Frasa Bio Dinamis</span>
+                    <span>{t('login_modal_tab_bio')}</span>
                   </button>
                 </div>
 
@@ -669,7 +671,7 @@ export const RobloxLoginModal: React.FC = () => {
                 {challengeLoading && (
                   <div className="py-6 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-[#00E59B]" />
-                    <span>Menghubungi server Roblox untuk membuat sesi tantangan unik...</span>
+                    <span>{t('login_modal_challenge_creating')}</span>
                   </div>
                 )}
 
@@ -682,16 +684,16 @@ export const RobloxLoginModal: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-xs font-bold text-white">
                             <Shirt className="w-4 h-4 text-[#00E59B]" />
-                            <span>Instruksi Avatar Editor (Bebas Sensor Kata)</span>
+                            <span>{t('login_modal_avatar_instructions_title')}</span>
                           </div>
                           <button
                             type="button"
                             onClick={() => startVerificationChallenge(foundUser, 'avatar')}
                             className="text-[11px] text-gray-400 hover:text-[#00E59B] flex items-center gap-1"
-                            title="Perbarui sesi"
+                            title={t('login_modal_refresh_session')}
                           >
                             <RefreshCw className="w-3 h-3" />
-                            <span>Perbarui Sesi</span>
+                            <span>{t('login_modal_refresh_session')}</span>
                           </button>
                         </div>
 
@@ -701,7 +703,7 @@ export const RobloxLoginModal: React.FC = () => {
                           </p>
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-[11px] text-gray-400 border-t border-white/5">
                             <div>
-                              <span>Item Resmi: </span>
+                              <span>{t('login_modal_official_item')} </span>
                               <strong className="text-white">{challengeData.assetName}</strong>{' '}
                               <span className="text-gray-400 font-mono text-[10px]">(ID: {challengeData.assetId})</span>
                             </div>
@@ -712,7 +714,7 @@ export const RobloxLoginModal: React.FC = () => {
                                 rel="noopener noreferrer"
                                 className="text-[#00A2FF] hover:underline flex items-center gap-1 font-semibold"
                               >
-                                <span>Lihat di Catalog (0 Robux)</span>
+                                <span>{t('login_modal_view_catalog')}</span>
                                 <ExternalLink className="w-3 h-3" />
                               </a>
                               <a
@@ -721,7 +723,7 @@ export const RobloxLoginModal: React.FC = () => {
                                 rel="noopener noreferrer"
                                 className="text-[#00E59B] hover:underline flex items-center gap-1 font-semibold"
                               >
-                                <span>Buka Avatar Editor</span>
+                                <span>{t('login_modal_open_avatar_editor')}</span>
                                 <ExternalLink className="w-3 h-3" />
                               </a>
                             </div>
@@ -731,7 +733,7 @@ export const RobloxLoginModal: React.FC = () => {
                         {/* Switch item option if available */}
                         {challengeData.availableItems && challengeData.availableItems.length > 1 && (
                           <div className="flex items-center justify-between pt-0.5 text-[11px] text-gray-400">
-                            <span>Ganti item tantangan lain:</span>
+                            <span>{t('login_modal_switch_item')}</span>
                             <div className="flex gap-1.5">
                               {challengeData.availableItems.map(item => (
                                 <button
@@ -752,7 +754,7 @@ export const RobloxLoginModal: React.FC = () => {
                         )}
 
                         <p className="text-[11px] text-gray-400 leading-relaxed">
-                          Item ini adalah topi resmi Roblox berharga <strong>0 Robux</strong> (Gratis). Jika belum kamu miliki di inventori, klik <strong>Lihat di Catalog (0 Robux)</strong> untuk mengklaimnya dalam 1 detik, pasang/lepas di Avatar Editor, lalu klik verifikasi.
+                          {t('login_modal_avatar_tip')}
                         </p>
                       </div>
                     )}
@@ -763,16 +765,16 @@ export const RobloxLoginModal: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-xs font-bold text-white">
                             <Sparkles className="w-4 h-4 text-[#00E59B]" />
-                            <span>Frasa 4 Kata Acak Sesi Ini</span>
+                            <span>{t('login_modal_bio_phrase_title')}</span>
                           </div>
                           <button
                             type="button"
                             onClick={() => startVerificationChallenge(foundUser, 'bio')}
                             className="text-[11px] text-gray-400 hover:text-[#00E59B] flex items-center gap-1"
-                            title="Buat sesi baru"
+                            title={t('login_modal_re_randomize')}
                           >
                             <RefreshCw className="w-3 h-3" />
-                            <span>Acak Ulang</span>
+                            <span>{t('login_modal_re_randomize')}</span>
                           </button>
                         </div>
 
@@ -788,21 +790,21 @@ export const RobloxLoginModal: React.FC = () => {
                             {copied ? (
                               <>
                                 <Check className="w-3.5 h-3.5 text-[#00E59B]" />
-                                <span className="text-[#00E59B]">Disalin!</span>
+                                <span className="text-[#00E59B]">{t('login_modal_copied')}</span>
                               </>
                             ) : (
                               <>
                                 <Copy className="w-3.5 h-3.5" />
-                                <span>Salin Frasa</span>
+                                <span>{t('login_modal_copy_phrase')}</span>
                               </>
                             )}
                           </button>
                         </div>
 
                         <ol className="text-[11px] text-gray-300 space-y-1 pl-4 list-decimal">
-                          <li>Salin frasa 4 kata di atas.</li>
-                          <li>Tempelkan sementara ke kolom <strong>About / Bio</strong> di profil Roblox kamu, lalu klik Save.</li>
-                          <li>Buat PIN Keamanan di bawah dan klik Verifikasi. (Setelah terverifikasi, kamu bebas menghapus kembali frasa dari bio kamu).</li>
+                          <li>{t('login_modal_bio_step1')}</li>
+                          <li>{t('login_modal_bio_step2')}</li>
+                          <li>{t('login_modal_bio_step3')}</li>
                         </ol>
                       </div>
                     )}
@@ -812,13 +814,13 @@ export const RobloxLoginModal: React.FC = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#11161d] p-3 rounded-xl border border-[#242d38]">
                         <div className="space-y-1">
                           <label className="block text-[11px] font-bold text-gray-300">
-                            Buat PIN Keamanan Akun
+                            {t('login_modal_create_pin')}
                           </label>
                           <div className="relative">
                             <input
                               type={showPin ? 'text' : 'password'}
                               autoComplete="new-password"
-                              aria-label="PIN Keamanan Baru"
+                              aria-label={t('login_modal_create_pin')}
                               value={newPin}
                               onChange={(e) => setNewPin(e.target.value)}
                               className="w-full px-3 py-2 bg-[#1b222a] border border-[#2c3746] focus:border-[#00E59B] rounded-lg text-xs text-white outline-none"
@@ -835,12 +837,12 @@ export const RobloxLoginModal: React.FC = () => {
 
                         <div className="space-y-1">
                           <label className="block text-[11px] font-bold text-gray-300">
-                            Konfirmasi PIN Keamanan
+                            {t('login_modal_confirm_pin')}
                           </label>
                           <input
                             type={showPin ? 'text' : 'password'}
                             autoComplete="new-password"
-                            aria-label="Konfirmasi PIN"
+                            aria-label={t('login_modal_confirm_pin')}
                             value={confirmPin}
                             onChange={(e) => setConfirmPin(e.target.value)}
                             className="w-full px-3 py-2 bg-[#1b222a] border border-[#2c3746] focus:border-[#00E59B] rounded-lg text-xs text-white outline-none"
@@ -857,12 +859,12 @@ export const RobloxLoginModal: React.FC = () => {
                         {verifying ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Memeriksa ke Server Roblox...</span>
+                            <span>{t('login_modal_verifying_with_roblox')}</span>
                           </>
                         ) : (
                           <>
                             <ShieldCheck className="w-4 h-4" />
-                            <span>Verifikasi Kepemilikan & Kunci Akun Saya</span>
+                            <span>{t('login_modal_verify_lock_btn')}</span>
                           </>
                         )}
                       </button>
@@ -877,7 +879,7 @@ export const RobloxLoginModal: React.FC = () => {
                             }}
                             className="text-xs text-gray-400 hover:text-white underline"
                           >
-                            Sudah ingat PIN? Masuk dengan PIN saja
+                            {t('login_modal_remembered_pin')}
                           </button>
                         </div>
                       )}

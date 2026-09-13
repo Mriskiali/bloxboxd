@@ -11,7 +11,9 @@ export const EditProfileModal: React.FC = () => {
     user, 
     updateUserProfile, 
     games, 
-    getGameById 
+    getGameById,
+    language,
+    t 
   } = useApp();
 
   const [username, setUsername] = useState(user?.username || '');
@@ -74,7 +76,7 @@ export const EditProfileModal: React.FC = () => {
         <div className="flex items-center justify-between border-b border-[#232b35] pb-3">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-[#00E59B]" />
-            <h3 className="text-lg font-bold text-white">Edit Profile & The 4 Favorites</h3>
+            <h3 className="text-lg font-bold text-white">{t('edit_profile_title')}</h3>
           </div>
           <button 
             onClick={() => setEditProfileModalOpen(false)}
@@ -89,9 +91,11 @@ export const EditProfileModal: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <span className="w-3 h-3 bg-[#00E59B] transform -rotate-12 rounded-[2px]" />
             <div className="text-xs">
-              <p className="font-bold text-white">Akun Roblox Resmi</p>
+              <p className="font-bold text-white">{t('edit_profile_roblox_official')}</p>
               <p className="text-[11px] text-gray-400">
-                {user.robloxUserId ? `Terhubung: @${user.robloxUsername}` : 'Login untuk sinkronisasi avatar & username otomatis'}
+                {user.robloxUserId 
+                  ? (language === 'id' ? `Terhubung: @${user.robloxUsername}` : `Connected: @${user.robloxUsername}`) 
+                  : (language === 'id' ? 'Login untuk sinkronisasi avatar & username otomatis' : 'Sign in to automatically sync avatar & username')}
               </p>
             </div>
           </div>
@@ -103,7 +107,7 @@ export const EditProfileModal: React.FC = () => {
             }}
             className="px-3 py-1.5 bg-[#00A2FF] hover:bg-[#008fe6] text-white text-xs font-bold rounded-lg transition-colors shadow"
           >
-            {user.robloxUserId ? 'Ganti Akun' : 'Login Roblox'}
+            {user.robloxUserId ? t('nav_switch_account') : t('nav_login_roblox')}
           </button>
         </div>
 
@@ -116,7 +120,7 @@ export const EditProfileModal: React.FC = () => {
               className="w-16 h-16 rounded-xl object-cover border border-[#00E59B]"
             />
             <div className="flex-1 space-y-1.5">
-              <span className="text-xs font-bold text-gray-300">Avatar Image URL</span>
+              <span className="text-xs font-bold text-gray-300">{t('edit_profile_avatar_url')}</span>
               <input
                 type="text"
                 value={avatarUrl}
@@ -130,7 +134,7 @@ export const EditProfileModal: React.FC = () => {
                 className="text-[11px] text-[#00E59B] hover:underline font-semibold flex items-center gap-1"
               >
                 {fetchingAvatar ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                <span>Fetch headshot using Roblox Username</span>
+                <span>{t('edit_profile_fetch_avatar')}</span>
               </button>
             </div>
           </div>
@@ -138,7 +142,7 @@ export const EditProfileModal: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                Bloxboxd Display Name
+                {t('edit_profile_display_name')}
               </label>
               <input
                 type="text"
@@ -150,7 +154,7 @@ export const EditProfileModal: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                Roblox Username
+                {t('edit_profile_roblox_name')}
               </label>
               <input
                 type="text"
@@ -163,12 +167,13 @@ export const EditProfileModal: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-              Bio & Gaming Motto
+              {t('edit_profile_bio')}
             </label>
             <textarea
               rows={2}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
+              placeholder={t('edit_profile_bio_ph')}
               className="w-full bg-[#1b222a] border border-[#2b3542] rounded-lg px-3 py-2 text-xs text-white focus:border-[#00E59B] outline-none"
             />
           </div>
@@ -178,7 +183,7 @@ export const EditProfileModal: React.FC = () => {
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5 text-[#00E59B] fill-[#00E59B]" />
-                <span>Top 4 Favorite Experiences ({favoriteGameIds.length}/4)</span>
+                <span>{t('edit_profile_favs')} ({favoriteGameIds.length}/4)</span>
               </label>
             </div>
 
@@ -220,6 +225,7 @@ export const EditProfileModal: React.FC = () => {
               aria-label="Search experiences to pin as favorite"
               value={gameSearch}
               onChange={(e) => setGameSearch(e.target.value)}
+              placeholder={t('edit_profile_search_ph')}
               className="w-full bg-[#14181c] border border-[#242d38] rounded-lg px-3 py-1.5 text-xs text-white mb-2"
             />
 
@@ -253,13 +259,13 @@ export const EditProfileModal: React.FC = () => {
               onClick={() => setEditProfileModalOpen(false)}
               className="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white"
             >
-              Cancel
+              {t('edit_profile_cancel')}
             </button>
             <button
               type="submit"
               className="px-5 py-2 text-xs font-bold text-black bg-[#00E59B] hover:bg-[#00c988] rounded-lg transition-all"
             >
-              Save Profile
+              {t('edit_profile_save')}
             </button>
           </div>
         </form>

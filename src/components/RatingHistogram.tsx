@@ -1,5 +1,6 @@
 import React from 'react';
 import { ThumbsUp } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 interface RatingHistogramProps {
   histogram: { [stars: string]: number };
@@ -24,6 +25,7 @@ export const RatingHistogram: React.FC<RatingHistogramProps> = ({
   upVotes,
   downVotes
 }) => {
+  const { language } = useApp();
   const steps = ['0.5', '1.0', '1.5', '2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0'];
 
   const maxVal = Math.max(...steps.map(s => histogram[s] || 0), 1);
@@ -38,15 +40,17 @@ export const RatingHistogram: React.FC<RatingHistogramProps> = ({
             <span className="text-3xl font-extrabold text-white tracking-tight">
               {averageRating.toFixed(1)}
             </span>
-            <span className="text-sm font-medium text-[#00E59B]">★ out of 5</span>
+            <span className="text-sm font-medium text-[#00E59B]">
+              {language === 'id' ? '★ dari 5' : '★ out of 5'}
+            </span>
           </div>
 
           <div className="flex flex-col items-end">
             <span className="text-xs font-semibold text-gray-300">
-              {formatCompact(totalCount)} ratings
+              {formatCompact(totalCount)} {language === 'id' ? 'penilaian' : 'ratings'}
             </span>
             <span className="text-[10px] text-gray-500">
-              ({totalCount.toLocaleString()} total)
+              ({totalCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US')} {language === 'id' ? 'total' : 'total'})
             </span>
           </div>
         </div>
@@ -55,7 +59,7 @@ export const RatingHistogram: React.FC<RatingHistogramProps> = ({
           <div className="flex items-center justify-between mb-3 text-[11px] text-gray-400 bg-[#12161b] px-2.5 py-1.5 rounded-lg border border-[#222b35]">
             <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
               <ThumbsUp className="w-3.5 h-3.5" />
-              <span>{approvalPct}% Positive Approval</span>
+              <span>{approvalPct}% {language === 'id' ? 'Kepuasan Positif' : 'Positive Approval'}</span>
             </div>
             <div className="text-gray-400 font-mono text-[10px]">
               {formatCompact(upVotes)} 👍 / {formatCompact(downVotes)} 👎

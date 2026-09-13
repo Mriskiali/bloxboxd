@@ -32,7 +32,10 @@ export const ListsView: React.FC = () => {
     clearAllLists,
     user,
     backToCatalog,
-    setLoginModalOpen
+    setLoginModalOpen,
+    viewUserProfile,
+    language,
+    t
   } = useApp();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -79,13 +82,13 @@ export const ListsView: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#181e24] hover:bg-[#232c37] border border-[#27323e] hover:border-[#00E59B] text-xs font-semibold text-gray-300 hover:text-white transition-all cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-[#00E59B]" />
-            <span>Back to Catalog</span>
+            <span>{t('lists_back_catalog')}</span>
           </button>
           <button
             onClick={() => setActiveTab('lists')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#181e24] hover:bg-[#232c37] border border-[#27323e] text-xs font-semibold text-gray-300 hover:text-white transition-all cursor-pointer"
           >
-            <span>Back to All Lists</span>
+            <span>{t('lists_back_all')}</span>
           </button>
         </div>
 
@@ -96,10 +99,10 @@ export const ListsView: React.FC = () => {
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
                 currentList.isRanked ? 'bg-[#00E59B]/15 text-[#00E59B]' : 'bg-[#00A2FF]/15 text-[#00A2FF]'
               }`}>
-                {currentList.isRanked ? 'Ranked List' : 'Unranked Curation'}
+                {currentList.isRanked ? t('lists_ranked_label') : t('lists_unranked_label')}
               </span>
               <span className="text-xs text-gray-400">
-                {currentList.items.length} experiences
+                {currentList.items.length} {t('lists_games_count')}
               </span>
             </div>
 
@@ -109,7 +112,7 @@ export const ListsView: React.FC = () => {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#222a33] hover:bg-rose-500/15 text-gray-300 hover:text-rose-400 border border-[#2f3a47] text-xs font-semibold transition-colors"
               >
                 <Heart className="w-3.5 h-3.5 fill-current" />
-                <span>{currentList.likesCount} Likes</span>
+                <span>{currentList.likesCount} {t('lists_like')}</span>
               </button>
 
               <button
@@ -117,10 +120,10 @@ export const ListsView: React.FC = () => {
                   deleteList(currentList.id);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-semibold transition-colors cursor-pointer"
-                title="Hapus list ini"
+                title={t('lists_delete_btn')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Hapus List</span>
+                <span>{t('lists_delete_btn')}</span>
               </button>
             </div>
           </div>
@@ -133,14 +136,17 @@ export const ListsView: React.FC = () => {
             {currentList.description}
           </p>
 
-          <div className="flex items-center gap-2.5 pt-3 border-t border-[#232b35]">
+          <div 
+            onClick={() => currentList.userId && viewUserProfile(currentList.userId)}
+            className="flex items-center gap-2.5 pt-3 border-t border-[#232b35] cursor-pointer group w-fit"
+          >
             <img
               src={safeAvatarSrc(currentList.userAvatar)}
               alt={currentList.userName}
-              className="w-7 h-7 rounded-full object-cover"
+              className="w-7 h-7 rounded-full object-cover group-hover:ring-2 group-hover:ring-[#00E59B] transition-all"
             />
-            <span className="text-xs text-gray-400">
-              Curated by <strong className="text-white">{currentList.userName}</strong>
+            <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
+              {t('lists_curated_by')} <strong className="text-white group-hover:text-[#00E59B] transition-colors">{currentList.userName}</strong>
             </span>
           </div>
         </div>
@@ -194,7 +200,7 @@ export const ListsView: React.FC = () => {
                     onClick={() => viewGame(game.id)}
                     className="px-3 py-1.5 rounded-lg bg-[#00E59B]/10 hover:bg-[#00E59B] text-[#00E59B] hover:text-black text-xs font-bold transition-all"
                   >
-                    View Details
+                    {language === 'id' ? 'Lihat Detail' : 'View Details'}
                   </button>
                 </div>
               </div>
@@ -214,11 +220,11 @@ export const ListsView: React.FC = () => {
           <div className="flex items-center gap-2">
             <ListOrdered className="w-5 h-5 text-[#00A2FF]" />
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Curated Community Lists
+              {t('lists_title')}
             </h1>
           </div>
           <p className="text-xs text-gray-400 mt-1">
-            Browse thematic recommendations curated by Roblox creators and players
+            {t('lists_desc')}
           </p>
         </div>
 
@@ -228,17 +234,17 @@ export const ListsView: React.FC = () => {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#181e24] hover:bg-[#232c37] border border-[#27323e] hover:border-[#00E59B] text-xs font-semibold text-gray-300 hover:text-white transition-all cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-[#00E59B]" />
-            <span>Back to Catalog</span>
+            <span>{t('lists_back_catalog')}</span>
           </button>
 
           {customLists.length > 0 && (
             <button
               onClick={() => clearAllLists()}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1f2630] hover:bg-red-500/20 border border-[#2b3542] hover:border-red-500/40 text-xs font-semibold text-gray-300 hover:text-red-400 transition-all cursor-pointer"
-              title="Hapus semua list"
+              title={language === 'id' ? 'Hapus semua list' : 'Clear all lists'}
             >
               <Trash2 className="w-3.5 h-3.5 text-red-400" />
-              <span>Bersihkan List</span>
+              <span>{language === 'id' ? 'Bersihkan List' : 'Clear Lists'}</span>
             </button>
           )}
 
@@ -253,7 +259,7 @@ export const ListsView: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00A2FF] hover:bg-[#0092e6] text-white text-xs font-bold transition-all shadow-[0_0_16px_rgba(0,162,255,0.3)]"
           >
             <Plus className="w-4 h-4" />
-            <span>Create New List</span>
+            <span>{t('lists_create_btn')}</span>
           </button>
         </div>
       </div>
@@ -265,9 +271,9 @@ export const ListsView: React.FC = () => {
             <ListOrdered className="w-8 h-8" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-white">Belum Ada List Komunitas</h3>
+            <h3 className="text-lg font-bold text-white">{t('lists_empty_title')}</h3>
             <p className="text-xs text-gray-400 max-w-sm mx-auto">
-              Jadilah orang pertama yang membuat kurasi game Roblox favoritmu untuk dibagikan ke komunitas Bloxboxd!
+              {t('lists_empty_desc')}
             </p>
           </div>
           <button
@@ -280,7 +286,7 @@ export const ListsView: React.FC = () => {
             }}
             className="px-5 py-2.5 rounded-xl bg-[#00A2FF] hover:bg-[#0092e6] text-white text-xs font-bold transition-all shadow-md"
           >
-            Buat List Pertama
+            {language === 'id' ? 'Buat List Pertama' : 'Create First List'}
           </button>
         </div>
       ) : (
@@ -319,10 +325,10 @@ export const ListsView: React.FC = () => {
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                     list.isRanked ? 'bg-[#00E59B]/15 text-[#00E59B]' : 'bg-[#00A2FF]/15 text-[#00A2FF]'
                   }`}>
-                    {list.isRanked ? 'Ranked' : 'Unranked'}
+                    {list.isRanked ? t('lists_ranked_label') : t('lists_unranked_label')}
                   </span>
                   <span className="text-xs text-gray-400">
-                    {list.items.length} games
+                    {list.items.length} {t('lists_games_count')}
                   </span>
                 </div>
 
@@ -335,13 +341,19 @@ export const ListsView: React.FC = () => {
               </div>
 
               <div className="flex items-center justify-between pt-4 mt-4 border-t border-[#232b35] text-xs">
-                <div className="flex items-center gap-2">
+                <div 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (list.userId) viewUserProfile(list.userId);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer group/creator"
+                >
                   <img
                     src={safeAvatarSrc(list.userAvatar)}
                     alt={list.userName}
-                    className="w-5 h-5 rounded-full object-cover"
+                    className="w-5 h-5 rounded-full object-cover group-hover/creator:ring-1 group-hover/creator:ring-[#00E59B]"
                   />
-                  <span className="text-gray-400 font-medium truncate max-w-[150px]">
+                  <span className="text-gray-400 font-medium truncate max-w-[150px] group-hover/creator:text-[#00E59B] transition-colors">
                     {list.userName}
                   </span>
                 </div>
@@ -351,16 +363,18 @@ export const ListsView: React.FC = () => {
                     <Heart className="w-3.5 h-3.5 fill-rose-500" />
                     <span>{list.likesCount}</span>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteList(list.id);
-                    }}
-                    className="p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                    title="Hapus list ini"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {user && list.userId === user.id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteList(list.id);
+                      }}
+                      className="p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      title={t('lists_delete_btn')}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -377,7 +391,7 @@ export const ListsView: React.FC = () => {
             className="w-full max-w-xl bg-[#181e24] border border-[#2b3542] rounded-2xl p-6 shadow-2xl space-y-5 my-8"
           >
             <div className="flex items-center justify-between border-b border-[#232b35] pb-3">
-              <h3 className="text-lg font-bold text-white">Create New Custom List</h3>
+              <h3 className="text-lg font-bold text-white">{t('modal_create_list_title')}</h3>
               <button 
                 onClick={() => setCreateModalOpen(false)}
                 className="text-gray-400 hover:text-white p-1"
@@ -389,11 +403,12 @@ export const ListsView: React.FC = () => {
             <form onSubmit={handleCreateList} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                  List Title
+                  {t('modal_create_list_name')}
                 </label>
                 <input
                   type="text"
                   required
+                  placeholder={t('modal_create_list_name_ph')}
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   className="w-full bg-[#1b222a] border border-[#2b3542] rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#00A2FF] outline-none"
@@ -402,10 +417,11 @@ export const ListsView: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                  Description
+                  {t('modal_create_list_desc')}
                 </label>
                 <textarea
                   rows={3}
+                  placeholder={t('modal_create_list_desc_ph')}
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
                   className="w-full bg-[#1b222a] border border-[#2b3542] rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#00A2FF] outline-none"
@@ -421,17 +437,18 @@ export const ListsView: React.FC = () => {
                   className="w-4 h-4 rounded accent-[#00A2FF]"
                 />
                 <label htmlFor="rankedCheck" className="text-xs font-medium text-gray-300 cursor-pointer">
-                  Ranked list (Numbered 1, 2, 3...)
+                  {t('modal_create_list_ranked')}
                 </label>
               </div>
 
               {/* Select experiences */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5">
-                  Select Experiences ({selectedGameIds.length} chosen)
+                  {language === 'id' ? `Pilih Game (${selectedGameIds.length} dipilih)` : `Select Experiences (${selectedGameIds.length} chosen)`}
                 </label>
                 <input
                   type="text"
+                  placeholder={t('modal_create_list_search_ph')}
                   value={gameSearch}
                   onChange={(e) => setGameSearch(e.target.value)}
                   className="w-full bg-[#14181c] border border-[#242d38] rounded-lg px-3 py-1.5 text-xs text-white mb-2"
@@ -467,14 +484,14 @@ export const ListsView: React.FC = () => {
                   onClick={() => setCreateModalOpen(false)}
                   className="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white"
                 >
-                  Cancel
+                  {t('modal_create_list_cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={!newTitle.trim() || selectedGameIds.length === 0}
                   className="px-5 py-2 text-xs font-bold text-white bg-[#00A2FF] hover:bg-[#0092e6] disabled:opacity-50 rounded-lg transition-all"
                 >
-                  Publish List
+                  {t('modal_create_list_save')}
                 </button>
               </div>
             </form>

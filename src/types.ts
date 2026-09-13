@@ -12,6 +12,9 @@ export interface Game {
   iconUrl: string;
   bannerUrl?: string;
   genre: string;
+  subgenre?: string;
+  genre_l1?: string;
+  genre_l2?: string;
   playerCount?: number;
   totalVisits?: string;
   rawVisits?: number;
@@ -53,6 +56,7 @@ export interface Review {
   hasSpoilers: boolean;
   isLiked: boolean;
   likesCount: number;
+  commentsCount?: number;
   loggedDate: string;
   createdAt: string;
 }

@@ -2,231 +2,191 @@ import { Game } from '../types';
 
 export const GENRE_CATEGORIES = [
   'All',
-  'Horror',
-  'Action / Fighting',
-  'Adventure / RPG',
-  'Social / Roleplay',
-  'Shooter / FPS',
-  'Obby / Parkour',
-  'Simulator / Tycoon',
-  'Tower Defense'
+  'Action',
+  'RPG',
+  'Shooter',
+  'Survival',
+  'Roleplay & Avatar Sim',
+  'Simulation',
+  'Strategy',
+  'Obby & Platformer',
+  'Party & Casual'
 ] as const;
 
 export type GenreCategory = (typeof GENRE_CATEGORIES)[number];
 
 /**
- * Robust, user-intuitive genre category matching for Roblox experiences.
- * Matches by primary genre, tags, game title, and content keywords.
+ * Strict, API-accurate genre category matching for Roblox experiences.
+ * Evaluates ONLY official Roblox API genre metadata (genre, subgenre, genre_l1, genre_l2).
+ * Eliminates keyword matching on game title and description to prevent false positives.
  */
 export function isGameInGenreCategory(game: Game, category: string): boolean {
   if (!category || category === 'All') return true;
 
-  const genre = (game.genre || '').toLowerCase();
-  const name = (game.name || '').toLowerCase();
-  const tags = Array.isArray(game.tags) ? game.tags.map(t => (t || '').toLowerCase()) : [];
-  const desc = (game.description || '').toLowerCase();
-  const fullText = `${genre} ${tags.join(' ')} ${name} ${desc}`;
+  const cat = category.toLowerCase().trim();
+  const gL1 = (game.genre_l1 || '').toLowerCase().trim();
+  const gL2 = (game.genre_l2 || '').toLowerCase().trim();
+  const gGenre = (game.genre || '').toLowerCase().trim();
+  const gSub = (game.subgenre || '').toLowerCase().trim();
 
-  switch (category) {
-    case 'Horror':
-      return (
-        genre.includes('horror') ||
-        tags.some(t => t.includes('horror') || t.includes('scary') || t.includes('creepy') || t === 'ftf' || t === 'mm2') ||
-        /horror|scary|jumpscare|creepy|flee the facility|the mimic|doors|pressure|evade|piggy|apeirophobia|dead silence|granny|slender|dandy's world|dandys world|rainbow friends|survival---mystery/i.test(fullText) ||
-        name.includes('doors') ||
-        name.includes('mimic') ||
-        name.includes('pressure') ||
-        name.includes('evade') ||
-        name.includes('piggy') ||
-        name.includes('flee the facility') ||
-        name.includes('murder mystery') ||
-        name.includes('3008') ||
-        name.includes('apeirophobia') ||
-        name.includes('dandy')
-      );
+  // 1. Direct match with any of the official API fields
+  if (gL1 === cat || gGenre === cat || gL2 === cat || gSub === cat) return true;
 
-    case 'Action / Fighting':
-      return (
-        (
-          genre.includes('action') ||
-          genre.includes('fighting') ||
-          genre.includes('arena') ||
-          genre.includes('chaos') ||
-          genre.includes('sandbox') ||
-          genre.includes('brawler') ||
-          tags.some(t => t.includes('pvp') || t.includes('fighting') || t.includes('combat') || t.includes('brawl') || t.includes('action')) ||
-          /battleground|combat|fighting|sword|brawl|duel|slap battles|blade ball|jujutsu|da hood|item asylum|strongest battleground/i.test(fullText) ||
-          name.includes('battleground') ||
-          name.includes('jujutsu') ||
-          name.includes('slap battles') ||
-          name.includes('blade ball') ||
-          name.includes('combat warriors') ||
-          name.includes('da hood') ||
-          name.includes('item asylum')
-        ) && !genre.includes('tower defense') && !tags.some(t => t.includes('tower-defense'))
-      );
-
-    case 'Adventure / RPG':
-      return (
-        genre.includes('rpg') ||
-        genre.includes('adventure') ||
-        genre.includes('dungeon') ||
-        genre.includes('quest') ||
-        tags.some(t => t.includes('rpg') || t.includes('adventure') || t.includes('quest') || t.includes('dungeon')) ||
-        /deepwoken|blox fruits|fisch|grand piece|king legacy|rogue lineage|build a boat|type:\/\/soul|open world rpg|anime rpg|souls-like/i.test(fullText) ||
-        name.includes('deepwoken') ||
-        name.includes('blox fruits') ||
-        name.includes('fisch') ||
-        name.includes('grand piece') ||
-        name.includes('king legacy') ||
-        name.includes('rogue lineage') ||
-        name.includes('build a boat') ||
-        name.includes('type://soul')
-      );
-
-    case 'Social / Roleplay':
-      return (
-        genre.includes('social') ||
-        genre.includes('roleplay') ||
-        genre.includes('fashion') ||
-        genre.includes('avatar') ||
-        genre.includes('pets') ||
-        genre.includes('fantasy') ||
-        genre.includes('reality tv') ||
-        genre.includes('police') ||
-        tags.some(t => t.includes('roleplay') || t.includes('social') || t === 'rp' || t.startsWith('rp-') || t.includes('fashion') || t.includes('dti') || t.includes('avatar')) ||
-        /brookhaven|berry avenue|bloxburg|adopt me|dress to impress|royale high|catalog avatar|emergency response|meepcity|livetopia|town and city|life rp/i.test(fullText) ||
-        name.includes('brookhaven') ||
-        name.includes('berry avenue') ||
-        name.includes('bloxburg') ||
-        name.includes('adopt me') ||
-        name.includes('dress to impress') ||
-        name.includes('royale high') ||
-        name.includes('catalog avatar') ||
-        name.includes('emergency response')
-      );
-
-    case 'Shooter / FPS':
-      return (
-        genre.includes('fps') ||
-        genre.includes('shooter') ||
-        genre.includes('tactical') ||
-        genre.includes('gun') ||
-        tags.some(t => t.includes('fps') || t.includes('shooter') || t.includes('gun') || t.includes('tactical')) ||
-        /fps|shooter|tactical shooter|sniper|rivals|arsenal|phantom forces|frontlines|gun fight/i.test(fullText) ||
-        name.includes('rivals') ||
-        name.includes('arsenal') ||
-        name.includes('phantom forces') ||
-        name.includes('frontlines')
-      );
-
-    case 'Obby / Parkour':
-      return (
-        genre.includes('obby') ||
-        genre.includes('platformer') ||
-        genre.includes('speedrun') ||
-        genre.includes('parkour') ||
-        tags.some(t => t.includes('obby') || t.includes('platformer') || t.includes('parkour') || t.includes('speedrun')) ||
-        /tower of hell|speed run|obby|parkour|obstacle course|difficulty chart/i.test(fullText) ||
-        name.includes('tower of hell') ||
-        name.includes('speed run') ||
-        name.includes('obby')
-      );
-
-    case 'Simulator / Tycoon':
-      return (
-        (
-          genre.includes('simulator') ||
-          genre.includes('tycoon') ||
-          genre.includes('collecting') ||
-          genre.includes('management') ||
-          tags.some(t => t.includes('simulator') || t.includes('tycoon') || t === 'sim' || t.includes('pet-sim')) ||
-          /pet simulator|bee swarm|theme park tycoon|lumber tycoon|work at a pizza place|mining simulator|idle tycoon|factory tycoon/i.test(fullText) ||
-          name.includes('pet simulator') ||
-          name.includes('bee swarm') ||
-          name.includes('theme park') ||
-          name.includes('lumber tycoon') ||
-          name.includes('work at a pizza place')
-        ) && !genre.includes('adventure / simulation')
-      );
-
-    case 'Tower Defense':
-      return (
-        genre.includes('tower defense') ||
-        genre.includes('strategy / defense') ||
-        genre.includes('defense') ||
-        tags.some(t => t.includes('tower-defense') || t.includes('tds') || t.includes('td') || t.includes('strategy')) ||
-        /tower defense|anime defenders|anime last stand|tower heroes|all star tower defense|anime vanguards|tds/i.test(fullText) ||
-        name.includes('tower defense') ||
-        name.includes('anime defenders') ||
-        name.includes('anime last stand') ||
-        name.includes('tower heroes') ||
-        name.includes('all star tower defense') ||
-        name.includes('anime vanguards')
-      );
-
-    default:
-      return (
-        genre.includes(category.toLowerCase()) ||
-        tags.some(t => t.includes(category.toLowerCase())) ||
-        name.toLowerCase().includes(category.toLowerCase())
-      );
+  // 2. Canonical Roblox API genre taxonomy mapping (Strictly based on API fields)
+  if (cat === 'action' || cat === 'action / fighting') {
+    return (
+      gL1 === 'action' ||
+      gGenre === 'action' ||
+      gGenre === 'fighting' ||
+      gL2.includes('fighting') ||
+      gSub.includes('fighting') ||
+      gL2.includes('battleground') ||
+      gSub.includes('battleground') ||
+      gL2 === 'open world action' ||
+      gSub === 'open world action'
+    );
   }
+
+  if (cat === 'rpg' || cat === 'adventure / rpg' || cat === 'adventure') {
+    return (
+      gL1 === 'rpg' ||
+      gGenre === 'rpg' ||
+      gGenre === 'adventure' ||
+      gL2.includes('rpg') ||
+      gSub.includes('rpg')
+    );
+  }
+
+  if (cat === 'shooter' || cat === 'shooter / fps' || cat === 'fps') {
+    return (
+      gL1 === 'shooter' ||
+      gGenre === 'shooter' ||
+      gGenre === 'fps' ||
+      gL2.includes('shooter') ||
+      gSub.includes('shooter')
+    );
+  }
+
+  if (cat === 'survival' || cat === 'horror') {
+    return (
+      gL1 === 'survival' ||
+      gGenre === 'survival' ||
+      gGenre === 'horror' ||
+      gL2 === 'escape' ||
+      gSub === 'escape' ||
+      gL2 === '1 vs all' ||
+      gSub === '1 vs all'
+    );
+  }
+
+  if (cat === 'roleplay & avatar sim' || cat === 'social / roleplay' || cat === 'roleplay') {
+    return (
+      gL1 === 'roleplay & avatar sim' ||
+      gL1 === 'shopping' ||
+      gGenre === 'town and city' ||
+      gGenre === 'roleplay' ||
+      gGenre === 'shopping' ||
+      gL2 === 'life' ||
+      gSub === 'life' ||
+      gL2 === 'dress up' ||
+      gSub === 'dress up' ||
+      gL2 === 'pet care' ||
+      gSub === 'pet care' ||
+      gL2.includes('avatar') ||
+      gSub.includes('avatar')
+    );
+  }
+
+  if (cat === 'simulation' || cat === 'simulator / tycoon') {
+    return (
+      gL1 === 'simulation' ||
+      gGenre === 'simulation' ||
+      gGenre === 'building' ||
+      gL2.includes('simulator') ||
+      gSub.includes('simulator') ||
+      gL2 === 'tycoon' ||
+      gSub === 'tycoon' ||
+      gL2 === 'vehicle sim' ||
+      gSub === 'vehicle sim' ||
+      gL2 === 'sandbox' ||
+      gSub === 'sandbox'
+    );
+  }
+
+  if (cat === 'strategy' || cat === 'tower defense') {
+    return (
+      gL1 === 'strategy' ||
+      gGenre === 'strategy' ||
+      gL2 === 'tower defense' ||
+      gSub === 'tower defense'
+    );
+  }
+
+  if (cat === 'obby & platformer' || cat === 'obby / parkour') {
+    return (
+      gL1 === 'obby & platformer' ||
+      gGenre === 'platformer' ||
+      gL2 === 'tower obby' ||
+      gSub === 'tower obby'
+    );
+  }
+
+  if (cat === 'party & casual') {
+    return (
+      gL1 === 'party & casual' ||
+      gGenre === 'party' ||
+      gGenre === 'comedy' ||
+      gL2 === 'minigame' ||
+      gSub === 'minigame' ||
+      gL2 === 'childhood game' ||
+      gSub === 'childhood game'
+    );
+  }
+
+  // 3. Fallback matching ONLY on official genre fields (no title/desc keyword searching)
+  return (
+    gGenre.includes(cat) ||
+    gSub.includes(cat) ||
+    gL1.includes(cat) ||
+    gL2.includes(cat)
+  );
 }
 
 /**
- * Analyzes Roblox game metadata (title, description, and raw genre from API)
- * and determines a clean, human-readable genre category and relevant tags.
+ * Normalizes Roblox API genre metadata into primary and subgenre strings.
+ */
+export function extractRobloxGenreMetadata(
+  rawGenre?: string,
+  genreL1?: string,
+  genreL2?: string
+): { genre: string; subgenre?: string; genre_l1?: string; genre_l2?: string } {
+  const l1 = genreL1 && genreL1 !== 'All' ? genreL1.trim() : undefined;
+  const l2 = genreL2 && genreL2 !== 'All' ? genreL2.trim() : undefined;
+  const base = rawGenre && rawGenre !== 'All' && rawGenre !== 'Experience' ? rawGenre.trim() : undefined;
+
+  const primaryGenre = l1 || base || 'Variety';
+  const subgenre = l2 || (l1 && base && base !== l1 ? base : undefined);
+
+  return {
+    genre: primaryGenre,
+    subgenre: subgenre || undefined,
+    genre_l1: genreL1 || undefined,
+    genre_l2: genreL2 || undefined
+  };
+}
+
+/**
+ * Legacy compatibility wrapper for inferRobloxGenre.
+ * Does not perform keyword guessing on game title/description.
  */
 export function inferRobloxGenre(
   name: string,
   desc: string = '',
   rawGenre?: string
 ): { genre: string; tags: string[] } {
-  const g = (rawGenre || '').trim();
-  const text = `${name} ${desc}`.toLowerCase();
-
-  // If already specific from Roblox API
-  if (/^horror$/i.test(g)) return { genre: 'Horror', tags: ['roblox', 'horror'] };
-  if (/^(fps|shooter)$/i.test(g)) return { genre: 'FPS / Shooter', tags: ['roblox', 'fps', 'shooter'] };
-  if (/^(rpg|roleplaying)$/i.test(g)) return { genre: 'Adventure / RPG', tags: ['roblox', 'rpg', 'adventure'] };
-  if (/^(action|fighting|brawler)$/i.test(g)) return { genre: 'Action / Fighting', tags: ['roblox', 'action', 'fighting'] };
-  if (/^(simulation|simulator)$/i.test(g)) return { genre: 'Simulator / Tycoon', tags: ['roblox', 'simulator'] };
-  if (/^(roleplay|town and city)$/i.test(g)) return { genre: 'Social / Roleplay', tags: ['roblox', 'roleplay', 'social'] };
-  if (/^(platformer|obby)$/i.test(g)) return { genre: 'Obby / Parkour', tags: ['roblox', 'obby', 'parkour'] };
-
-  // Infer from content and title
-  if (/horror|scary|jumpscare|creepy|flee the facility|mimic|doors|pressure|evade|piggy|apeirophobia|dead silence|granny|slender|dandy|survival horror/i.test(text)) {
-    return { genre: 'Horror', tags: ['roblox', 'horror', 'survival'] };
-  }
-  if (/\b(fps|shooter|guns?|sniper|tactical shooter|arsenal|aim|frontlines|phantom forces)\b/i.test(text)) {
-    return { genre: 'FPS / Shooter', tags: ['roblox', 'fps', 'shooter', 'gun'] };
-  }
-  if (/\b(tower defense|tds|all star tower defense|anime defenders|anime last stand|anime vanguards)\b/i.test(text)) {
-    return { genre: 'Tower Defense', tags: ['roblox', 'tower-defense', 'strategy'] };
-  }
-  if (/\b(obby|parkour|speedrun|speed run|obstacle course|tower of hell)\b/i.test(text)) {
-    return { genre: 'Obby / Parkour', tags: ['roblox', 'obby', 'parkour', 'platformer'] };
-  }
-  if (/\b(tycoon|factory|industry)\b/i.test(text)) {
-    return { genre: 'Simulator / Tycoon', tags: ['roblox', 'tycoon', 'simulation'] };
-  }
-  if (/\b(simulator|pet sim|mining simulator|swarms?)\b/i.test(text)) {
-    return { genre: 'Simulator / Tycoon', tags: ['roblox', 'simulator', 'collecting'] };
-  }
-  if (/\b(roleplay|rp|brookhaven|berry avenue|bloxburg|adopt me|royale high|dress to impress|fashion|meepcity|hangout|high school|town and city)\b/i.test(text)) {
-    return { genre: 'Social / Roleplay', tags: ['roblox', 'roleplay', 'social', 'rp'] };
-  }
-  if (/\b(battleground|battlegrounds|pvp|fighting|brawl|slap battles|blade ball|combat|arena|jujutsu|duel)\b/i.test(text)) {
-    return { genre: 'Action / Fighting', tags: ['roblox', 'action', 'fighting', 'pvp'] };
-  }
-  if (/\b(rpg|dungeon|quest|open world|deepwoken|fisch|piece|rogue lineage|souls-like|anime rpg)\b/i.test(text)) {
-    return { genre: 'Adventure / RPG', tags: ['roblox', 'rpg', 'adventure', 'open-world'] };
-  }
-  if (/\b(racing|driving|cars?|drift|speedway|cdid)\b/i.test(text)) {
-    return { genre: 'Racing / Driving', tags: ['roblox', 'racing', 'driving', 'cars'] };
-  }
-
-  const fallbackGenre = g && g !== 'All' && g !== 'Experience' ? g : 'Adventure / RPG';
-  return { genre: fallbackGenre, tags: ['roblox', 'experience'] };
+  const meta = extractRobloxGenreMetadata(rawGenre);
+  return {
+    genre: meta.genre,
+    tags: ['roblox', meta.genre.toLowerCase()]
+  };
 }

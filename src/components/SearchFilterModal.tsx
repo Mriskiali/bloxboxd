@@ -35,7 +35,9 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
     minPlayers,
     setMinPlayers,
     resetAllFilters,
-    setActiveTab
+    setActiveTab,
+    language,
+    t
   } = useApp();
 
   // Close on Escape key
@@ -67,40 +69,40 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
   const sortOptions: { id: SortOption; label: string; icon: React.ReactNode }[] = [
     { 
       id: 'popular', 
-      label: 'Paling Ramai', 
+      label: t('sort_popular'), 
       icon: <Flame className="w-3.5 h-3.5 text-[#FF8000]" /> 
     },
     { 
       id: 'rating', 
-      label: 'Rating Tertinggi', 
+      label: t('sort_rating'), 
       icon: <Star className="w-3.5 h-3.5 text-[#00E59B] fill-[#00E59B]" /> 
     },
     { 
       id: 'visits', 
-      label: 'Total Kunjungan', 
+      label: t('sort_visits'), 
       icon: <Users className="w-3.5 h-3.5 text-[#00A2FF]" /> 
     },
     { 
       id: 'newest', 
-      label: 'Rilis Terbaru', 
+      label: t('sort_newest'), 
       icon: <Calendar className="w-3.5 h-3.5 text-purple-400" /> 
     },
     { 
       id: 'az', 
-      label: 'Abjad (A-Z)', 
+      label: t('sort_az'), 
       icon: <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" /> 
     },
   ];
 
   const ratingOptions = [
-    { value: 0, label: 'Semua' },
+    { value: 0, label: t('filter_modal_all') },
     { value: 3.5, label: '3.5+ ★' },
     { value: 4.0, label: '4.0+ ★' },
     { value: 4.5, label: '4.5+ ★' },
   ];
 
   const playerOptions = [
-    { value: 0, label: 'Bebas' },
+    { value: 0, label: t('filter_modal_any') },
     { value: 1000, label: '1K+' },
     { value: 10000, label: '10K+' },
     { value: 50000, label: '50K+' },
@@ -127,16 +129,16 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-white tracking-tight">
-                Filter & Urutkan Pengalaman
+                {t('filter_modal_title')}
               </h3>
               {activeFiltersCount > 0 && (
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-[#00E59B] text-black">
-                  {activeFiltersCount} Aktif
+                  {t('filter_modal_active', { count: activeFiltersCount })}
                 </span>
               )}
             </div>
             <p className="text-[11px] text-gray-400">
-              Saring katalog game Roblox berdasarkan preferensi Anda
+              {t('filter_modal_desc')}
             </p>
           </div>
         </div>
@@ -146,16 +148,16 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
             <button
               onClick={resetAllFilters}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-gray-300 hover:text-white hover:bg-[#202732] border border-[#2b3644] transition-colors"
-              title="Reset semua filter ke default"
+              title={language === 'id' ? 'Reset semua filter ke default' : 'Reset all filters to default'}
             >
               <RotateCcw className="w-3 h-3" />
-              <span>Reset</span>
+              <span>{t('filter_modal_reset')}</span>
             </button>
           )}
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#222b37] transition-colors"
-            aria-label="Tutup filter"
+            aria-label={language === 'id' ? 'Tutup filter' : 'Close filters'}
           >
             <X className="w-4 h-4" />
           </button>
@@ -168,7 +170,7 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-              Urutkan Berdasarkan
+              {t('filter_modal_sort_label')}
             </label>
             <span className="text-[11px] text-[#00E59B] font-semibold">
               {sortOptions.find(s => s.id === sortBy)?.label}
@@ -204,7 +206,7 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
           <div className="space-y-2 bg-[#1a2129]/60 p-3 rounded-xl border border-[#252f3c]">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                Min. Rating
+                {t('filter_min_rating_label')}
               </label>
               {minRating > 0 && (
                 <span className="text-[10px] text-[#00E59B] font-bold">{minRating}+ ★</span>
@@ -234,7 +236,7 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
           <div className="space-y-2 bg-[#1a2129]/60 p-3 rounded-xl border border-[#252f3c]">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                Min. Pemain Online
+                {t('filter_min_players_label')}
               </label>
               {minPlayers > 0 && (
                 <span className="text-[10px] text-[#00A2FF] font-bold">{minPlayers.toLocaleString()}+</span>
@@ -266,7 +268,7 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
       <div className="px-4 sm:px-5 py-3 border-t border-[#242d38] bg-[#12161b] flex items-center justify-between gap-3">
         <div className="text-xs text-gray-400">
           <span>
-            Cocok: <strong className="text-white font-bold">{matchingCount}</strong> pengalaman
+            {t('filter_modal_matching', { count: matchingCount })}
           </span>
         </div>
 
@@ -275,13 +277,13 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
             onClick={onClose}
             className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-300 hover:text-white hover:bg-[#202732] border border-[#28323f] transition-colors"
           >
-            Tutup
+            {t('filter_modal_close')}
           </button>
           <button
             onClick={handleApply}
             className="px-4 py-1.5 rounded-xl text-xs font-extrabold bg-[#00E59B] hover:bg-[#00c988] text-black transition-all shadow-md active:scale-95 flex items-center gap-1.5"
           >
-            <span>Terapkan Filter</span>
+            <span>{t('filter_modal_apply')}</span>
           </button>
         </div>
       </div>

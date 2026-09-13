@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Game, GameLog, Review, UserProfile, CustomList, ShelfStatus, SortOption, DEFAULT_AVATAR_URL } from '../types';
 import { INITIAL_GAMES } from '../data/initialGames';
 import { DEFAULT_USER, INITIAL_USER_LOGS, INITIAL_REVIEWS, INITIAL_LISTS } from '../data/mockCommunity';
+import { Language, TranslationKey, getTranslation } from '../utils/translations';
 
 export const deduplicateGames = (gameList: Game[]): Game[] => {
   const seenIds = new Set<string>();
@@ -33,6 +34,7 @@ interface AppContextType {
   activeTab: 'catalog' | 'game-detail' | 'profile' | 'diary' | 'lists' | 'list-detail' | 'community';
   selectedGameId: string | null;
   selectedListId: string | null;
+  selectedUserId: string | null;
   searchQuery: string;
   selectedGenre: string;
   sortBy: SortOption;
@@ -50,6 +52,12 @@ interface AppContextType {
   setActiveTab: (tab: 'catalog' | 'game-detail' | 'profile' | 'diary' | 'lists' | 'list-detail' | 'community') => void;
   setSelectedGameId: (id: string | null) => void;
   setSelectedListId: (id: string | null) => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  setSelectedUserId: (id: string | null) => void;
+  viewUserProfile: (userId: string) => void;
+  incrementReviewCommentsCount: (reviewId: string) => void;
   setSearchQuery: (query: string) => void;
   setSelectedGenre: (genre: string) => void;
   setSortBy: (sort: SortOption) => void;
@@ -130,20 +138,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [userLogs, setUserLogs] = useState<GameLog[]>(() => {
-    const MIGRATION_KEY = 'bloxboxd_clean_v5';
+    const MIGRATION_KEY = 'bloxboxd_clean_v6';
     if (!localStorage.getItem(MIGRATION_KEY)) {
       localStorage.removeItem('bloxboxd_logs');
-      localStorage.removeItem('bloxboxd_reviews');
-      localStorage.removeItem('bloxboxd_lists');
       localStorage.setItem(MIGRATION_KEY, 'true');
       return [];
     }
+    const savedUser = localStorage.getItem('bloxboxd_user');
+    let currentUserId: string | null = null;
+    if (savedUser) {
+      try {
+        const u = JSON.parse(savedUser);
+        currentUserId = u?.id || null;
+      } catch (e) {}
+    }
+    if (!currentUserId) return [];
+
     const saved = localStorage.getItem('bloxboxd_logs');
     if (saved) {
       try { 
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(l => l && !l.id?.includes('mock') && !l.id?.includes('placeholder') && !l.userId?.includes('mock') && l.userId !== 'user-1' && l.userId !== 'user-2');
+          return parsed.filter(l => l && (l.userId === currentUserId || l.userId === currentUserId.replace('user-roblox-', '')));
         }
       } catch (e) { /* ignore */ }
     }
@@ -190,9 +206,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return [];
   });
 
+  const [language, setLanguageState] = useState<Language>(() => {
+    const saved = localStorage.getItem('bloxboxd_lang');
+    return saved === 'en' ? 'en' : 'id';
+  });
+
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('bloxboxd_lang', lang);
+  }, []);
+
+  const t = useCallback((key: TranslationKey, params?: Record<string, string | number>) => {
+    return getTranslation(language, key, params);
+  }, [language]);
+
   const [activeTab, setActiveTab] = useState<'catalog' | 'game-detail' | 'profile' | 'diary' | 'lists' | 'list-detail' | 'community'>('catalog');
   const [selectedGameId, setSelectedGameId] = useState<string | null>('game-doors');
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [sortBy, setSortBy] = useState<SortOption>('popular');
@@ -293,16 +324,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 2. Fetch logged-in user data (profile & logs) from Turso database
   useEffect(() => {
-    if (!user || !user.id) return;
+    if (!user || !user.id) {
+      setUserLogs([]);
+      return;
+    }
 
     const fetchUserData = async () => {
       try {
         const res = await fetch(`/api/user/data?userId=${encodeURIComponent(user.id)}`);
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data.logs) && data.logs.length > 0) {
-            setUserLogs(data.logs);
-          }
+          setUserLogs(Array.isArray(data.logs) ? data.logs : []);
           if (data.profile) {
             setUser(prev => prev ? ({ ...prev, ...data.profile }) : data.profile);
           }
@@ -322,9 +354,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [games]);
 
   // Real-time synchronization engine with official Roblox APIs
+  // Optimasi: Sinkronkan 30 game teratas saja (1 chunk) agar tidak memborbardir Roblox API dan terkena rate limit 429
   const refreshRealtimeStats = useCallback(async () => {
     const currentGames = gamesRef.current;
-    const universeIds = currentGames.map(g => g.universeId).filter(Boolean);
+    const topActiveGames = [...currentGames]
+      .filter(g => Boolean(g.universeId))
+      .sort((a, b) => (b.playerCount || 0) - (a.playerCount || 0))
+      .slice(0, 30);
+
+    const universeIds = topActiveGames.map(g => g.universeId);
     if (universeIds.length === 0) return;
 
     setIsRealtimeSyncing(true);
@@ -350,6 +388,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             iconUrl: apiData.iconUrl || g.iconUrl,
             bannerUrl: apiData.bannerUrl || g.bannerUrl,
             genre: apiData.genre || g.genre,
+            subgenre: apiData.subgenre ?? g.subgenre,
+            genre_l1: apiData.genre_l1 ?? g.genre_l1,
+            genre_l2: apiData.genre_l2 ?? g.genre_l2,
             name: apiData.name || g.name,
             description: apiData.description || g.description
           };
@@ -363,13 +404,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Initial sync on mount and auto-refresh every 35 seconds
+  // Initial sync on mount and auto-refresh every 90 seconds (interval aman dari rate limit Roblox)
   useEffect(() => {
     refreshRealtimeStats();
 
     const interval = setInterval(() => {
       refreshRealtimeStats();
-    }, 35000);
+    }, 90000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -408,6 +449,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveTab('list-detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const viewUserProfile = useCallback((userId: string) => {
+    setSelectedUserId(userId);
+    setActiveTab('profile');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const incrementReviewCommentsCount = useCallback((reviewId: string) => {
+    setReviews(prev => prev.map(r => {
+      if (r.id === reviewId) {
+        return { ...r, commentsCount: (r.commentsCount || 0) + 1 };
+      }
+      return r;
+    }));
+  }, []);
 
   const openLogModal = (game: Game) => {
     if (!user) {
@@ -699,11 +755,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         : 'Bergabung 2026',
       robloxJoinedDate: robloxData.created,
       robloxFriendsCount: robloxData.friendsCount,
-      favoriteGameIds: user?.favoriteGameIds || []
+      favoriteGameIds: []
     };
 
+    // Cleanly isolate session: reset logs for new user account
+    setUserLogs([]);
     setUser(newUser);
     localStorage.setItem('bloxboxd_user', JSON.stringify(newUser));
+    localStorage.removeItem('bloxboxd_logs');
 
     // Seamlessly update active user author fields on reviews & custom lists
     setReviews(prev => prev.map(r => r.userId === newUser.id ? {
@@ -729,8 +788,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetch(`/api/user/data?userId=${encodeURIComponent(newUser.id)}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data && Array.isArray(data.logs) && data.logs.length > 0) {
-          setUserLogs(data.logs);
+        setUserLogs(Array.isArray(data?.logs) ? data.logs : []);
+        if (data?.profile?.favoriteGameIds) {
+          setUser(prev => prev ? ({ ...prev, favoriteGameIds: data.profile.favoriteGameIds }) : null);
         }
       })
       .catch(() => {});
@@ -738,7 +798,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logoutRobloxAccount = () => {
     setUser(null);
+    setUserLogs([]);
     localStorage.removeItem('bloxboxd_user');
+    localStorage.removeItem('bloxboxd_logs');
   };
 
   const importGame = (newGame: Game) => {
@@ -830,11 +892,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return deduplicateGames(updated);
     });
 
-    fetch('/api/games', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newGames)
-    }).catch(e => console.warn('Failed to persist games batch to database:', e));
+    // Catatan: Penyimpanan ke Turso sudah ditangani secara otomatis di backend (server.ts)
+    // saat endpoint /api/roblox/discover atau /api/roblox/search dipanggil.
+    // Menghilangkan POST redundan dari client ini menghemat ribuan rows written ke Turso.
   };
 
   const createList = (listData: { title: string; description: string; isRanked: boolean; isPublic: boolean; gameIds: string[] }) => {
@@ -944,6 +1004,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeTab,
         selectedGameId,
         selectedListId,
+        selectedUserId,
+        setSelectedUserId,
+        language,
+        setLanguage,
+        t,
+        viewUserProfile,
+        incrementReviewCommentsCount,
         searchQuery,
         selectedGenre,
         sortBy,

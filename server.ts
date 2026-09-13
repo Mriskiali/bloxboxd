@@ -27,7 +27,9 @@ import {
   getAllGames,
   getGameById,
   upsertGame,
-  bulkUpsertGames
+  bulkUpsertGames,
+  searchUserProfiles,
+  getUserReviews
 } from './src/db/index';
 
 interface CachedGameResponse {
@@ -265,54 +267,45 @@ function computeRatingStats(upVotes: number, downVotes: number) {
   };
 }
 
-// Automatically infers specific, user-friendly Roblox genres and tags from metadata
-function inferRobloxGenre(name: string, desc: string = '', rawGenre?: string): { genre: string; tags: string[] } {
-  const g = (rawGenre || '').trim();
-  const text = `${name} ${desc}`.toLowerCase();
+// Extracts genuine Roblox API genre and subgenre taxonomy
+function extractRobloxGenreMetadata(rawGenre?: string, genreL1?: string, genreL2?: string): {
+  genre: string;
+  subgenre?: string;
+  genre_l1?: string;
+  genre_l2?: string;
+  tags: string[];
+} {
+  const l1 = (genreL1 || '').trim();
+  const l2 = (genreL2 || '').trim();
+  const legacy = (rawGenre || '').trim();
 
-  // If already specific from Roblox API
-  if (/^horror$/i.test(g)) return { genre: 'Horror', tags: ['horror'] };
-  if (/^(fps|shooter)$/i.test(g)) return { genre: 'FPS / Shooter', tags: ['fps', 'shooter'] };
-  if (/^(rpg|roleplaying)$/i.test(g)) return { genre: 'Adventure / RPG', tags: ['rpg', 'adventure'] };
-  if (/^(action|fighting|brawler)$/i.test(g)) return { genre: 'Action / Fighting', tags: ['action', 'fighting'] };
-  if (/^(simulation|simulator)$/i.test(g)) return { genre: 'Simulator / Tycoon', tags: ['simulator'] };
-  if (/^(roleplay|town and city)$/i.test(g)) return { genre: 'Social / Roleplay', tags: ['roleplay', 'social'] };
-  if (/^(platformer|obby)$/i.test(g)) return { genre: 'Obby / Parkour', tags: ['obby', 'parkour'] };
-
-  // Infer from content and title
-  if (/horror|scary|jumpscare|creepy|flee the facility|mimic|doors|pressure|evade|piggy|apeirophobia|dead silence|granny|slender|dandy|survival horror/i.test(text)) {
-    return { genre: 'Horror', tags: ['horror', 'survival'] };
+  // Primary Genre: Prioritize official Roblox modern genre_l1; fallback to legacy genre if not 'All'; default to 'Variety'
+  let primaryGenre = l1;
+  if (!primaryGenre && legacy && legacy.toLowerCase() !== 'all') {
+    primaryGenre = legacy;
   }
-  if (/\b(fps|shooter|guns?|sniper|tactical shooter|arsenal|aim|frontlines|phantom forces)\b/i.test(text)) {
-    return { genre: 'FPS / Shooter', tags: ['fps', 'shooter', 'gun'] };
-  }
-  if (/\b(tower defense|tds|all star tower defense|anime defenders|anime last stand|anime vanguards)\b/i.test(text)) {
-    return { genre: 'Tower Defense', tags: ['tower-defense', 'strategy'] };
-  }
-  if (/\b(obby|parkour|speedrun|speed run|obstacle course|tower of hell)\b/i.test(text)) {
-    return { genre: 'Obby / Parkour', tags: ['obby', 'parkour', 'platformer'] };
-  }
-  if (/\b(tycoon|factory|industry)\b/i.test(text)) {
-    return { genre: 'Simulator / Tycoon', tags: ['tycoon', 'simulation'] };
-  }
-  if (/\b(simulator|pet sim|mining simulator|swarms?)\b/i.test(text)) {
-    return { genre: 'Simulator / Tycoon', tags: ['simulator', 'collecting'] };
-  }
-  if (/\b(roleplay|rp|brookhaven|berry avenue|bloxburg|adopt me|royale high|dress to impress|fashion|meepcity|hangout|high school|town and city)\b/i.test(text)) {
-    return { genre: 'Social / Roleplay', tags: ['roleplay', 'social', 'rp'] };
-  }
-  if (/\b(battleground|battlegrounds|pvp|fighting|brawl|slap battles|blade ball|combat|arena|jujutsu|duel)\b/i.test(text)) {
-    return { genre: 'Action / Fighting', tags: ['action', 'fighting', 'pvp'] };
-  }
-  if (/\b(rpg|dungeon|quest|open world|deepwoken|fisch|piece|rogue lineage|souls-like|anime rpg)\b/i.test(text)) {
-    return { genre: 'Adventure / RPG', tags: ['rpg', 'adventure', 'open-world'] };
-  }
-  if (/\b(racing|driving|cars?|drift|speedway|cdid)\b/i.test(text)) {
-    return { genre: 'Racing / Driving', tags: ['racing', 'driving', 'cars'] };
+  if (!primaryGenre) {
+    primaryGenre = 'Variety';
   }
 
-  const fallbackGenre = g && g !== 'All' && g !== 'Experience' ? g : 'Adventure / RPG';
-  return { genre: fallbackGenre, tags: ['experience'] };
+  // Subgenre: Prioritize official Roblox modern genre_l2
+  let subgenre: string | undefined = l2 || undefined;
+  if (!subgenre && legacy && legacy.toLowerCase() !== 'all' && legacy.toLowerCase() !== primaryGenre.toLowerCase()) {
+    subgenre = legacy;
+  }
+
+  const tags: string[] = ['roblox'];
+  if (primaryGenre && primaryGenre !== 'Variety') tags.push(primaryGenre.toLowerCase());
+  if (subgenre) tags.push(subgenre.toLowerCase());
+  if (legacy && legacy !== 'All' && !tags.includes(legacy.toLowerCase())) tags.push(legacy.toLowerCase());
+
+  return {
+    genre: primaryGenre,
+    subgenre,
+    genre_l1: l1 || undefined,
+    genre_l2: l2 || undefined,
+    tags
+  };
 }
 
 // Ingestion helper to fetch full details for a Roblox universe
@@ -370,10 +363,10 @@ async function fetchUniverseDetails(universeId: number, placeId: number) {
   const rawVisits = gameInfo?.visits || 0;
   const favoritedCount = gameInfo?.favoritedCount || 0;
 
-  const genreMeta = inferRobloxGenre(
-    gameInfo?.name || `Roblox Experience #${placeId}`,
-    gameInfo?.description || '',
-    gameInfo?.genre
+  const genreMeta = extractRobloxGenreMetadata(
+    gameInfo?.genre,
+    gameInfo?.genre_l1,
+    gameInfo?.genre_l2
   );
 
   return {
@@ -387,6 +380,9 @@ async function fetchUniverseDetails(universeId: number, placeId: number) {
     iconUrl: iconUrl || 'https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter',
     bannerUrl: bannerUrl || undefined,
     genre: genreMeta.genre,
+    subgenre: genreMeta.subgenre,
+    genre_l1: genreMeta.genre_l1,
+    genre_l2: genreMeta.genre_l2,
     playerCount: gameInfo?.playing || 0,
     totalVisits: rawVisits ? Number(rawVisits).toLocaleString() : '0',
     rawVisits,
@@ -401,10 +397,134 @@ async function fetchUniverseDetails(universeId: number, placeId: number) {
   };
 }
 
+// In-memory caching layer for Turso database catalog to avoid 500-row table scans on every search/resolve
+let cachedDbCatalog: any[] = [];
+let lastDbCatalogFetchTime = 0;
+const DB_CATALOG_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getCachedDbCatalog(): Promise<any[]> {
+  const now = Date.now();
+  if (cachedDbCatalog.length > 0 && (now - lastDbCatalogFetchTime) < DB_CATALOG_CACHE_TTL) {
+    return cachedDbCatalog;
+  }
+  try {
+    cachedDbCatalog = await getAllGames(500);
+    lastDbCatalogFetchTime = now;
+  } catch (e) {
+    console.error('Failed to refresh db catalog cache:', e);
+  }
+  return cachedDbCatalog;
+}
+
+// In-memory cache for live Roblox online searches (10 minutes)
+const onlineSearchCache = new Map<string, { results: any[]; timestamp: number }>();
+const SEARCH_CACHE_TTL = 10 * 60 * 1000;
+
+// In-memory cache for batch universe details (30 minutes)
+const universeDetailsCache = new Map<number, { data: any; timestamp: number }>();
+const UNIVERSE_DETAILS_CACHE_TTL = 30 * 60 * 1000;
+
+// Batch fetch universe details (genre_l1, genre_l2, visits, creator, description, etc.)
+async function fetchBatchUniverseDetails(universeIds: number[]): Promise<Map<number, any>> {
+  const resultMap = new Map<number, any>();
+  if (!universeIds || universeIds.length === 0) return resultMap;
+
+  const missingIds: number[] = [];
+  const now = Date.now();
+
+  for (const uid of universeIds) {
+    if (!uid) continue;
+    const cached = universeDetailsCache.get(uid);
+    if (cached && (now - cached.timestamp) < UNIVERSE_DETAILS_CACHE_TTL) {
+      resultMap.set(uid, cached.data);
+    } else {
+      missingIds.push(uid);
+    }
+  }
+
+  if (missingIds.length === 0) {
+    return resultMap;
+  }
+
+  const uniqueMissing = Array.from(new Set(missingIds));
+  const CHUNK_SIZE = 40;
+
+  await Promise.all(
+    Array.from({ length: Math.ceil(uniqueMissing.length / CHUNK_SIZE) }, async (_, idx) => {
+      const chunk = uniqueMissing.slice(idx * CHUNK_SIZE, (idx + 1) * CHUNK_SIZE);
+      const endpoints = [
+        `https://games.roproxy.com/v1/games?universeIds=${chunk.join(',')}`,
+        `https://games.roblox.com/v1/games?universeIds=${chunk.join(',')}`
+      ];
+
+      for (const ep of endpoints) {
+        try {
+          const res = await fetch(ep, {
+            headers: { 'User-Agent': 'Bloxboxd/1.0' }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            for (const item of (data.data || [])) {
+              if (item.id) {
+                resultMap.set(item.id, item);
+                universeDetailsCache.set(item.id, { data: item, timestamp: Date.now() });
+              }
+            }
+            if (data.data && data.data.length > 0) break;
+          }
+        } catch (e) {}
+      }
+    })
+  );
+
+  return resultMap;
+}
+
+// Batch fetch 512x512 high-resolution game icons
+async function fetchBatchIcons(universeIds: number[]): Promise<Map<number, string>> {
+  const iconMap = new Map<number, string>();
+  if (!universeIds || universeIds.length === 0) return iconMap;
+
+  const uniqueIds = Array.from(new Set(universeIds.filter(Boolean)));
+  const CHUNK_SIZE = 50;
+
+  await Promise.all(
+    Array.from({ length: Math.ceil(uniqueIds.length / CHUNK_SIZE) }, async (_, idx) => {
+      const chunk = uniqueIds.slice(idx * CHUNK_SIZE, (idx + 1) * CHUNK_SIZE);
+      const iconEndpoints = [
+        `https://thumbnails.roproxy.com/v1/games/icons?universeIds=${chunk.join(',')}&size=512x512&format=Png&isCircular=false`,
+        `https://thumbnails.roblox.com/v1/games/icons?universeIds=${chunk.join(',')}&size=512x512&format=Png&isCircular=false`
+      ];
+      for (const ep of iconEndpoints) {
+        try {
+          const iconRes = await fetch(ep, { headers: { 'User-Agent': 'Bloxboxd/1.0' } });
+          if (iconRes.ok) {
+            const iconData = await iconRes.json();
+            for (const ic of (iconData.data || [])) {
+              if (ic.targetId && ic.imageUrl) {
+                iconMap.set(ic.targetId, ic.imageUrl);
+              }
+            }
+            if (iconMap.size > 0) break;
+          }
+        } catch (e) {}
+      }
+    })
+  );
+
+  return iconMap;
+}
+
 // Live search resolver for finding ANY Roblox game on the platform by name, keyword, or query
 async function searchRobloxLiveOnline(rawQuery: string): Promise<any[]> {
   const query = rawQuery.trim();
   if (!query) return [];
+
+  const cacheKey = query.toLowerCase();
+  const cached = onlineSearchCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp) < SEARCH_CACHE_TTL) {
+    return cached.results;
+  }
 
   const sessionId = crypto.randomUUID();
   const searchEndpoints = [
@@ -435,6 +555,8 @@ async function searchRobloxLiveOnline(rawQuery: string): Promise<any[]> {
           }
         }
         if (rawGames.length > 0) break;
+      } else if (res.status === 429) {
+        console.warn(`[Roblox Search API] Rate limited (429) on ${ep}`);
       }
     } catch (err) {
       console.warn(`Search endpoint ${ep} failed:`, err);
@@ -446,59 +568,56 @@ async function searchRobloxLiveOnline(rawQuery: string): Promise<any[]> {
   const topGames = rawGames.slice(0, 40);
   const universeIds = topGames.map(g => g.universeId);
 
-  // Batch fetch high-resolution icons for all search results
-  const iconMap = new Map<number, string>();
-  const iconEndpoints = [
-    `https://thumbnails.roproxy.com/v1/games/icons?universeIds=${universeIds.join(',')}&size=512x512&format=Png&isCircular=false`,
-    `https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeIds.join(',')}&size=512x512&format=Png&isCircular=false`
-  ];
+  // Batch fetch icons & genuine universe metadata concurrently
+  const [iconMap, universeDetailsMap] = await Promise.all([
+    fetchBatchIcons(universeIds),
+    fetchBatchUniverseDetails(universeIds)
+  ]);
 
-  for (const ep of iconEndpoints) {
-    try {
-      const iconRes = await fetch(ep, { headers: { 'User-Agent': 'Bloxboxd/1.0' } });
-      if (iconRes.ok) {
-        const iconData = await iconRes.json();
-        for (const ic of (iconData.data || [])) {
-          if (ic.targetId && ic.imageUrl) {
-            iconMap.set(ic.targetId, ic.imageUrl);
-          }
-        }
-        if (iconMap.size > 0) break;
-      }
-    } catch (e) {}
-  }
-
-  return topGames.map(item => {
-    const upVotes = item.totalUpVotes || 0;
+  const formattedResults = topGames.map(item => {
+    const details = universeDetailsMap.get(item.universeId);
+    const upVotes = details?.favoritedCount || item.totalUpVotes || 0;
     const downVotes = item.totalDownVotes || 0;
     const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
     const iconUrl = iconMap.get(item.universeId) || 'https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter';
-    const rawVisits = (item.playerCount || 0) * 18 || 10000;
-    const genreMeta = inferRobloxGenre(item.name, item.description || '', item.genreL1);
+    const rawVisits = details?.visits ?? ((item.playerCount || 0) * 18 || 10000);
+    const rawGenre = details?.genre || item.genre;
+    const genreL1 = details?.genre_l1 || item.genreL1 || item.genre_l1;
+    const genreL2 = details?.genre_l2 || item.genreL2 || item.genre_l2;
+    const genreMeta = extractRobloxGenreMetadata(rawGenre, genreL1, genreL2);
 
     return {
       id: `roblox-${item.universeId}`,
       universeId: item.universeId,
-      rootPlaceId: item.rootPlaceId || 0,
-      name: item.name,
-      description: item.description || '',
-      creatorName: item.creatorName || 'Roblox Creator',
-      creatorType: item.creatorHasVerifiedBadge ? 'Verified' : 'Group',
+      rootPlaceId: details?.rootPlaceId || item.rootPlaceId || 0,
+      name: details?.name || item.name,
+      description: details?.description || item.description || '',
+      creatorName: details?.creator?.name || item.creatorName || 'Roblox Creator',
+      creatorType: details?.creator?.hasVerifiedBadge || item.creatorHasVerifiedBadge ? 'Verified' : 'Group',
       iconUrl,
       genre: genreMeta.genre,
-      playerCount: item.playerCount || 0,
+      subgenre: genreMeta.subgenre,
+      genre_l1: genreMeta.genre_l1,
+      genre_l2: genreMeta.genre_l2,
+      playerCount: details?.playing ?? (item.playerCount || 0),
       totalVisits: rawVisits ? Number(rawVisits).toLocaleString() : '10,000+',
       rawVisits,
       favoritedCount: upVotes,
       upVotes,
       downVotes,
-      releaseYear: new Date().getFullYear(),
+      releaseYear: details?.created ? new Date(details.created).getFullYear() : new Date().getFullYear(),
       ratingAverage,
       ratingCount,
       ratingHistogram,
-      tags: ['roblox', 'live-search', ...genreMeta.tags, (item.genreL1 || '').toLowerCase()].filter(Boolean)
+      tags: ['roblox', 'live-search', ...genreMeta.tags].filter(Boolean)
     };
   });
+
+  if (formattedResults.length > 0) {
+    onlineSearchCache.set(cacheKey, { results: formattedResults, timestamp: Date.now() });
+  }
+
+  return formattedResults;
 }
 
 app.get('/api/roblox/resolve', async (req, res) => {
@@ -512,9 +631,9 @@ app.get('/api/roblox/resolve', async (req, res) => {
 
     // If query is not a placeId or URL, attempt to resolve by game name
     if (!placeId) {
-      // 1. Check Turso database first
+      // 1. Check Turso database first (cached in memory)
       try {
-        const dbGames = await getAllGames(500);
+        const dbGames = await getCachedDbCatalog();
         const qLower = query.toLowerCase();
         const dbMatch = dbGames.find((g: any) => {
           const nameMatch = g.name.toLowerCase().includes(qLower);
@@ -630,7 +749,7 @@ app.get('/api/roblox/batch', async (req, res) => {
             const upVotes = vote?.upVotes || 0;
             const downVotes = vote?.downVotes || 0;
             const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
-            const genreMeta = inferRobloxGenre(g.name || '', g.description || '', g.genre);
+            const genreMeta = extractRobloxGenreMetadata(g.genre, g.genre_l1, g.genre_l2);
 
             allResults.push({
               universeId: g.id,
@@ -645,6 +764,9 @@ app.get('/api/roblox/batch', async (req, res) => {
               upVotes,
               downVotes,
               genre: genreMeta.genre,
+              subgenre: genreMeta.subgenre,
+              genre_l1: genreMeta.genre_l1,
+              genre_l2: genreMeta.genre_l2,
               tags: genreMeta.tags,
               ratingAverage,
               ratingCount,
@@ -707,17 +829,36 @@ async function fetchLiveDiscoverGames(): Promise<any[]> {
 }
 
 const GENRE_KEYWORD_MAP: Record<string, string> = {
+  'Action': 'action fighting battleground',
+  'RPG': 'rpg action-rpg adventure',
+  'Shooter': 'shooter fps deathmatch',
+  'Survival': 'survival escape horror',
+  'Roleplay & Avatar Sim': 'roleplay life dress up avatar',
+  'Simulation': 'simulation tycoon simulator',
+  'Strategy': 'strategy tower defense',
+  'Obby & Platformer': 'obby platformer parkour',
+  'Party & Casual': 'party minigames casual',
   'Horror': 'horror scary survival',
-  'Action / Fighting': 'action fighting battleground pvp',
-  'Adventure / RPG': 'rpg anime adventure',
-  'Social / Roleplay': 'roleplay rp social town',
-  'Shooter / FPS': 'fps shooter gun',
-  'Obby / Parkour': 'obby parkour platformer',
-  'Simulator / Tycoon': 'simulator tycoon idle',
-  'Tower Defense': 'tower defense td strategy'
+  'Action / Fighting': 'action fighting battleground',
+  'Adventure / RPG': 'rpg adventure',
+  'Social / Roleplay': 'roleplay avatar life',
+  'Shooter / FPS': 'shooter fps',
+  'Obby / Parkour': 'obby parkour',
+  'Simulator / Tycoon': 'simulation tycoon',
+  'Tower Defense': 'tower defense strategy'
 };
 
+// In-memory cache for Roblox omni-search pages (10 minutes)
+const omniSearchCache = new Map<string, { data: { games: any[]; nextPageToken?: string }; timestamp: number }>();
+const OMNI_SEARCH_CACHE_TTL = 10 * 60 * 1000;
+
 async function fetchRobloxOmniSearchPage(query: string, pageToken?: string): Promise<{ games: any[]; nextPageToken?: string }> {
+  const cacheKey = `${query.toLowerCase().trim()}::${pageToken || ''}`;
+  const cached = omniSearchCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp) < OMNI_SEARCH_CACHE_TTL) {
+    return cached.data;
+  }
+
   const sessionId = crypto.randomUUID();
   let url = `https://apis.roproxy.com/search-api/omni-search?searchQuery=${encodeURIComponent(query)}&sessionId=${sessionId}`;
   if (pageToken) {
@@ -741,6 +882,8 @@ async function fetchRobloxOmniSearchPage(query: string, pageToken?: string): Pro
       if (res.ok) {
         searchData = await res.json();
         if (searchData?.searchResults) break;
+      } else if (res.status === 429) {
+        console.warn(`[Roblox Omni-Search] Rate limited (429) on ${ep}`);
       }
     } catch (e) {}
   }
@@ -760,10 +903,16 @@ async function fetchRobloxOmniSearchPage(query: string, pageToken?: string): Pro
     }
   }
 
-  return {
+  const result = {
     games: rawGames,
     nextPageToken: searchData.nextPageToken || undefined
   };
+
+  if (rawGames.length > 0) {
+    omniSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
+  }
+
+  return result;
 }
 
 app.get('/api/roblox/discover', async (req, res) => {
@@ -818,18 +967,21 @@ app.get('/api/roblox/discover', async (req, res) => {
 
     if (rawGames.length === 0) {
       try {
-        const dbGames = await getAllGames(300);
+        const dbGames = await getCachedDbCatalog();
         const filtered = genre !== 'All'
           ? dbGames.filter(g => (g.genre || '').toLowerCase().includes(genre.toLowerCase()) || (g.tags || []).some((t: string) => t.toLowerCase().includes(genre.toLowerCase())))
           : dbGames;
         if (filtered.length > 0) {
-          const offset = (page - 1) * limit;
+          // Jika client meminta halaman lanjutan via pageToken dan Roblox rate-limited / habis,
+          // jangan kirim hasMore: true tanpa token karena akan memicu looping request dari awal.
+          const isCursorPagination = Boolean(pageToken);
+          const offset = isCursorPagination ? 0 : (page - 1) * limit;
           const slice = filtered.slice(offset, offset + limit);
           return res.json({
             games: slice,
             page,
             total: filtered.length,
-            hasMore: offset + limit < filtered.length,
+            hasMore: isCursorPagination ? false : offset + limit < filtered.length,
             nextPageToken: undefined,
             source: 'database-resilience-fallback'
           });
@@ -842,55 +994,59 @@ app.get('/api/roblox/discover', async (req, res) => {
     }
 
     const universeIds = rawGames.map(g => g.universeId);
-    const iconMap = new Map<number, string>();
-    try {
-      const iconRes = await fetch(`https://thumbnails.roproxy.com/v1/games/icons?universeIds=${universeIds.join(',')}&size=512x512&format=Png&isCircular=false`, {
-        headers: { 'User-Agent': 'Bloxboxd/1.0' }
-      });
-      if (iconRes.ok) {
-        const iconData = await iconRes.json();
-        for (const ic of (iconData.data || [])) {
-          if (ic.targetId && ic.imageUrl) {
-            iconMap.set(ic.targetId, ic.imageUrl);
-          }
-        }
-      }
-    } catch (e) {}
+
+    // Concurrently fetch icons and genuine universe metadata (genre_l1, genre_l2, visits, etc.)
+    const [iconMap, universeDetailsMap] = await Promise.all([
+      fetchBatchIcons(universeIds),
+      fetchBatchUniverseDetails(universeIds)
+    ]);
 
     const formattedGames = rawGames.map(item => {
-      const upVotes = item.totalUpVotes || 0;
+      const details = universeDetailsMap.get(item.universeId);
+      const upVotes = details?.favoritedCount || item.totalUpVotes || 0;
       const downVotes = item.totalDownVotes || 0;
       const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
       const iconUrl = iconMap.get(item.universeId) || 'https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter';
-      const rawVisits = (item.playerCount || 0) * 20 || 10000;
-      const genreMeta = inferRobloxGenre(item.name, item.description || '', item.genreL1);
+      const rawVisits = details?.visits ?? ((item.playerCount || 0) * 20 || 10000);
+      const rawGenre = details?.genre || item.genre;
+      const genreL1 = details?.genre_l1 || item.genreL1 || item.genre_l1;
+      const genreL2 = details?.genre_l2 || item.genreL2 || item.genre_l2;
+      const genreMeta = extractRobloxGenreMetadata(rawGenre, genreL1, genreL2);
 
-      // If a specific genre was requested and inferred genre is generic, use the requested genre
-      const assignedGenre = (genre !== 'All' && genreMeta.genre === 'Custom / Variety') 
-        ? genre 
-        : genreMeta.genre;
+      // If user queried a specific genre in discover and genre is still empty or 'Variety',
+      // tag/align with the requested genre so it correctly surfaces in the client's genre category
+      if (genre && genre !== 'All' && (genreMeta.genre === 'Variety' || !genreMeta.genre)) {
+        genreMeta.genre = genre;
+        if (!genreMeta.subgenre) genreMeta.subgenre = genre;
+        if (!genreMeta.tags.includes(genre.toLowerCase())) {
+          genreMeta.tags.push(genre.toLowerCase());
+        }
+      }
 
       return {
         id: `roblox-${item.universeId}`,
         universeId: item.universeId,
-        rootPlaceId: item.rootPlaceId || 0,
-        name: item.name,
-        description: item.description || `Popular Roblox experience with over ${(item.playerCount || 0).toLocaleString()} active players.`,
-        creatorName: item.creatorName || 'Roblox Creator',
-        creatorType: item.creatorHasVerifiedBadge ? 'Verified' : 'Group',
+        rootPlaceId: details?.rootPlaceId || item.rootPlaceId || 0,
+        name: details?.name || item.name,
+        description: details?.description || item.description || `Popular Roblox experience with over ${(details?.playing || item.playerCount || 0).toLocaleString()} active players.`,
+        creatorName: details?.creator?.name || item.creatorName || 'Roblox Creator',
+        creatorType: details?.creator?.hasVerifiedBadge || item.creatorHasVerifiedBadge ? 'Verified' : 'Group',
         iconUrl,
-        genre: assignedGenre,
-        playerCount: item.playerCount || 0,
+        genre: genreMeta.genre,
+        subgenre: genreMeta.subgenre,
+        genre_l1: genreMeta.genre_l1,
+        genre_l2: genreMeta.genre_l2,
+        playerCount: details?.playing ?? (item.playerCount || 0),
         totalVisits: rawVisits ? Number(rawVisits).toLocaleString() : '10,000+',
         rawVisits,
         favoritedCount: upVotes,
         upVotes,
         downVotes,
-        releaseYear: new Date().getFullYear(),
+        releaseYear: details?.created ? new Date(details.created).getFullYear() : new Date().getFullYear(),
         ratingAverage,
         ratingCount,
         ratingHistogram,
-        tags: ['roblox', 'live-feed', ...genreMeta.tags, (item.genreL1 || '').toLowerCase(), genre.toLowerCase()].filter(Boolean)
+        tags: ['roblox', 'live-feed', ...genreMeta.tags]
       };
     });
 
@@ -923,9 +1079,9 @@ app.get('/api/roblox/search', async (req, res) => {
     const placeId = extractPlaceId(rawQuery);
     let catalog: any[] = [];
     try {
-      catalog = await getAllGames(500);
+      catalog = await getCachedDbCatalog();
     } catch (e) {
-      console.error('Failed to fetch catalog from database:', e);
+      console.error('Failed to fetch catalog from database cache:', e);
     }
 
     // If direct Place ID or Roblox link was entered
@@ -1724,10 +1880,26 @@ app.get('/api/user/data', async (req, res) => {
     }
     const profile = await getUserProfile(userId);
     const logs = await getUserGameLogs(userId);
-    return res.json({ profile, logs });
+    const reviews = await getUserReviews(userId);
+    return res.json({ profile, logs, reviews });
   } catch (err) {
     console.error('Error fetching user data:', err);
     return res.status(500).json({ error: 'Failed to fetch user data' });
+  }
+});
+
+// Search Bloxboxd users by username, handle, or display name
+app.get('/api/users/search', async (req, res) => {
+  try {
+    const q = ((req.query.q as string) || '').trim();
+    if (!q) {
+      return res.json({ users: [] });
+    }
+    const users = await searchUserProfiles(q, 8);
+    return res.json({ users });
+  } catch (err) {
+    console.error('Error searching users:', err);
+    return res.status(500).json({ error: 'Failed to search users' });
   }
 });
 

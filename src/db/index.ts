@@ -333,6 +333,59 @@ export async function upsertUserProfile(profile: any): Promise<void> {
       favJson
     ]
   });
+
+  // Cascade latest username and avatar to reviews, custom lists, and comments
+  const effectiveUsername = profile.robloxDisplayName || profile.displayName || profile.username;
+  const effectiveAvatar = profile.avatarUrl || '';
+  const rawRobloxId = profile.robloxUserId ? String(profile.robloxUserId) : '';
+  const prefixedId = profile.id.startsWith('user-roblox-') ? profile.id : `user-roblox-${profile.id}`;
+
+  try {
+    if (effectiveAvatar) {
+      await db.execute({
+        sql: `UPDATE reviews SET username = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
+        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
+      });
+      await db.execute({
+        sql: `UPDATE custom_lists SET user_name = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
+        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
+      });
+      await db.execute({
+        sql: `UPDATE review_comments SET username = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
+        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
+      });
+    }
+  } catch (e) {
+    console.warn('[Database] Failed to cascade profile updates to reviews/lists:', e);
+  }
+}
+
+export async function searchUserProfiles(query: string, limit: number = 8): Promise<any[]> {
+  const cleanQ = query.trim().toLowerCase();
+  if (!cleanQ) return [];
+  const pattern = `%${cleanQ}%`;
+  const result = await db.execute({
+    sql: `
+      SELECT id, roblox_user_id, username, handle, display_name, avatar_url, avatar_bust_url, bio, joined_date, friends_count
+      FROM user_profiles
+      WHERE LOWER(username) LIKE ? OR LOWER(handle) LIKE ? OR LOWER(display_name) LIKE ?
+      LIMIT ?
+    `,
+    args: [pattern, pattern, pattern, limit]
+  });
+
+  return result.rows.map((row: any) => ({
+    id: row.id,
+    robloxUserId: row.roblox_user_id,
+    username: row.username,
+    handle: row.handle,
+    displayName: row.display_name,
+    avatarUrl: row.avatar_url,
+    avatarBustUrl: row.avatar_bust_url,
+    bio: row.bio || '',
+    joinedDate: row.joined_date,
+    friendsCount: row.friends_count || 0
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -340,9 +393,13 @@ export async function upsertUserProfile(profile: any): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function getUserGameLogs(userId: string): Promise<any[]> {
+  const cleanId = (userId || '').trim();
+  const rawNumId = cleanId.replace('user-roblox-', '');
+  const prefixedId = cleanId.startsWith('user-roblox-') ? cleanId : `user-roblox-${cleanId}`;
+
   const result = await db.execute({
-    sql: `SELECT * FROM game_logs WHERE user_id = ? ORDER BY logged_date DESC, updated_at DESC`,
-    args: [userId]
+    sql: `SELECT * FROM game_logs WHERE user_id = ? OR user_id = ? OR user_id = ? ORDER BY logged_date DESC, updated_at DESC`,
+    args: [cleanId, rawNumId, prefixedId]
   });
   return result.rows.map((row: any) => ({
     id: row.id,
@@ -396,9 +453,13 @@ export async function upsertGameLog(log: any): Promise<void> {
 }
 
 export async function deleteGameLog(userId: string, logId: string): Promise<void> {
+  const cleanId = (userId || '').trim();
+  const rawNumId = cleanId.replace('user-roblox-', '');
+  const prefixedId = cleanId.startsWith('user-roblox-') ? cleanId : `user-roblox-${cleanId}`;
+
   await db.execute({
-    sql: `DELETE FROM game_logs WHERE id = ? AND user_id = ?`,
-    args: [logId, userId]
+    sql: `DELETE FROM game_logs WHERE id = ? AND (user_id = ? OR user_id = ? OR user_id = ?)`,
+    args: [logId, cleanId, rawNumId, prefixedId]
   });
 }
 
@@ -408,8 +469,21 @@ export async function deleteGameLog(userId: string, logId: string): Promise<void
 
 export async function getAllReviews(gameId?: string): Promise<any[]> {
   const sql = gameId
-    ? `SELECT * FROM reviews WHERE game_id = ? ORDER BY created_at DESC LIMIT 100`
-    : `SELECT * FROM reviews ORDER BY created_at DESC LIMIT 100`;
+    ? `SELECT r.*, 
+         COALESCE(p.display_name, p.username, r.username) as live_username,
+         COALESCE(p.avatar_url, r.user_avatar) as live_avatar,
+         (SELECT COUNT(*) FROM review_comments rc WHERE rc.review_id = r.id) as comments_count 
+       FROM reviews r 
+       LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
+       WHERE r.game_id = ? 
+       ORDER BY r.created_at DESC LIMIT 100`
+    : `SELECT r.*, 
+         COALESCE(p.display_name, p.username, r.username) as live_username,
+         COALESCE(p.avatar_url, r.user_avatar) as live_avatar,
+         (SELECT COUNT(*) FROM review_comments rc WHERE rc.review_id = r.id) as comments_count 
+       FROM reviews r 
+       LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
+       ORDER BY r.created_at DESC LIMIT 100`;
   const args = gameId ? [gameId] : [];
   const result = await db.execute({ sql, args });
 
@@ -419,13 +493,50 @@ export async function getAllReviews(gameId?: string): Promise<any[]> {
     gameTitle: row.game_title,
     gameIcon: row.game_icon,
     userId: row.user_id,
-    username: row.username,
-    userAvatar: row.user_avatar,
+    username: row.live_username || row.username,
+    userAvatar: row.live_avatar || row.user_avatar,
     rating: row.rating !== null ? Number(row.rating) : undefined,
     reviewText: row.review_text,
     hasSpoilers: Boolean(row.has_spoilers),
     isLiked: Boolean(row.is_liked),
     likesCount: Number(row.likes_count) || 0,
+    commentsCount: Number(row.comments_count) || 0,
+    loggedDate: row.logged_date,
+    createdAt: row.created_at
+  }));
+}
+
+export async function getUserReviews(userId: string): Promise<any[]> {
+  const cleanId = (userId || '').trim();
+  const rawNumId = cleanId.replace('user-roblox-', '');
+  const prefixedId = cleanId.startsWith('user-roblox-') ? cleanId : `user-roblox-${cleanId}`;
+
+  const result = await db.execute({
+    sql: `SELECT r.*, 
+            COALESCE(p.display_name, p.username, r.username) as live_username,
+            COALESCE(p.avatar_url, r.user_avatar) as live_avatar,
+            (SELECT COUNT(*) FROM review_comments rc WHERE rc.review_id = r.id) as comments_count 
+          FROM reviews r 
+          LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
+          WHERE r.user_id = ? OR r.user_id = ? OR r.user_id = ? 
+          ORDER BY r.created_at DESC LIMIT 100`,
+    args: [cleanId, rawNumId, prefixedId]
+  });
+
+  return result.rows.map((row: any) => ({
+    id: row.id,
+    gameId: row.game_id,
+    gameTitle: row.game_title,
+    gameIcon: row.game_icon,
+    userId: row.user_id,
+    username: row.live_username || row.username,
+    userAvatar: row.live_avatar || row.user_avatar,
+    rating: row.rating !== null ? Number(row.rating) : undefined,
+    reviewText: row.review_text,
+    hasSpoilers: Boolean(row.has_spoilers),
+    isLiked: Boolean(row.is_liked),
+    likesCount: Number(row.likes_count) || 0,
+    commentsCount: Number(row.comments_count) || 0,
     loggedDate: row.logged_date,
     createdAt: row.created_at
   }));
@@ -506,20 +617,27 @@ export async function toggleReviewLike(userId: string, reviewId: string): Promis
 
 export async function getAllCustomLists(): Promise<any[]> {
   const result = await db.execute(`
-    SELECT * FROM custom_lists WHERE is_public = 1 ORDER BY created_at DESC LIMIT 100
+    SELECT l.*,
+           COALESCE(p.display_name, p.username, l.user_name) as live_username,
+           COALESCE(p.avatar_url, l.user_avatar) as live_avatar
+    FROM custom_lists l
+    LEFT JOIN user_profiles p ON (p.id = l.user_id OR p.roblox_user_id = l.user_id)
+    WHERE l.is_public = 1 
+    ORDER BY l.created_at DESC LIMIT 100
   `);
   return result.rows.map((row: any) => ({
     id: row.id,
     userId: row.user_id,
-    userName: row.user_name,
-    userAvatar: row.user_avatar,
+    userName: row.live_username || row.user_name,
+    userAvatar: row.live_avatar || row.user_avatar,
     title: row.title,
-    description: row.description || '',
+    description: row.description,
     isRanked: Boolean(row.is_ranked),
     isPublic: Boolean(row.is_public),
-    items: row.items ? JSON.parse(row.items) : [],
     likesCount: Number(row.likes_count) || 0,
-    createdAt: row.created_at
+    items: row.items ? JSON.parse(row.items) : [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   }));
 }
 
@@ -645,18 +763,24 @@ export async function getFollowStatus(currentUserId: string, targetUserId: strin
 export async function getCommunityFeed(userId?: string): Promise<any[]> {
   // Activity feed: combining latest reviews, high ratings, and created custom lists
   const reviewsRes = await db.execute(`
-    SELECT r.id, r.game_id, r.game_title, r.game_icon, r.user_id, r.username,
-           r.user_avatar, r.rating, r.review_text, r.likes_count, r.created_at,
+    SELECT r.id, r.game_id, r.game_title, r.game_icon, r.user_id,
+           COALESCE(p.display_name, p.username, r.username) as username,
+           COALESCE(p.avatar_url, r.user_avatar) as user_avatar,
+           r.rating, r.review_text, r.likes_count, r.created_at,
            'review' as activity_type
     FROM reviews r
+    LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
     ORDER BY r.created_at DESC LIMIT 30
   `);
 
   const listsRes = await db.execute(`
-    SELECT l.id, l.user_id, l.user_name as username, l.user_avatar, l.title,
-           l.description, l.items, l.likes_count, l.created_at,
+    SELECT l.id, l.user_id,
+           COALESCE(p.display_name, p.username, l.user_name) as username,
+           COALESCE(p.avatar_url, l.user_avatar) as user_avatar,
+           l.title, l.description, l.items, l.likes_count, l.created_at,
            'list' as activity_type
     FROM custom_lists l
+    LEFT JOIN user_profiles p ON (p.id = l.user_id OR p.roblox_user_id = l.user_id)
     WHERE l.is_public = 1
     ORDER BY l.created_at DESC LIMIT 20
   `);
@@ -703,7 +827,13 @@ export async function getCommunityFeed(userId?: string): Promise<any[]> {
 export async function getTrendingReviewsAndLeaderboard(): Promise<{ trendingReviews: any[]; leaderboard: any[] }> {
   // Trending reviews: highest likes count
   const trendingRes = await db.execute(`
-    SELECT * FROM reviews ORDER BY likes_count DESC, created_at DESC LIMIT 8
+    SELECT r.*,
+           COALESCE(p.display_name, p.username, r.username) as live_username,
+           COALESCE(p.avatar_url, r.user_avatar) as live_avatar,
+           (SELECT COUNT(*) FROM review_comments rc WHERE rc.review_id = r.id) as comments_count
+    FROM reviews r
+    LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
+    ORDER BY r.likes_count DESC, r.created_at DESC LIMIT 8
   `);
   const trendingReviews = trendingRes.rows.map((row: any) => ({
     id: row.id,
@@ -711,11 +841,12 @@ export async function getTrendingReviewsAndLeaderboard(): Promise<{ trendingRevi
     gameTitle: row.game_title,
     gameIcon: row.game_icon,
     userId: row.user_id,
-    username: row.username,
-    userAvatar: row.user_avatar,
+    username: row.live_username || row.username,
+    userAvatar: row.live_avatar || row.user_avatar,
     rating: row.rating !== null ? Number(row.rating) : undefined,
     reviewText: row.review_text,
     likesCount: Number(row.likes_count) || 0,
+    commentsCount: Number(row.comments_count) || 0,
     loggedDate: row.logged_date,
     createdAt: row.created_at
   }));
@@ -749,15 +880,21 @@ export async function getTrendingReviewsAndLeaderboard(): Promise<{ trendingRevi
 
 export async function getReviewComments(reviewId: string): Promise<any[]> {
   const result = await db.execute({
-    sql: `SELECT * FROM review_comments WHERE review_id = ? ORDER BY created_at ASC`,
+    sql: `SELECT rc.*,
+            COALESCE(p.display_name, p.username, rc.username) as live_username,
+            COALESCE(p.avatar_url, rc.user_avatar) as live_avatar
+          FROM review_comments rc
+          LEFT JOIN user_profiles p ON (p.id = rc.user_id OR p.roblox_user_id = rc.user_id)
+          WHERE rc.review_id = ? 
+          ORDER BY rc.created_at ASC`,
     args: [reviewId]
   });
   return result.rows.map((r: any) => ({
     id: r.id,
     reviewId: r.review_id,
     userId: r.user_id,
-    username: r.username,
-    userAvatar: r.user_avatar,
+    username: r.live_username || r.username,
+    userAvatar: r.live_avatar || r.user_avatar,
     commentText: r.comment_text,
     createdAt: r.created_at
   }));

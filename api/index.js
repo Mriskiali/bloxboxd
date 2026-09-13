@@ -22,7 +22,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter",
-    "genre": "Horror",
+    "genre": "Survival",
     "playerCount": 71494,
     "totalVisits": "7.7B+",
     "rawVisits": 7701104387,
@@ -48,7 +48,10 @@ var INITIAL_GAMES = [
       "horror",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Escape",
+    "genre_l1": "Survival",
+    "genre_l2": "Escape"
   },
   {
     "id": "game-dress-to-impress",
@@ -60,7 +63,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-622d27cf094210e32f71577a301f1acd/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-622d27cf094210e32f71577a301f1acd/512/512/Image/Png/noFilter",
-    "genre": "Social / Fashion",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 80311,
     "totalVisits": "11.0B+",
     "rawVisits": 10956570795,
@@ -89,7 +92,10 @@ var INITIAL_GAMES = [
       "dti",
       "dress to impress",
       "fashion"
-    ]
+    ],
+    "subgenre": "Dress Up",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Dress Up"
   },
   {
     "id": "game-blox-fruits",
@@ -101,7 +107,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-774ec14539b264f85fdb6e8a34dfa344/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-774ec14539b264f85fdb6e8a34dfa344/512/512/Image/Png/noFilter",
-    "genre": "Anime / RPG",
+    "genre": "RPG",
     "playerCount": 385918,
     "totalVisits": "64.3B+",
     "rawVisits": 64308886814,
@@ -131,7 +137,10 @@ var INITIAL_GAMES = [
       "blox fruits",
       "one piece",
       "devil fruit"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-pressure",
@@ -143,7 +152,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-1c367e9e2c3d85b65c39323220b79d15/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-1c367e9e2c3d85b65c39323220b79d15/512/512/Image/Png/noFilter",
-    "genre": "Horror",
+    "genre": "Survival",
     "playerCount": 1543,
     "totalVisits": "487.3M+",
     "rawVisits": 487263853,
@@ -169,7 +178,10 @@ var INITIAL_GAMES = [
       "horror",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Escape",
+    "genre_l1": "Survival",
+    "genre_l2": "Escape"
   },
   {
     "id": "game-deepwoken",
@@ -181,7 +193,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-8af036394d38fd14eb20989f3e7e4924/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-8af036394d38fd14eb20989f3e7e4924/512/512/Image/Png/noFilter",
-    "genre": "Hardcore RPG",
+    "genre": "RPG",
     "playerCount": 4049,
     "totalVisits": "1.6B+",
     "rawVisits": 1632241171,
@@ -209,7 +221,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "dw",
       "deepwoken"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-blade-ball",
@@ -221,7 +236,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-b7317d44fd85c141d154cede4aacf4b0/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-b7317d44fd85c141d154cede4aacf4b0/512/512/Image/Png/noFilter",
-    "genre": "Action / Arcade",
+    "genre": "Action",
     "playerCount": 21413,
     "totalVisits": "6.4B+",
     "rawVisits": 6406983213,
@@ -249,7 +264,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "bb",
       "blade ball"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-rivals",
@@ -261,7 +279,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-2f7bb0535e48ac3766835b44ded27a74/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-2f7bb0535e48ac3766835b44ded27a74/512/512/Image/Png/noFilter",
-    "genre": "FPS / Shooter",
+    "genre": "Shooter",
     "playerCount": 202724,
     "totalVisits": "18.0B+",
     "rawVisits": 18036375989,
@@ -287,7 +305,10 @@ var INITIAL_GAMES = [
       "fps---shooter",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Deathmatch Shooter",
+    "genre_l1": "Shooter",
+    "genre_l2": "Deathmatch Shooter"
   },
   {
     "id": "game-fisch",
@@ -299,7 +320,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e4a60be5e47f439d81ba79b6b3e96963/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e4a60be5e47f439d81ba79b6b3e96963/512/512/Image/Png/noFilter",
-    "genre": "Adventure / Simulation",
+    "genre": "Simulation",
     "playerCount": 86849,
     "totalVisits": "4.9B+",
     "rawVisits": 4881534307,
@@ -325,7 +346,9 @@ var INITIAL_GAMES = [
       "adventure---simulation",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Adventure",
+    "genre_l1": "Simulation"
   },
   {
     "id": "game-tower-of-hell",
@@ -337,7 +360,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-9704151d9c8a70e7ebe0ced8cb2b95c1/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-9704151d9c8a70e7ebe0ced8cb2b95c1/512/512/Image/Png/noFilter",
-    "genre": "Obby / Platformer",
+    "genre": "Obby & Platformer",
     "playerCount": 61753,
     "totalVisits": "28.8B+",
     "rawVisits": 28804736617,
@@ -365,7 +388,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "toh",
       "tower of hell"
-    ]
+    ],
+    "subgenre": "Tower Obby",
+    "genre_l1": "Obby & Platformer",
+    "genre_l2": "Tower Obby"
   },
   {
     "id": "game-murder-mystery-2",
@@ -377,7 +403,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-3ac5af325970a745b0156a5358174169/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-3ac5af325970a745b0156a5358174169/512/512/Image/Png/noFilter",
-    "genre": "Survival / Mystery",
+    "genre": "Survival",
     "playerCount": 330090,
     "totalVisits": "30.4B+",
     "rawVisits": 30358042684,
@@ -406,7 +432,10 @@ var INITIAL_GAMES = [
       "mm2",
       "murder mystery",
       "knife"
-    ]
+    ],
+    "subgenre": "1 vs All",
+    "genre_l1": "Survival",
+    "genre_l2": "1 vs All"
   },
   {
     "id": "game-item-asylum",
@@ -418,7 +447,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-159ce52270cf160ad22f214943334420/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-159ce52270cf160ad22f214943334420/512/512/Image/Png/noFilter",
-    "genre": "Arena / Chaos",
+    "genre": "Action",
     "playerCount": 2620,
     "totalVisits": "590.0M+",
     "rawVisits": 589960119,
@@ -446,7 +475,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "ia",
       "item asylum"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-the-mimic",
@@ -458,7 +490,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e7fcd16051fcc7e59d2a89cf89407ab9/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e7fcd16051fcc7e59d2a89cf89407ab9/512/512/Image/Png/noFilter",
-    "genre": "Horror",
+    "genre": "Survival",
     "playerCount": 4197,
     "totalVisits": "1.3B+",
     "rawVisits": 1251603829,
@@ -484,7 +516,10 @@ var INITIAL_GAMES = [
       "horror",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Escape",
+    "genre_l1": "Survival",
+    "genre_l2": "Escape"
   },
   {
     "id": "game-brookhaven",
@@ -496,7 +531,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-0dd115dcf30069741293a3987641b86d/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-0dd115dcf30069741293a3987641b86d/512/512/Image/Png/noFilter",
-    "genre": "Social / Roleplay",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 549200,
     "totalVisits": "87.5B+",
     "rawVisits": 87472605652,
@@ -522,7 +557,10 @@ var INITIAL_GAMES = [
       "social---roleplay",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-adopt-me",
@@ -534,7 +572,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e2adbad115878800194c15eecab9a3a5/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e2adbad115878800194c15eecab9a3a5/512/512/Image/Png/noFilter",
-    "genre": "Social / Pets",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 161270,
     "totalVisits": "44.7B+",
     "rawVisits": 44693892195,
@@ -560,7 +598,10 @@ var INITIAL_GAMES = [
       "social---pets",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Pet Care",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Pet Care"
   },
   {
     "id": "game-arsenal",
@@ -572,7 +613,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-29023c3f115f5eac513c836ef674fd42/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-29023c3f115f5eac513c836ef674fd42/512/512/Image/Png/noFilter",
-    "genre": "FPS / Shooter",
+    "genre": "Shooter",
     "playerCount": 3304,
     "totalVisits": "6.3B+",
     "rawVisits": 6297186761,
@@ -598,7 +639,10 @@ var INITIAL_GAMES = [
       "fps---shooter",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Deathmatch Shooter",
+    "genre_l1": "Shooter",
+    "genre_l2": "Deathmatch Shooter"
   },
   {
     "id": "game-jailbreak",
@@ -610,7 +654,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://t5.rbxcdn.com/180DAY-950708626319e299abab674f3b11816b",
     "bannerUrl": "https://t5.rbxcdn.com/180DAY-950708626319e299abab674f3b11816b",
-    "genre": "Action / Open World",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -648,7 +692,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-c59b28a5559c17e6e36a138809af17b1/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-c59b28a5559c17e6e36a138809af17b1/512/512/Image/Png/noFilter",
-    "genre": "Simulator / Collecting",
+    "genre": "Simulation",
     "playerCount": 72823,
     "totalVisits": "2.6B+",
     "rawVisits": 2633031531,
@@ -679,7 +723,10 @@ var INITIAL_GAMES = [
       "pet sim 99",
       "psx",
       "pet simulator"
-    ]
+    ],
+    "subgenre": "Incremental Simulator",
+    "genre_l1": "Simulation",
+    "genre_l2": "Incremental Simulator"
   },
   {
     "id": "game-bedwars",
@@ -691,7 +738,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-92dfbc55ac3653237f8a460aaf65f7e1/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-92dfbc55ac3653237f8a460aaf65f7e1/512/512/Image/Png/noFilter",
-    "genre": "Action / Strategy",
+    "genre": "Action",
     "playerCount": 22217,
     "totalVisits": "11.7B+",
     "rawVisits": 11679308895,
@@ -717,7 +764,10 @@ var INITIAL_GAMES = [
       "action---strategy",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-tower-defense-simulator",
@@ -729,7 +779,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-c6d22e4b6e36fb4f64b8ce35dcdcf2ef/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-c6d22e4b6e36fb4f64b8ce35dcdcf2ef/512/512/Image/Png/noFilter",
-    "genre": "Strategy / Defense",
+    "genre": "Strategy",
     "playerCount": 18389,
     "totalVisits": "5.0B+",
     "rawVisits": 4964691601,
@@ -758,7 +808,10 @@ var INITIAL_GAMES = [
       "simulator",
       "tds",
       "tower defense simulator"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-da-hood",
@@ -770,7 +823,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ae6cda2dcf44b42ebf33fd1f24578e42/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ae6cda2dcf44b42ebf33fd1f24578e42/512/512/Image/Png/noFilter",
-    "genre": "Action / Sandbox",
+    "genre": "Action",
     "playerCount": 1900,
     "totalVisits": "2.9B+",
     "rawVisits": 2946350270,
@@ -796,7 +849,10 @@ var INITIAL_GAMES = [
       "action---sandbox",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Open World Action",
+    "genre_l1": "Action",
+    "genre_l2": "Open World Action"
   },
   {
     "id": "game-bloxburg",
@@ -808,7 +864,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-975ef139ad526667e977addf45793a71/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-975ef139ad526667e977addf45793a71/512/512/Image/Png/noFilter",
-    "genre": "Simulation / Roleplay",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 14307,
     "totalVisits": "10.1B+",
     "rawVisits": 10091794506,
@@ -834,7 +890,10 @@ var INITIAL_GAMES = [
       "simulation---roleplay",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-natural-disaster",
@@ -846,7 +905,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ac1c764a99cfae201fd4fe916170a218/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ac1c764a99cfae201fd4fe916170a218/512/512/Image/Png/noFilter",
-    "genre": "Survival / Classic",
+    "genre": "Survival",
     "playerCount": 8926,
     "totalVisits": "4.4B+",
     "rawVisits": 4442663557,
@@ -872,7 +931,8 @@ var INITIAL_GAMES = [
       "survival---classic",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "genre_l1": "Survival"
   },
   {
     "id": "game-strongest-battlegrounds",
@@ -884,7 +944,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-68c92fc62a8753793f7963e146b5197f/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-68c92fc62a8753793f7963e146b5197f/512/512/Image/Png/noFilter",
-    "genre": "Action / Anime",
+    "genre": "Action",
     "playerCount": 54227,
     "totalVisits": "19.2B+",
     "rawVisits": 19190019088,
@@ -914,7 +974,10 @@ var INITIAL_GAMES = [
       "tsb",
       "strongest battlegrounds",
       "saitama"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-anime-vanguards",
@@ -926,7 +989,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-31148a6446e3261000387cf3c62d4dff/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-31148a6446e3261000387cf3c62d4dff/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 21481,
     "totalVisits": "2.0B+",
     "rawVisits": 2038205619,
@@ -956,7 +1019,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "av",
       "anime vanguards"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-dandys-world",
@@ -968,7 +1034,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://t6.rbxcdn.com/180DAY-007dc222a830b5992e1a04073454e980",
     "bannerUrl": "https://t6.rbxcdn.com/180DAY-007dc222a830b5992e1a04073454e980",
-    "genre": "Horror / Survival",
+    "genre": "Variety",
     "playerCount": 42100,
     "totalVisits": "480M+",
     "rawVisits": 48012e4,
@@ -1010,7 +1076,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://t3.rbxcdn.com/180DAY-8a2116bd9d541c179d7bd4e611fe58b8",
     "bannerUrl": "https://t3.rbxcdn.com/180DAY-8a2116bd9d541c179d7bd4e611fe58b8",
-    "genre": "Horror / Survival",
+    "genre": "Variety",
     "playerCount": 28400,
     "totalVisits": "2.4B+",
     "rawVisits": 24e8,
@@ -1053,7 +1119,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://t4.rbxcdn.com/180DAY-d111e601a049bc036dbee4dd47894778",
     "bannerUrl": "https://t4.rbxcdn.com/180DAY-d111e601a049bc036dbee4dd47894778",
-    "genre": "Horror / Puzzle",
+    "genre": "Variety",
     "playerCount": 12500,
     "totalVisits": "410M+",
     "rawVisits": 41e7,
@@ -1095,7 +1161,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-bf95a86e5f5e37bf61a5f33401e95deb/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-bf95a86e5f5e37bf61a5f33401e95deb/512/512/Image/Png/noFilter",
-    "genre": "Horror / Survival",
+    "genre": "Survival",
     "playerCount": 37398,
     "totalVisits": "9.2B+",
     "rawVisits": 9163276119,
@@ -1121,7 +1187,9 @@ var INITIAL_GAMES = [
       "horror---survival",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Horror",
+    "genre_l1": "Survival"
   },
   {
     "id": "game-slap-battles",
@@ -1133,7 +1201,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-8637ca6df36c828ef3df9f06a26e94a6/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-8637ca6df36c828ef3df9f06a26e94a6/512/512/Image/Png/noFilter",
-    "genre": "Action / Arena",
+    "genre": "Action",
     "playerCount": 11668,
     "totalVisits": "3.6B+",
     "rawVisits": 3629584050,
@@ -1160,7 +1228,10 @@ var INITIAL_GAMES = [
       "roblox",
       "multiplayer",
       "pvp"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-royale-high",
@@ -1172,7 +1243,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-70261ea10395ff2b3e27f1d562ade61c/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-70261ea10395ff2b3e27f1d562ade61c/512/512/Image/Png/noFilter",
-    "genre": "Social / Fantasy",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 6088,
     "totalVisits": "10.4B+",
     "rawVisits": 10446257659,
@@ -1198,7 +1269,10 @@ var INITIAL_GAMES = [
       "social---fantasy",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Dress Up",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Dress Up"
   },
   {
     "id": "game-build-a-boat",
@@ -1210,7 +1284,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-a16e27d3d8380da38b43960549590ca2/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-a16e27d3d8380da38b43960549590ca2/512/512/Image/Png/noFilter",
-    "genre": "Adventure / Building",
+    "genre": "Simulation",
     "playerCount": 19363,
     "totalVisits": "5.2B+",
     "rawVisits": 5182449401,
@@ -1238,7 +1312,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "babft",
       "build a boat"
-    ]
+    ],
+    "subgenre": "Sandbox",
+    "genre_l1": "Simulation",
+    "genre_l2": "Sandbox"
   },
   {
     "id": "game-bee-swarm",
@@ -1250,7 +1327,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-47a5cb3cce196ed1f9ddbc097c415ad1/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-47a5cb3cce196ed1f9ddbc097c415ad1/512/512/Image/Png/noFilter",
-    "genre": "Simulator / Adventure",
+    "genre": "Simulation",
     "playerCount": 22228,
     "totalVisits": "4.6B+",
     "rawVisits": 4557623684,
@@ -1277,7 +1354,10 @@ var INITIAL_GAMES = [
       "roblox",
       "multiplayer",
       "simulator"
-    ]
+    ],
+    "subgenre": "Incremental Simulator",
+    "genre_l1": "Simulation",
+    "genre_l2": "Incremental Simulator"
   },
   {
     "id": "game-work-at-pizza",
@@ -1289,7 +1369,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ae06e2703a3f516a9946173e656912c0/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ae06e2703a3f516a9946173e656912c0/512/512/Image/Png/noFilter",
-    "genre": "Simulation / Classic",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 5564,
     "totalVisits": "5.6B+",
     "rawVisits": 5571120627,
@@ -1315,7 +1395,10 @@ var INITIAL_GAMES = [
       "simulation---classic",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-theme-park-2",
@@ -1327,7 +1410,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-cdddc8bcd502f7c749cd5ea7692ba940/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-cdddc8bcd502f7c749cd5ea7692ba940/512/512/Image/Png/noFilter",
-    "genre": "Tycoon / Building",
+    "genre": "Simulation",
     "playerCount": 5550,
     "totalVisits": "1.6B+",
     "rawVisits": 1614850643,
@@ -1354,7 +1437,10 @@ var INITIAL_GAMES = [
       "roblox",
       "multiplayer",
       "tycoon"
-    ]
+    ],
+    "subgenre": "Tycoon",
+    "genre_l1": "Simulation",
+    "genre_l2": "Tycoon"
   },
   {
     "id": "game-piggy",
@@ -1366,7 +1452,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-88c605cc111c862403ae2d1e0f4bce6b/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-88c605cc111c862403ae2d1e0f4bce6b/512/512/Image/Png/noFilter",
-    "genre": "Horror / Puzzle",
+    "genre": "Survival",
     "playerCount": 5990,
     "totalVisits": "14.3B+",
     "rawVisits": 14326776901,
@@ -1392,7 +1478,9 @@ var INITIAL_GAMES = [
       "horror---puzzle",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Horror",
+    "genre_l1": "Survival"
   },
   {
     "id": "game-grand-piece-online",
@@ -1404,7 +1492,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ac5cae9ca606a1a3d2e9a81b3ad29247/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ac5cae9ca606a1a3d2e9a81b3ad29247/512/512/Image/Png/noFilter",
-    "genre": "Anime / Adventure",
+    "genre": "RPG",
     "playerCount": 21492,
     "totalVisits": "1.3B+",
     "rawVisits": 1298836355,
@@ -1432,7 +1520,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "gpo",
       "grand piece online"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-king-legacy",
@@ -1444,7 +1535,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-8d0a42cbf6f6c05180a90b8f99a5eb72/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-8d0a42cbf6f6c05180a90b8f99a5eb72/512/512/Image/Png/noFilter",
-    "genre": "Anime / RPG",
+    "genre": "RPG",
     "playerCount": 6444,
     "totalVisits": "4.1B+",
     "rawVisits": 4051974293,
@@ -1470,7 +1561,10 @@ var INITIAL_GAMES = [
       "anime---rpg",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-type-soul",
@@ -1482,7 +1576,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-95cec754219956ebd33e5bdf165145df/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-95cec754219956ebd33e5bdf165145df/512/512/Image/Png/noFilter",
-    "genre": "Anime / Action",
+    "genre": "RPG",
     "playerCount": 345,
     "totalVisits": "817.8M+",
     "rawVisits": 817752553,
@@ -1508,7 +1602,10 @@ var INITIAL_GAMES = [
       "anime---action",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-anime-defenders",
@@ -1520,7 +1617,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-2ef69e4e4d0be01a2b12ecb16536d54f/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-2ef69e4e4d0be01a2b12ecb16536d54f/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 184,
     "totalVisits": "3.4B+",
     "rawVisits": 3433488803,
@@ -1546,7 +1643,10 @@ var INITIAL_GAMES = [
       "tower-defense",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-driving-empire",
@@ -1558,7 +1658,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-53bcc30e65b73ea367490997918740ee/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-53bcc30e65b73ea367490997918740ee/512/512/Image/Png/noFilter",
-    "genre": "Racing / Driving",
+    "genre": "Simulation",
     "playerCount": 38675,
     "totalVisits": "3.3B+",
     "rawVisits": 3269497734,
@@ -1584,7 +1684,10 @@ var INITIAL_GAMES = [
       "racing---driving",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Vehicle Sim",
+    "genre_l1": "Simulation",
+    "genre_l2": "Vehicle Sim"
   },
   {
     "id": "game-speed-run-4",
@@ -1596,7 +1699,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ffcf22e41a17051fdc1628c6c545c0b7/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ffcf22e41a17051fdc1628c6c545c0b7/512/512/Image/Png/noFilter",
-    "genre": "Obby / Speedrun",
+    "genre": "Obby & Platformer",
     "playerCount": 1163,
     "totalVisits": "1.7B+",
     "rawVisits": 1746553544,
@@ -1622,7 +1725,9 @@ var INITIAL_GAMES = [
       "obby---speedrun",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Adventure",
+    "genre_l1": "Obby & Platformer"
   },
   {
     "id": "game-phantom-forces",
@@ -1634,7 +1739,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-717f6839a37d00ddc8bcc9863e7ae6da/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-717f6839a37d00ddc8bcc9863e7ae6da/512/512/Image/Png/noFilter",
-    "genre": "FPS / Tactical",
+    "genre": "Shooter",
     "playerCount": 2354,
     "totalVisits": "1.8B+",
     "rawVisits": 1796380565,
@@ -1662,7 +1767,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "pf",
       "phantom forces"
-    ]
+    ],
+    "subgenre": "Deathmatch Shooter",
+    "genre_l1": "Shooter",
+    "genre_l2": "Deathmatch Shooter"
   },
   {
     "id": "game-combat-warriors",
@@ -1674,7 +1782,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-aceb5959312903e9ffd26462c3584fcc/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-aceb5959312903e9ffd26462c3584fcc/512/512/Image/Png/noFilter",
-    "genre": "Fighting / Action",
+    "genre": "Action",
     "playerCount": 1998,
     "totalVisits": "1.4B+",
     "rawVisits": 1448631725,
@@ -1702,7 +1810,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "cw",
       "combat warriors"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-flee-the-facility",
@@ -1714,7 +1825,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e68a512ad1c725b492c66b366748f55c/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e68a512ad1c725b492c66b366748f55c/512/512/Image/Png/noFilter",
-    "genre": "Horror / Survival",
+    "genre": "Survival",
     "playerCount": 29647,
     "totalVisits": "6.0B+",
     "rawVisits": 5995046277,
@@ -1743,7 +1854,10 @@ var INITIAL_GAMES = [
       "ftf",
       "flee the facility",
       "beast"
-    ]
+    ],
+    "subgenre": "1 vs All",
+    "genre_l1": "Survival",
+    "genre_l2": "1 vs All"
   },
   {
     "id": "game-lumber-tycoon-2",
@@ -1755,7 +1869,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ce843fd3f00692899556df857a836fd7/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ce843fd3f00692899556df857a836fd7/512/512/Image/Png/noFilter",
-    "genre": "Tycoon / Classic",
+    "genre": "Simulation",
     "playerCount": 1959,
     "totalVisits": "1.3B+",
     "rawVisits": 1312309161,
@@ -1782,7 +1896,10 @@ var INITIAL_GAMES = [
       "roblox",
       "multiplayer",
       "tycoon"
-    ]
+    ],
+    "subgenre": "Tycoon",
+    "genre_l1": "Simulation",
+    "genre_l2": "Tycoon"
   },
   {
     "id": "game-restaurant-tycoon-2",
@@ -1794,7 +1911,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://t3.rbxcdn.com/180DAY-8a2116bd9d541c179d7bd4e611fe58b8",
     "bannerUrl": "https://t3.rbxcdn.com/180DAY-8a2116bd9d541c179d7bd4e611fe58b8",
-    "genre": "Tycoon / Management",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -1833,7 +1950,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e27277bbda2ba2efdb47a1863df2da3d/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e27277bbda2ba2efdb47a1863df2da3d/512/512/Image/Png/noFilter",
-    "genre": "Action / Fighting",
+    "genre": "Action",
     "playerCount": 157327,
     "totalVisits": "7.2B+",
     "rawVisits": 7189319413,
@@ -1863,7 +1980,10 @@ var INITIAL_GAMES = [
       "jujutsu shenanigans",
       "gojo",
       "sukuna"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-berry-avenue",
@@ -1875,7 +1995,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-0ad132d9a875993bc0c73af94dcebddb/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-0ad132d9a875993bc0c73af94dcebddb/512/512/Image/Png/noFilter",
-    "genre": "Social / Roleplay",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 38269,
     "totalVisits": "8.7B+",
     "rawVisits": 8704250351,
@@ -1901,7 +2021,10 @@ var INITIAL_GAMES = [
       "social---roleplay",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-car-driving-indonesia",
@@ -1913,7 +2036,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://t4.rbxcdn.com/180DAY-dc729135d7789ab11a92a9d761648577",
     "bannerUrl": "https://t4.rbxcdn.com/180DAY-dc729135d7789ab11a92a9d761648577",
-    "genre": "Simulation / Driving",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -1953,7 +2076,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-878684cc2a3973ce1f37779de7a53ecf/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-878684cc2a3973ce1f37779de7a53ecf/512/512/Image/Png/noFilter",
-    "genre": "Roleplay / Police",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 5958,
     "totalVisits": "1.6B+",
     "rawVisits": 1580121088,
@@ -1983,7 +2106,10 @@ var INITIAL_GAMES = [
       "emergency response",
       "liberty county",
       "police"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-all-star-td",
@@ -1995,7 +2121,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-1041ffa20fc03c82a0d076a8f979d9bc/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-1041ffa20fc03c82a0d076a8f979d9bc/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 6895,
     "totalVisits": "7.9B+",
     "rawVisits": 7916008503,
@@ -2023,7 +2149,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "astd",
       "all star tower defense"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-anime-last-stand",
@@ -2035,7 +2164,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-9e233ae020d9b35a75ec67637b42d3b6/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-9e233ae020d9b35a75ec67637b42d3b6/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 106,
     "totalVisits": "1.1B+",
     "rawVisits": 1081370483,
@@ -2063,7 +2192,10 @@ var INITIAL_GAMES = [
       "multiplayer",
       "als",
       "anime last stand"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-catalog-avatar",
@@ -2075,7 +2207,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-4091747afd807e31c643fac0b3ad3448/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-4091747afd807e31c643fac0b3ad3448/512/512/Image/Png/noFilter",
-    "genre": "Social / Avatar",
+    "genre": "Shopping",
     "playerCount": 68687,
     "totalVisits": "7.9B+",
     "rawVisits": 7865340511,
@@ -2101,7 +2233,10 @@ var INITIAL_GAMES = [
       "social---avatar",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Avatar Shopping",
+    "genre_l1": "Shopping",
+    "genre_l2": "Avatar Shopping"
   },
   {
     "id": "game-tower-heroes",
@@ -2113,7 +2248,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-7c6195e487b29ae55d02c38b8cc09756/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-7c6195e487b29ae55d02c38b8cc09756/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 1350,
     "totalVisits": "528.5M+",
     "rawVisits": 528477347,
@@ -2139,7 +2274,10 @@ var INITIAL_GAMES = [
       "tower-defense",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-sharkbite-2",
@@ -2151,7 +2289,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://t4.rbxcdn.com/180DAY-dc729135d7789ab11a92a9d761648577",
     "bannerUrl": "https://t4.rbxcdn.com/180DAY-dc729135d7789ab11a92a9d761648577",
-    "genre": "Survival / Action",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -2189,7 +2327,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e50353797d125464767287770cafd602/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e50353797d125464767287770cafd602/512/512/Image/Png/noFilter",
-    "genre": "Social / Party",
+    "genre": "Party & Casual",
     "playerCount": 2780,
     "totalVisits": "3.4B+",
     "rawVisits": 3415557235,
@@ -2215,7 +2353,10 @@ var INITIAL_GAMES = [
       "social---party",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Childhood Game",
+    "genre_l1": "Party & Casual",
+    "genre_l2": "Childhood Game"
   },
   {
     "id": "game-epic-minigames",
@@ -2227,7 +2368,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-a7cb7bb15c8f29fcfcf39d83800a60df/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-a7cb7bb15c8f29fcfcf39d83800a60df/512/512/Image/Png/noFilter",
-    "genre": "Party / Minigames",
+    "genre": "Party & Casual",
     "playerCount": 2425,
     "totalVisits": "2.4B+",
     "rawVisits": 2351221506,
@@ -2253,7 +2394,10 @@ var INITIAL_GAMES = [
       "party---minigames",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Minigame",
+    "genre_l1": "Party & Casual",
+    "genre_l2": "Minigame"
   },
   {
     "id": "game-rogue-lineage",
@@ -2265,7 +2409,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e4f7aff307d47645c43eafae4a45d7c5/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e4f7aff307d47645c43eafae4a45d7c5/512/512/Image/Png/noFilter",
-    "genre": "Hardcore RPG",
+    "genre": "RPG",
     "playerCount": 707,
     "totalVisits": "384.4M+",
     "rawVisits": 384368432,
@@ -2291,7 +2435,10 @@ var INITIAL_GAMES = [
       "hardcore-rpg",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-phighting",
@@ -2303,7 +2450,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://t4.rbxcdn.com/180DAY-c86b7d253016e3d58e6a91a13f62dab7",
     "bannerUrl": "https://t4.rbxcdn.com/180DAY-c86b7d253016e3d58e6a91a13f62dab7",
-    "genre": "Action / Arena",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -2341,7 +2488,7 @@ var INITIAL_GAMES = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-3fab2edac3adb6050f42d3292937f9d8/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-3fab2edac3adb6050f42d3292937f9d8/512/512/Image/Png/noFilter",
-    "genre": "FPS / Tactical",
+    "genre": "Shooter",
     "playerCount": 308,
     "totalVisits": "210.7M+",
     "rawVisits": 210740638,
@@ -2367,7 +2514,10 @@ var INITIAL_GAMES = [
       "fps---tactical",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Deathmatch Shooter",
+    "genre_l1": "Shooter",
+    "genre_l2": "Deathmatch Shooter"
   },
   {
     "id": "game-total-drama",
@@ -2379,7 +2529,7 @@ var INITIAL_GAMES = [
     "creatorType": "User",
     "iconUrl": "https://t0.rbxcdn.com/180DAY-6b0a0f92f70c7748c90fb3d90dc56234",
     "bannerUrl": "https://t0.rbxcdn.com/180DAY-6b0a0f92f70c7748c90fb3d90dc56234",
-    "genre": "Social / Reality TV",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -2686,11 +2836,62 @@ async function upsertUserProfile(profile) {
       favJson
     ]
   });
+  const effectiveUsername = profile.robloxDisplayName || profile.displayName || profile.username;
+  const effectiveAvatar = profile.avatarUrl || "";
+  const rawRobloxId = profile.robloxUserId ? String(profile.robloxUserId) : "";
+  const prefixedId = profile.id.startsWith("user-roblox-") ? profile.id : `user-roblox-${profile.id}`;
+  try {
+    if (effectiveAvatar) {
+      await db.execute({
+        sql: `UPDATE reviews SET username = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
+        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
+      });
+      await db.execute({
+        sql: `UPDATE custom_lists SET user_name = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
+        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
+      });
+      await db.execute({
+        sql: `UPDATE review_comments SET username = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
+        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
+      });
+    }
+  } catch (e) {
+    console.warn("[Database] Failed to cascade profile updates to reviews/lists:", e);
+  }
+}
+async function searchUserProfiles(query, limit = 8) {
+  const cleanQ = query.trim().toLowerCase();
+  if (!cleanQ) return [];
+  const pattern = `%${cleanQ}%`;
+  const result = await db.execute({
+    sql: `
+      SELECT id, roblox_user_id, username, handle, display_name, avatar_url, avatar_bust_url, bio, joined_date, friends_count
+      FROM user_profiles
+      WHERE LOWER(username) LIKE ? OR LOWER(handle) LIKE ? OR LOWER(display_name) LIKE ?
+      LIMIT ?
+    `,
+    args: [pattern, pattern, pattern, limit]
+  });
+  return result.rows.map((row) => ({
+    id: row.id,
+    robloxUserId: row.roblox_user_id,
+    username: row.username,
+    handle: row.handle,
+    displayName: row.display_name,
+    avatarUrl: row.avatar_url,
+    avatarBustUrl: row.avatar_bust_url,
+    bio: row.bio || "",
+    joinedDate: row.joined_date,
+    friendsCount: row.friends_count || 0
+  }));
 }
 async function getUserGameLogs(userId) {
+  const cleanId = (userId || "").trim();
+  const rawNumId = cleanId.replace("user-roblox-", "");
+  const prefixedId = cleanId.startsWith("user-roblox-") ? cleanId : `user-roblox-${cleanId}`;
   const result = await db.execute({
-    sql: `SELECT * FROM game_logs WHERE user_id = ? ORDER BY logged_date DESC, updated_at DESC`,
-    args: [userId]
+    sql: `SELECT * FROM game_logs WHERE user_id = ? OR user_id = ? OR user_id = ? ORDER BY logged_date DESC, updated_at DESC`,
+    args: [cleanId, rawNumId, prefixedId]
   });
   return result.rows.map((row) => ({
     id: row.id,
@@ -2742,13 +2943,29 @@ async function upsertGameLog(log) {
   });
 }
 async function deleteGameLog(userId, logId) {
+  const cleanId = (userId || "").trim();
+  const rawNumId = cleanId.replace("user-roblox-", "");
+  const prefixedId = cleanId.startsWith("user-roblox-") ? cleanId : `user-roblox-${cleanId}`;
   await db.execute({
-    sql: `DELETE FROM game_logs WHERE id = ? AND user_id = ?`,
-    args: [logId, userId]
+    sql: `DELETE FROM game_logs WHERE id = ? AND (user_id = ? OR user_id = ? OR user_id = ?)`,
+    args: [logId, cleanId, rawNumId, prefixedId]
   });
 }
 async function getAllReviews(gameId) {
-  const sql = gameId ? `SELECT * FROM reviews WHERE game_id = ? ORDER BY created_at DESC LIMIT 100` : `SELECT * FROM reviews ORDER BY created_at DESC LIMIT 100`;
+  const sql = gameId ? `SELECT r.*, 
+         COALESCE(p.display_name, p.username, r.username) as live_username,
+         COALESCE(p.avatar_url, r.user_avatar) as live_avatar,
+         (SELECT COUNT(*) FROM review_comments rc WHERE rc.review_id = r.id) as comments_count 
+       FROM reviews r 
+       LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
+       WHERE r.game_id = ? 
+       ORDER BY r.created_at DESC LIMIT 100` : `SELECT r.*, 
+         COALESCE(p.display_name, p.username, r.username) as live_username,
+         COALESCE(p.avatar_url, r.user_avatar) as live_avatar,
+         (SELECT COUNT(*) FROM review_comments rc WHERE rc.review_id = r.id) as comments_count 
+       FROM reviews r 
+       LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
+       ORDER BY r.created_at DESC LIMIT 100`;
   const args = gameId ? [gameId] : [];
   const result = await db.execute({ sql, args });
   return result.rows.map((row) => ({
@@ -2757,13 +2974,47 @@ async function getAllReviews(gameId) {
     gameTitle: row.game_title,
     gameIcon: row.game_icon,
     userId: row.user_id,
-    username: row.username,
-    userAvatar: row.user_avatar,
+    username: row.live_username || row.username,
+    userAvatar: row.live_avatar || row.user_avatar,
     rating: row.rating !== null ? Number(row.rating) : void 0,
     reviewText: row.review_text,
     hasSpoilers: Boolean(row.has_spoilers),
     isLiked: Boolean(row.is_liked),
     likesCount: Number(row.likes_count) || 0,
+    commentsCount: Number(row.comments_count) || 0,
+    loggedDate: row.logged_date,
+    createdAt: row.created_at
+  }));
+}
+async function getUserReviews(userId) {
+  const cleanId = (userId || "").trim();
+  const rawNumId = cleanId.replace("user-roblox-", "");
+  const prefixedId = cleanId.startsWith("user-roblox-") ? cleanId : `user-roblox-${cleanId}`;
+  const result = await db.execute({
+    sql: `SELECT r.*, 
+            COALESCE(p.display_name, p.username, r.username) as live_username,
+            COALESCE(p.avatar_url, r.user_avatar) as live_avatar,
+            (SELECT COUNT(*) FROM review_comments rc WHERE rc.review_id = r.id) as comments_count 
+          FROM reviews r 
+          LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
+          WHERE r.user_id = ? OR r.user_id = ? OR r.user_id = ? 
+          ORDER BY r.created_at DESC LIMIT 100`,
+    args: [cleanId, rawNumId, prefixedId]
+  });
+  return result.rows.map((row) => ({
+    id: row.id,
+    gameId: row.game_id,
+    gameTitle: row.game_title,
+    gameIcon: row.game_icon,
+    userId: row.user_id,
+    username: row.live_username || row.username,
+    userAvatar: row.live_avatar || row.user_avatar,
+    rating: row.rating !== null ? Number(row.rating) : void 0,
+    reviewText: row.review_text,
+    hasSpoilers: Boolean(row.has_spoilers),
+    isLiked: Boolean(row.is_liked),
+    likesCount: Number(row.likes_count) || 0,
+    commentsCount: Number(row.comments_count) || 0,
     loggedDate: row.logged_date,
     createdAt: row.created_at
   }));
@@ -2834,20 +3085,27 @@ async function toggleReviewLike(userId, reviewId) {
 }
 async function getAllCustomLists() {
   const result = await db.execute(`
-    SELECT * FROM custom_lists WHERE is_public = 1 ORDER BY created_at DESC LIMIT 100
+    SELECT l.*,
+           COALESCE(p.display_name, p.username, l.user_name) as live_username,
+           COALESCE(p.avatar_url, l.user_avatar) as live_avatar
+    FROM custom_lists l
+    LEFT JOIN user_profiles p ON (p.id = l.user_id OR p.roblox_user_id = l.user_id)
+    WHERE l.is_public = 1 
+    ORDER BY l.created_at DESC LIMIT 100
   `);
   return result.rows.map((row) => ({
     id: row.id,
     userId: row.user_id,
-    userName: row.user_name,
-    userAvatar: row.user_avatar,
+    userName: row.live_username || row.user_name,
+    userAvatar: row.live_avatar || row.user_avatar,
     title: row.title,
-    description: row.description || "",
+    description: row.description,
     isRanked: Boolean(row.is_ranked),
     isPublic: Boolean(row.is_public),
-    items: row.items ? JSON.parse(row.items) : [],
     likesCount: Number(row.likes_count) || 0,
-    createdAt: row.created_at
+    items: row.items ? JSON.parse(row.items) : [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   }));
 }
 async function upsertCustomList(list) {
@@ -2956,17 +3214,23 @@ async function getFollowStatus(currentUserId, targetUserId) {
 }
 async function getCommunityFeed(userId) {
   const reviewsRes = await db.execute(`
-    SELECT r.id, r.game_id, r.game_title, r.game_icon, r.user_id, r.username,
-           r.user_avatar, r.rating, r.review_text, r.likes_count, r.created_at,
+    SELECT r.id, r.game_id, r.game_title, r.game_icon, r.user_id,
+           COALESCE(p.display_name, p.username, r.username) as username,
+           COALESCE(p.avatar_url, r.user_avatar) as user_avatar,
+           r.rating, r.review_text, r.likes_count, r.created_at,
            'review' as activity_type
     FROM reviews r
+    LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
     ORDER BY r.created_at DESC LIMIT 30
   `);
   const listsRes = await db.execute(`
-    SELECT l.id, l.user_id, l.user_name as username, l.user_avatar, l.title,
-           l.description, l.items, l.likes_count, l.created_at,
+    SELECT l.id, l.user_id,
+           COALESCE(p.display_name, p.username, l.user_name) as username,
+           COALESCE(p.avatar_url, l.user_avatar) as user_avatar,
+           l.title, l.description, l.items, l.likes_count, l.created_at,
            'list' as activity_type
     FROM custom_lists l
+    LEFT JOIN user_profiles p ON (p.id = l.user_id OR p.roblox_user_id = l.user_id)
     WHERE l.is_public = 1
     ORDER BY l.created_at DESC LIMIT 20
   `);
@@ -3008,7 +3272,13 @@ async function getCommunityFeed(userId) {
 }
 async function getTrendingReviewsAndLeaderboard() {
   const trendingRes = await db.execute(`
-    SELECT * FROM reviews ORDER BY likes_count DESC, created_at DESC LIMIT 8
+    SELECT r.*,
+           COALESCE(p.display_name, p.username, r.username) as live_username,
+           COALESCE(p.avatar_url, r.user_avatar) as live_avatar,
+           (SELECT COUNT(*) FROM review_comments rc WHERE rc.review_id = r.id) as comments_count
+    FROM reviews r
+    LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
+    ORDER BY r.likes_count DESC, r.created_at DESC LIMIT 8
   `);
   const trendingReviews = trendingRes.rows.map((row) => ({
     id: row.id,
@@ -3016,11 +3286,12 @@ async function getTrendingReviewsAndLeaderboard() {
     gameTitle: row.game_title,
     gameIcon: row.game_icon,
     userId: row.user_id,
-    username: row.username,
-    userAvatar: row.user_avatar,
+    username: row.live_username || row.username,
+    userAvatar: row.live_avatar || row.user_avatar,
     rating: row.rating !== null ? Number(row.rating) : void 0,
     reviewText: row.review_text,
     likesCount: Number(row.likes_count) || 0,
+    commentsCount: Number(row.comments_count) || 0,
     loggedDate: row.logged_date,
     createdAt: row.created_at
   }));
@@ -3049,15 +3320,21 @@ async function getTrendingReviewsAndLeaderboard() {
 }
 async function getReviewComments(reviewId) {
   const result = await db.execute({
-    sql: `SELECT * FROM review_comments WHERE review_id = ? ORDER BY created_at ASC`,
+    sql: `SELECT rc.*,
+            COALESCE(p.display_name, p.username, rc.username) as live_username,
+            COALESCE(p.avatar_url, rc.user_avatar) as live_avatar
+          FROM review_comments rc
+          LEFT JOIN user_profiles p ON (p.id = rc.user_id OR p.roblox_user_id = rc.user_id)
+          WHERE rc.review_id = ? 
+          ORDER BY rc.created_at ASC`,
     args: [reviewId]
   });
   return result.rows.map((r) => ({
     id: r.id,
     reviewId: r.review_id,
     userId: r.user_id,
-    username: r.username,
-    userAvatar: r.user_avatar,
+    username: r.live_username || r.username,
+    userAvatar: r.live_avatar || r.user_avatar,
     commentText: r.comment_text,
     createdAt: r.created_at
   }));
@@ -3451,48 +3728,32 @@ function computeRatingStats(upVotes, downVotes) {
     ratingHistogram
   };
 }
-function inferRobloxGenre(name, desc = "", rawGenre) {
-  const g = (rawGenre || "").trim();
-  const text = `${name} ${desc}`.toLowerCase();
-  if (/^horror$/i.test(g)) return { genre: "Horror", tags: ["horror"] };
-  if (/^(fps|shooter)$/i.test(g)) return { genre: "FPS / Shooter", tags: ["fps", "shooter"] };
-  if (/^(rpg|roleplaying)$/i.test(g)) return { genre: "Adventure / RPG", tags: ["rpg", "adventure"] };
-  if (/^(action|fighting|brawler)$/i.test(g)) return { genre: "Action / Fighting", tags: ["action", "fighting"] };
-  if (/^(simulation|simulator)$/i.test(g)) return { genre: "Simulator / Tycoon", tags: ["simulator"] };
-  if (/^(roleplay|town and city)$/i.test(g)) return { genre: "Social / Roleplay", tags: ["roleplay", "social"] };
-  if (/^(platformer|obby)$/i.test(g)) return { genre: "Obby / Parkour", tags: ["obby", "parkour"] };
-  if (/horror|scary|jumpscare|creepy|flee the facility|mimic|doors|pressure|evade|piggy|apeirophobia|dead silence|granny|slender|dandy|survival horror/i.test(text)) {
-    return { genre: "Horror", tags: ["horror", "survival"] };
+function extractRobloxGenreMetadata(rawGenre, genreL1, genreL2) {
+  const l1 = (genreL1 || "").trim();
+  const l2 = (genreL2 || "").trim();
+  const legacy = (rawGenre || "").trim();
+  let primaryGenre = l1;
+  if (!primaryGenre && legacy && legacy.toLowerCase() !== "all") {
+    primaryGenre = legacy;
   }
-  if (/\b(fps|shooter|guns?|sniper|tactical shooter|arsenal|aim|frontlines|phantom forces)\b/i.test(text)) {
-    return { genre: "FPS / Shooter", tags: ["fps", "shooter", "gun"] };
+  if (!primaryGenre) {
+    primaryGenre = "Variety";
   }
-  if (/\b(tower defense|tds|all star tower defense|anime defenders|anime last stand|anime vanguards)\b/i.test(text)) {
-    return { genre: "Tower Defense", tags: ["tower-defense", "strategy"] };
+  let subgenre = l2 || void 0;
+  if (!subgenre && legacy && legacy.toLowerCase() !== "all" && legacy.toLowerCase() !== primaryGenre.toLowerCase()) {
+    subgenre = legacy;
   }
-  if (/\b(obby|parkour|speedrun|speed run|obstacle course|tower of hell)\b/i.test(text)) {
-    return { genre: "Obby / Parkour", tags: ["obby", "parkour", "platformer"] };
-  }
-  if (/\b(tycoon|factory|industry)\b/i.test(text)) {
-    return { genre: "Simulator / Tycoon", tags: ["tycoon", "simulation"] };
-  }
-  if (/\b(simulator|pet sim|mining simulator|swarms?)\b/i.test(text)) {
-    return { genre: "Simulator / Tycoon", tags: ["simulator", "collecting"] };
-  }
-  if (/\b(roleplay|rp|brookhaven|berry avenue|bloxburg|adopt me|royale high|dress to impress|fashion|meepcity|hangout|high school|town and city)\b/i.test(text)) {
-    return { genre: "Social / Roleplay", tags: ["roleplay", "social", "rp"] };
-  }
-  if (/\b(battleground|battlegrounds|pvp|fighting|brawl|slap battles|blade ball|combat|arena|jujutsu|duel)\b/i.test(text)) {
-    return { genre: "Action / Fighting", tags: ["action", "fighting", "pvp"] };
-  }
-  if (/\b(rpg|dungeon|quest|open world|deepwoken|fisch|piece|rogue lineage|souls-like|anime rpg)\b/i.test(text)) {
-    return { genre: "Adventure / RPG", tags: ["rpg", "adventure", "open-world"] };
-  }
-  if (/\b(racing|driving|cars?|drift|speedway|cdid)\b/i.test(text)) {
-    return { genre: "Racing / Driving", tags: ["racing", "driving", "cars"] };
-  }
-  const fallbackGenre = g && g !== "All" && g !== "Experience" ? g : "Adventure / RPG";
-  return { genre: fallbackGenre, tags: ["experience"] };
+  const tags = ["roblox"];
+  if (primaryGenre && primaryGenre !== "Variety") tags.push(primaryGenre.toLowerCase());
+  if (subgenre) tags.push(subgenre.toLowerCase());
+  if (legacy && legacy !== "All" && !tags.includes(legacy.toLowerCase())) tags.push(legacy.toLowerCase());
+  return {
+    genre: primaryGenre,
+    subgenre,
+    genre_l1: l1 || void 0,
+    genre_l2: l2 || void 0,
+    tags
+  };
 }
 async function fetchUniverseDetails(universeId, placeId) {
   const [gamesRes, votesRes, iconRes, thumbRes] = await Promise.all([
@@ -3542,10 +3803,10 @@ async function fetchUniverseDetails(universeId, placeId) {
   const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
   const rawVisits = gameInfo?.visits || 0;
   const favoritedCount = gameInfo?.favoritedCount || 0;
-  const genreMeta = inferRobloxGenre(
-    gameInfo?.name || `Roblox Experience #${placeId}`,
-    gameInfo?.description || "",
-    gameInfo?.genre
+  const genreMeta = extractRobloxGenreMetadata(
+    gameInfo?.genre,
+    gameInfo?.genre_l1,
+    gameInfo?.genre_l2
   );
   return {
     id: `roblox-${universeId}`,
@@ -3558,6 +3819,9 @@ async function fetchUniverseDetails(universeId, placeId) {
     iconUrl: iconUrl || "https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter",
     bannerUrl: bannerUrl || void 0,
     genre: genreMeta.genre,
+    subgenre: genreMeta.subgenre,
+    genre_l1: genreMeta.genre_l1,
+    genre_l2: genreMeta.genre_l2,
     playerCount: gameInfo?.playing || 0,
     totalVisits: rawVisits ? Number(rawVisits).toLocaleString() : "0",
     rawVisits,
@@ -3571,9 +3835,113 @@ async function fetchUniverseDetails(universeId, placeId) {
     tags: ["roblox", "live-game", ...genreMeta.tags]
   };
 }
+var cachedDbCatalog = [];
+var lastDbCatalogFetchTime = 0;
+var DB_CATALOG_CACHE_TTL = 5 * 60 * 1e3;
+async function getCachedDbCatalog() {
+  const now = Date.now();
+  if (cachedDbCatalog.length > 0 && now - lastDbCatalogFetchTime < DB_CATALOG_CACHE_TTL) {
+    return cachedDbCatalog;
+  }
+  try {
+    cachedDbCatalog = await getAllGames(500);
+    lastDbCatalogFetchTime = now;
+  } catch (e) {
+    console.error("Failed to refresh db catalog cache:", e);
+  }
+  return cachedDbCatalog;
+}
+var onlineSearchCache = /* @__PURE__ */ new Map();
+var SEARCH_CACHE_TTL = 10 * 60 * 1e3;
+var universeDetailsCache = /* @__PURE__ */ new Map();
+var UNIVERSE_DETAILS_CACHE_TTL = 30 * 60 * 1e3;
+async function fetchBatchUniverseDetails(universeIds) {
+  const resultMap = /* @__PURE__ */ new Map();
+  if (!universeIds || universeIds.length === 0) return resultMap;
+  const missingIds = [];
+  const now = Date.now();
+  for (const uid of universeIds) {
+    if (!uid) continue;
+    const cached = universeDetailsCache.get(uid);
+    if (cached && now - cached.timestamp < UNIVERSE_DETAILS_CACHE_TTL) {
+      resultMap.set(uid, cached.data);
+    } else {
+      missingIds.push(uid);
+    }
+  }
+  if (missingIds.length === 0) {
+    return resultMap;
+  }
+  const uniqueMissing = Array.from(new Set(missingIds));
+  const CHUNK_SIZE = 40;
+  await Promise.all(
+    Array.from({ length: Math.ceil(uniqueMissing.length / CHUNK_SIZE) }, async (_, idx) => {
+      const chunk = uniqueMissing.slice(idx * CHUNK_SIZE, (idx + 1) * CHUNK_SIZE);
+      const endpoints = [
+        `https://games.roproxy.com/v1/games?universeIds=${chunk.join(",")}`,
+        `https://games.roblox.com/v1/games?universeIds=${chunk.join(",")}`
+      ];
+      for (const ep of endpoints) {
+        try {
+          const res = await fetch(ep, {
+            headers: { "User-Agent": "Bloxboxd/1.0" }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            for (const item of data.data || []) {
+              if (item.id) {
+                resultMap.set(item.id, item);
+                universeDetailsCache.set(item.id, { data: item, timestamp: Date.now() });
+              }
+            }
+            if (data.data && data.data.length > 0) break;
+          }
+        } catch (e) {
+        }
+      }
+    })
+  );
+  return resultMap;
+}
+async function fetchBatchIcons(universeIds) {
+  const iconMap = /* @__PURE__ */ new Map();
+  if (!universeIds || universeIds.length === 0) return iconMap;
+  const uniqueIds = Array.from(new Set(universeIds.filter(Boolean)));
+  const CHUNK_SIZE = 50;
+  await Promise.all(
+    Array.from({ length: Math.ceil(uniqueIds.length / CHUNK_SIZE) }, async (_, idx) => {
+      const chunk = uniqueIds.slice(idx * CHUNK_SIZE, (idx + 1) * CHUNK_SIZE);
+      const iconEndpoints = [
+        `https://thumbnails.roproxy.com/v1/games/icons?universeIds=${chunk.join(",")}&size=512x512&format=Png&isCircular=false`,
+        `https://thumbnails.roblox.com/v1/games/icons?universeIds=${chunk.join(",")}&size=512x512&format=Png&isCircular=false`
+      ];
+      for (const ep of iconEndpoints) {
+        try {
+          const iconRes = await fetch(ep, { headers: { "User-Agent": "Bloxboxd/1.0" } });
+          if (iconRes.ok) {
+            const iconData = await iconRes.json();
+            for (const ic of iconData.data || []) {
+              if (ic.targetId && ic.imageUrl) {
+                iconMap.set(ic.targetId, ic.imageUrl);
+              }
+            }
+            if (iconMap.size > 0) break;
+          }
+        } catch (e) {
+        }
+      }
+    })
+  );
+  return iconMap;
+}
 async function searchRobloxLiveOnline(rawQuery) {
   const query = rawQuery.trim();
   if (!query) return [];
+  const cacheKey = query.toLowerCase();
+  const cached = onlineSearchCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < SEARCH_CACHE_TTL) {
+    return cached.results;
+  }
   const sessionId = crypto.randomUUID();
   const searchEndpoints = [
     `https://apis.roproxy.com/search-api/omni-search?searchQuery=${encodeURIComponent(query)}&sessionId=${sessionId}`,
@@ -3601,6 +3969,8 @@ async function searchRobloxLiveOnline(rawQuery) {
           }
         }
         if (rawGames.length > 0) break;
+      } else if (res.status === 429) {
+        console.warn(`[Roblox Search API] Rate limited (429) on ${ep}`);
       }
     } catch (err) {
       console.warn(`Search endpoint ${ep} failed:`, err);
@@ -3609,56 +3979,51 @@ async function searchRobloxLiveOnline(rawQuery) {
   if (rawGames.length === 0) return [];
   const topGames = rawGames.slice(0, 40);
   const universeIds = topGames.map((g) => g.universeId);
-  const iconMap = /* @__PURE__ */ new Map();
-  const iconEndpoints = [
-    `https://thumbnails.roproxy.com/v1/games/icons?universeIds=${universeIds.join(",")}&size=512x512&format=Png&isCircular=false`,
-    `https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeIds.join(",")}&size=512x512&format=Png&isCircular=false`
-  ];
-  for (const ep of iconEndpoints) {
-    try {
-      const iconRes = await fetch(ep, { headers: { "User-Agent": "Bloxboxd/1.0" } });
-      if (iconRes.ok) {
-        const iconData = await iconRes.json();
-        for (const ic of iconData.data || []) {
-          if (ic.targetId && ic.imageUrl) {
-            iconMap.set(ic.targetId, ic.imageUrl);
-          }
-        }
-        if (iconMap.size > 0) break;
-      }
-    } catch (e) {
-    }
-  }
-  return topGames.map((item) => {
-    const upVotes = item.totalUpVotes || 0;
+  const [iconMap, universeDetailsMap] = await Promise.all([
+    fetchBatchIcons(universeIds),
+    fetchBatchUniverseDetails(universeIds)
+  ]);
+  const formattedResults = topGames.map((item) => {
+    const details = universeDetailsMap.get(item.universeId);
+    const upVotes = details?.favoritedCount || item.totalUpVotes || 0;
     const downVotes = item.totalDownVotes || 0;
     const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
     const iconUrl = iconMap.get(item.universeId) || "https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter";
-    const rawVisits = (item.playerCount || 0) * 18 || 1e4;
-    const genreMeta = inferRobloxGenre(item.name, item.description || "", item.genreL1);
+    const rawVisits = details?.visits ?? ((item.playerCount || 0) * 18 || 1e4);
+    const rawGenre = details?.genre || item.genre;
+    const genreL1 = details?.genre_l1 || item.genreL1 || item.genre_l1;
+    const genreL2 = details?.genre_l2 || item.genreL2 || item.genre_l2;
+    const genreMeta = extractRobloxGenreMetadata(rawGenre, genreL1, genreL2);
     return {
       id: `roblox-${item.universeId}`,
       universeId: item.universeId,
-      rootPlaceId: item.rootPlaceId || 0,
-      name: item.name,
-      description: item.description || "",
-      creatorName: item.creatorName || "Roblox Creator",
-      creatorType: item.creatorHasVerifiedBadge ? "Verified" : "Group",
+      rootPlaceId: details?.rootPlaceId || item.rootPlaceId || 0,
+      name: details?.name || item.name,
+      description: details?.description || item.description || "",
+      creatorName: details?.creator?.name || item.creatorName || "Roblox Creator",
+      creatorType: details?.creator?.hasVerifiedBadge || item.creatorHasVerifiedBadge ? "Verified" : "Group",
       iconUrl,
       genre: genreMeta.genre,
-      playerCount: item.playerCount || 0,
+      subgenre: genreMeta.subgenre,
+      genre_l1: genreMeta.genre_l1,
+      genre_l2: genreMeta.genre_l2,
+      playerCount: details?.playing ?? (item.playerCount || 0),
       totalVisits: rawVisits ? Number(rawVisits).toLocaleString() : "10,000+",
       rawVisits,
       favoritedCount: upVotes,
       upVotes,
       downVotes,
-      releaseYear: (/* @__PURE__ */ new Date()).getFullYear(),
+      releaseYear: details?.created ? new Date(details.created).getFullYear() : (/* @__PURE__ */ new Date()).getFullYear(),
       ratingAverage,
       ratingCount,
       ratingHistogram,
-      tags: ["roblox", "live-search", ...genreMeta.tags, (item.genreL1 || "").toLowerCase()].filter(Boolean)
+      tags: ["roblox", "live-search", ...genreMeta.tags].filter(Boolean)
     };
   });
+  if (formattedResults.length > 0) {
+    onlineSearchCache.set(cacheKey, { results: formattedResults, timestamp: Date.now() });
+  }
+  return formattedResults;
 }
 app.get("/api/roblox/resolve", async (req, res) => {
   try {
@@ -3669,7 +4034,7 @@ app.get("/api/roblox/resolve", async (req, res) => {
     const placeId = extractPlaceId(query);
     if (!placeId) {
       try {
-        const dbGames = await getAllGames(500);
+        const dbGames = await getCachedDbCatalog();
         const qLower = query.toLowerCase();
         const dbMatch = dbGames.find((g) => {
           const nameMatch = g.name.toLowerCase().includes(qLower);
@@ -3763,7 +4128,7 @@ app.get("/api/roblox/batch", async (req, res) => {
             const upVotes = vote?.upVotes || 0;
             const downVotes = vote?.downVotes || 0;
             const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
-            const genreMeta = inferRobloxGenre(g.name || "", g.description || "", g.genre);
+            const genreMeta = extractRobloxGenreMetadata(g.genre, g.genre_l1, g.genre_l2);
             allResults.push({
               universeId: g.id,
               rootPlaceId: g.rootPlaceId,
@@ -3777,6 +4142,9 @@ app.get("/api/roblox/batch", async (req, res) => {
               upVotes,
               downVotes,
               genre: genreMeta.genre,
+              subgenre: genreMeta.subgenre,
+              genre_l1: genreMeta.genre_l1,
+              genre_l2: genreMeta.genre_l2,
               tags: genreMeta.tags,
               ratingAverage,
               ratingCount,
@@ -3831,16 +4199,32 @@ async function fetchLiveDiscoverGames() {
   return cachedDiscoverGames;
 }
 var GENRE_KEYWORD_MAP = {
+  "Action": "action fighting battleground",
+  "RPG": "rpg action-rpg adventure",
+  "Shooter": "shooter fps deathmatch",
+  "Survival": "survival escape horror",
+  "Roleplay & Avatar Sim": "roleplay life dress up avatar",
+  "Simulation": "simulation tycoon simulator",
+  "Strategy": "strategy tower defense",
+  "Obby & Platformer": "obby platformer parkour",
+  "Party & Casual": "party minigames casual",
   "Horror": "horror scary survival",
-  "Action / Fighting": "action fighting battleground pvp",
-  "Adventure / RPG": "rpg anime adventure",
-  "Social / Roleplay": "roleplay rp social town",
-  "Shooter / FPS": "fps shooter gun",
-  "Obby / Parkour": "obby parkour platformer",
-  "Simulator / Tycoon": "simulator tycoon idle",
-  "Tower Defense": "tower defense td strategy"
+  "Action / Fighting": "action fighting battleground",
+  "Adventure / RPG": "rpg adventure",
+  "Social / Roleplay": "roleplay avatar life",
+  "Shooter / FPS": "shooter fps",
+  "Obby / Parkour": "obby parkour",
+  "Simulator / Tycoon": "simulation tycoon",
+  "Tower Defense": "tower defense strategy"
 };
+var omniSearchCache = /* @__PURE__ */ new Map();
+var OMNI_SEARCH_CACHE_TTL = 10 * 60 * 1e3;
 async function fetchRobloxOmniSearchPage(query, pageToken) {
+  const cacheKey = `${query.toLowerCase().trim()}::${pageToken || ""}`;
+  const cached = omniSearchCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < OMNI_SEARCH_CACHE_TTL) {
+    return cached.data;
+  }
   const sessionId = crypto.randomUUID();
   let url = `https://apis.roproxy.com/search-api/omni-search?searchQuery=${encodeURIComponent(query)}&sessionId=${sessionId}`;
   if (pageToken) {
@@ -3862,6 +4246,8 @@ async function fetchRobloxOmniSearchPage(query, pageToken) {
       if (res.ok) {
         searchData = await res.json();
         if (searchData?.searchResults) break;
+      } else if (res.status === 429) {
+        console.warn(`[Roblox Omni-Search] Rate limited (429) on ${ep}`);
       }
     } catch (e) {
     }
@@ -3879,10 +4265,14 @@ async function fetchRobloxOmniSearchPage(query, pageToken) {
       }
     }
   }
-  return {
+  const result = {
     games: rawGames,
     nextPageToken: searchData.nextPageToken || void 0
   };
+  if (rawGames.length > 0) {
+    omniSearchCache.set(cacheKey, { data: result, timestamp: Date.now() });
+  }
+  return result;
 }
 app.get("/api/roblox/discover", async (req, res) => {
   try {
@@ -3927,16 +4317,17 @@ app.get("/api/roblox/discover", async (req, res) => {
     }
     if (rawGames.length === 0) {
       try {
-        const dbGames = await getAllGames(300);
+        const dbGames = await getCachedDbCatalog();
         const filtered = genre !== "All" ? dbGames.filter((g) => (g.genre || "").toLowerCase().includes(genre.toLowerCase()) || (g.tags || []).some((t) => t.toLowerCase().includes(genre.toLowerCase()))) : dbGames;
         if (filtered.length > 0) {
-          const offset = (page - 1) * limit;
+          const isCursorPagination = Boolean(pageToken);
+          const offset = isCursorPagination ? 0 : (page - 1) * limit;
           const slice = filtered.slice(offset, offset + limit);
           return res.json({
             games: slice,
             page,
             total: filtered.length,
-            hasMore: offset + limit < filtered.length,
+            hasMore: isCursorPagination ? false : offset + limit < filtered.length,
             nextPageToken: void 0,
             source: "database-resilience-fallback"
           });
@@ -3947,50 +4338,52 @@ app.get("/api/roblox/discover", async (req, res) => {
       return res.json({ games: [], page, total: 0, hasMore: false, nextPageToken: void 0 });
     }
     const universeIds = rawGames.map((g) => g.universeId);
-    const iconMap = /* @__PURE__ */ new Map();
-    try {
-      const iconRes = await fetch(`https://thumbnails.roproxy.com/v1/games/icons?universeIds=${universeIds.join(",")}&size=512x512&format=Png&isCircular=false`, {
-        headers: { "User-Agent": "Bloxboxd/1.0" }
-      });
-      if (iconRes.ok) {
-        const iconData = await iconRes.json();
-        for (const ic of iconData.data || []) {
-          if (ic.targetId && ic.imageUrl) {
-            iconMap.set(ic.targetId, ic.imageUrl);
-          }
-        }
-      }
-    } catch (e) {
-    }
+    const [iconMap, universeDetailsMap] = await Promise.all([
+      fetchBatchIcons(universeIds),
+      fetchBatchUniverseDetails(universeIds)
+    ]);
     const formattedGames = rawGames.map((item) => {
-      const upVotes = item.totalUpVotes || 0;
+      const details = universeDetailsMap.get(item.universeId);
+      const upVotes = details?.favoritedCount || item.totalUpVotes || 0;
       const downVotes = item.totalDownVotes || 0;
       const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
       const iconUrl = iconMap.get(item.universeId) || "https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter";
-      const rawVisits = (item.playerCount || 0) * 20 || 1e4;
-      const genreMeta = inferRobloxGenre(item.name, item.description || "", item.genreL1);
-      const assignedGenre = genre !== "All" && genreMeta.genre === "Custom / Variety" ? genre : genreMeta.genre;
+      const rawVisits = details?.visits ?? ((item.playerCount || 0) * 20 || 1e4);
+      const rawGenre = details?.genre || item.genre;
+      const genreL1 = details?.genre_l1 || item.genreL1 || item.genre_l1;
+      const genreL2 = details?.genre_l2 || item.genreL2 || item.genre_l2;
+      const genreMeta = extractRobloxGenreMetadata(rawGenre, genreL1, genreL2);
+      if (genre && genre !== "All" && (genreMeta.genre === "Variety" || !genreMeta.genre)) {
+        genreMeta.genre = genre;
+        if (!genreMeta.subgenre) genreMeta.subgenre = genre;
+        if (!genreMeta.tags.includes(genre.toLowerCase())) {
+          genreMeta.tags.push(genre.toLowerCase());
+        }
+      }
       return {
         id: `roblox-${item.universeId}`,
         universeId: item.universeId,
-        rootPlaceId: item.rootPlaceId || 0,
-        name: item.name,
-        description: item.description || `Popular Roblox experience with over ${(item.playerCount || 0).toLocaleString()} active players.`,
-        creatorName: item.creatorName || "Roblox Creator",
-        creatorType: item.creatorHasVerifiedBadge ? "Verified" : "Group",
+        rootPlaceId: details?.rootPlaceId || item.rootPlaceId || 0,
+        name: details?.name || item.name,
+        description: details?.description || item.description || `Popular Roblox experience with over ${(details?.playing || item.playerCount || 0).toLocaleString()} active players.`,
+        creatorName: details?.creator?.name || item.creatorName || "Roblox Creator",
+        creatorType: details?.creator?.hasVerifiedBadge || item.creatorHasVerifiedBadge ? "Verified" : "Group",
         iconUrl,
-        genre: assignedGenre,
-        playerCount: item.playerCount || 0,
+        genre: genreMeta.genre,
+        subgenre: genreMeta.subgenre,
+        genre_l1: genreMeta.genre_l1,
+        genre_l2: genreMeta.genre_l2,
+        playerCount: details?.playing ?? (item.playerCount || 0),
         totalVisits: rawVisits ? Number(rawVisits).toLocaleString() : "10,000+",
         rawVisits,
         favoritedCount: upVotes,
         upVotes,
         downVotes,
-        releaseYear: (/* @__PURE__ */ new Date()).getFullYear(),
+        releaseYear: details?.created ? new Date(details.created).getFullYear() : (/* @__PURE__ */ new Date()).getFullYear(),
         ratingAverage,
         ratingCount,
         ratingHistogram,
-        tags: ["roblox", "live-feed", ...genreMeta.tags, (item.genreL1 || "").toLowerCase(), genre.toLowerCase()].filter(Boolean)
+        tags: ["roblox", "live-feed", ...genreMeta.tags]
       };
     });
     if (formattedGames.length > 0) {
@@ -4017,9 +4410,9 @@ app.get("/api/roblox/search", async (req, res) => {
     const placeId = extractPlaceId(rawQuery);
     let catalog = [];
     try {
-      catalog = await getAllGames(500);
+      catalog = await getCachedDbCatalog();
     } catch (e) {
-      console.error("Failed to fetch catalog from database:", e);
+      console.error("Failed to fetch catalog from database cache:", e);
     }
     if (placeId) {
       const existing = catalog.find((g) => g.rootPlaceId === placeId || g.universeId === placeId);
@@ -4803,10 +5196,24 @@ app.get("/api/user/data", async (req, res) => {
     }
     const profile = await getUserProfile(userId);
     const logs = await getUserGameLogs(userId);
-    return res.json({ profile, logs });
+    const reviews = await getUserReviews(userId);
+    return res.json({ profile, logs, reviews });
   } catch (err) {
     console.error("Error fetching user data:", err);
     return res.status(500).json({ error: "Failed to fetch user data" });
+  }
+});
+app.get("/api/users/search", async (req, res) => {
+  try {
+    const q = (req.query.q || "").trim();
+    if (!q) {
+      return res.json({ users: [] });
+    }
+    const users = await searchUserProfiles(q, 8);
+    return res.json({ users });
+  } catch (err) {
+    console.error("Error searching users:", err);
+    return res.status(500).json({ error: "Failed to search users" });
   }
 });
 app.post("/api/user/profile", async (req, res) => {

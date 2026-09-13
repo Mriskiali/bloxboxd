@@ -11,7 +11,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter",
-    "genre": "Horror",
+    "genre": "Survival",
     "playerCount": 71494,
     "totalVisits": "7.7B+",
     "rawVisits": 7701104387,
@@ -37,7 +37,10 @@ export const INITIAL_GAMES: Game[] = [
       "horror",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Escape",
+    "genre_l1": "Survival",
+    "genre_l2": "Escape"
   },
   {
     "id": "game-dress-to-impress",
@@ -49,7 +52,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-622d27cf094210e32f71577a301f1acd/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-622d27cf094210e32f71577a301f1acd/512/512/Image/Png/noFilter",
-    "genre": "Social / Fashion",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 80311,
     "totalVisits": "11.0B+",
     "rawVisits": 10956570795,
@@ -78,7 +81,10 @@ export const INITIAL_GAMES: Game[] = [
       "dti",
       "dress to impress",
       "fashion"
-    ]
+    ],
+    "subgenre": "Dress Up",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Dress Up"
   },
   {
     "id": "game-blox-fruits",
@@ -90,7 +96,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-774ec14539b264f85fdb6e8a34dfa344/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-774ec14539b264f85fdb6e8a34dfa344/512/512/Image/Png/noFilter",
-    "genre": "Anime / RPG",
+    "genre": "RPG",
     "playerCount": 385918,
     "totalVisits": "64.3B+",
     "rawVisits": 64308886814,
@@ -120,7 +126,10 @@ export const INITIAL_GAMES: Game[] = [
       "blox fruits",
       "one piece",
       "devil fruit"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-pressure",
@@ -132,7 +141,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-1c367e9e2c3d85b65c39323220b79d15/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-1c367e9e2c3d85b65c39323220b79d15/512/512/Image/Png/noFilter",
-    "genre": "Horror",
+    "genre": "Survival",
     "playerCount": 1543,
     "totalVisits": "487.3M+",
     "rawVisits": 487263853,
@@ -158,7 +167,10 @@ export const INITIAL_GAMES: Game[] = [
       "horror",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Escape",
+    "genre_l1": "Survival",
+    "genre_l2": "Escape"
   },
   {
     "id": "game-deepwoken",
@@ -170,7 +182,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-8af036394d38fd14eb20989f3e7e4924/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-8af036394d38fd14eb20989f3e7e4924/512/512/Image/Png/noFilter",
-    "genre": "Hardcore RPG",
+    "genre": "RPG",
     "playerCount": 4049,
     "totalVisits": "1.6B+",
     "rawVisits": 1632241171,
@@ -198,7 +210,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "dw",
       "deepwoken"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-blade-ball",
@@ -210,7 +225,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-b7317d44fd85c141d154cede4aacf4b0/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-b7317d44fd85c141d154cede4aacf4b0/512/512/Image/Png/noFilter",
-    "genre": "Action / Arcade",
+    "genre": "Action",
     "playerCount": 21413,
     "totalVisits": "6.4B+",
     "rawVisits": 6406983213,
@@ -238,7 +253,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "bb",
       "blade ball"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-rivals",
@@ -250,7 +268,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-2f7bb0535e48ac3766835b44ded27a74/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-2f7bb0535e48ac3766835b44ded27a74/512/512/Image/Png/noFilter",
-    "genre": "FPS / Shooter",
+    "genre": "Shooter",
     "playerCount": 202724,
     "totalVisits": "18.0B+",
     "rawVisits": 18036375989,
@@ -276,7 +294,10 @@ export const INITIAL_GAMES: Game[] = [
       "fps---shooter",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Deathmatch Shooter",
+    "genre_l1": "Shooter",
+    "genre_l2": "Deathmatch Shooter"
   },
   {
     "id": "game-fisch",
@@ -288,7 +309,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e4a60be5e47f439d81ba79b6b3e96963/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e4a60be5e47f439d81ba79b6b3e96963/512/512/Image/Png/noFilter",
-    "genre": "Adventure / Simulation",
+    "genre": "Simulation",
     "playerCount": 86849,
     "totalVisits": "4.9B+",
     "rawVisits": 4881534307,
@@ -314,7 +335,9 @@ export const INITIAL_GAMES: Game[] = [
       "adventure---simulation",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Adventure",
+    "genre_l1": "Simulation"
   },
   {
     "id": "game-tower-of-hell",
@@ -326,7 +349,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-9704151d9c8a70e7ebe0ced8cb2b95c1/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-9704151d9c8a70e7ebe0ced8cb2b95c1/512/512/Image/Png/noFilter",
-    "genre": "Obby / Platformer",
+    "genre": "Obby & Platformer",
     "playerCount": 61753,
     "totalVisits": "28.8B+",
     "rawVisits": 28804736617,
@@ -354,7 +377,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "toh",
       "tower of hell"
-    ]
+    ],
+    "subgenre": "Tower Obby",
+    "genre_l1": "Obby & Platformer",
+    "genre_l2": "Tower Obby"
   },
   {
     "id": "game-murder-mystery-2",
@@ -366,7 +392,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-3ac5af325970a745b0156a5358174169/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-3ac5af325970a745b0156a5358174169/512/512/Image/Png/noFilter",
-    "genre": "Survival / Mystery",
+    "genre": "Survival",
     "playerCount": 330090,
     "totalVisits": "30.4B+",
     "rawVisits": 30358042684,
@@ -395,7 +421,10 @@ export const INITIAL_GAMES: Game[] = [
       "mm2",
       "murder mystery",
       "knife"
-    ]
+    ],
+    "subgenre": "1 vs All",
+    "genre_l1": "Survival",
+    "genre_l2": "1 vs All"
   },
   {
     "id": "game-item-asylum",
@@ -407,7 +436,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-159ce52270cf160ad22f214943334420/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-159ce52270cf160ad22f214943334420/512/512/Image/Png/noFilter",
-    "genre": "Arena / Chaos",
+    "genre": "Action",
     "playerCount": 2620,
     "totalVisits": "590.0M+",
     "rawVisits": 589960119,
@@ -435,7 +464,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "ia",
       "item asylum"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-the-mimic",
@@ -447,7 +479,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e7fcd16051fcc7e59d2a89cf89407ab9/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e7fcd16051fcc7e59d2a89cf89407ab9/512/512/Image/Png/noFilter",
-    "genre": "Horror",
+    "genre": "Survival",
     "playerCount": 4197,
     "totalVisits": "1.3B+",
     "rawVisits": 1251603829,
@@ -473,7 +505,10 @@ export const INITIAL_GAMES: Game[] = [
       "horror",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Escape",
+    "genre_l1": "Survival",
+    "genre_l2": "Escape"
   },
   {
     "id": "game-brookhaven",
@@ -485,7 +520,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-0dd115dcf30069741293a3987641b86d/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-0dd115dcf30069741293a3987641b86d/512/512/Image/Png/noFilter",
-    "genre": "Social / Roleplay",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 549200,
     "totalVisits": "87.5B+",
     "rawVisits": 87472605652,
@@ -511,7 +546,10 @@ export const INITIAL_GAMES: Game[] = [
       "social---roleplay",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-adopt-me",
@@ -523,7 +561,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e2adbad115878800194c15eecab9a3a5/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e2adbad115878800194c15eecab9a3a5/512/512/Image/Png/noFilter",
-    "genre": "Social / Pets",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 161270,
     "totalVisits": "44.7B+",
     "rawVisits": 44693892195,
@@ -549,7 +587,10 @@ export const INITIAL_GAMES: Game[] = [
       "social---pets",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Pet Care",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Pet Care"
   },
   {
     "id": "game-arsenal",
@@ -561,7 +602,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-29023c3f115f5eac513c836ef674fd42/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-29023c3f115f5eac513c836ef674fd42/512/512/Image/Png/noFilter",
-    "genre": "FPS / Shooter",
+    "genre": "Shooter",
     "playerCount": 3304,
     "totalVisits": "6.3B+",
     "rawVisits": 6297186761,
@@ -587,7 +628,10 @@ export const INITIAL_GAMES: Game[] = [
       "fps---shooter",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Deathmatch Shooter",
+    "genre_l1": "Shooter",
+    "genre_l2": "Deathmatch Shooter"
   },
   {
     "id": "game-jailbreak",
@@ -599,7 +643,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://t5.rbxcdn.com/180DAY-950708626319e299abab674f3b11816b",
     "bannerUrl": "https://t5.rbxcdn.com/180DAY-950708626319e299abab674f3b11816b",
-    "genre": "Action / Open World",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -637,7 +681,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-c59b28a5559c17e6e36a138809af17b1/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-c59b28a5559c17e6e36a138809af17b1/512/512/Image/Png/noFilter",
-    "genre": "Simulator / Collecting",
+    "genre": "Simulation",
     "playerCount": 72823,
     "totalVisits": "2.6B+",
     "rawVisits": 2633031531,
@@ -668,7 +712,10 @@ export const INITIAL_GAMES: Game[] = [
       "pet sim 99",
       "psx",
       "pet simulator"
-    ]
+    ],
+    "subgenre": "Incremental Simulator",
+    "genre_l1": "Simulation",
+    "genre_l2": "Incremental Simulator"
   },
   {
     "id": "game-bedwars",
@@ -680,7 +727,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-92dfbc55ac3653237f8a460aaf65f7e1/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-92dfbc55ac3653237f8a460aaf65f7e1/512/512/Image/Png/noFilter",
-    "genre": "Action / Strategy",
+    "genre": "Action",
     "playerCount": 22217,
     "totalVisits": "11.7B+",
     "rawVisits": 11679308895,
@@ -706,7 +753,10 @@ export const INITIAL_GAMES: Game[] = [
       "action---strategy",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-tower-defense-simulator",
@@ -718,7 +768,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-c6d22e4b6e36fb4f64b8ce35dcdcf2ef/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-c6d22e4b6e36fb4f64b8ce35dcdcf2ef/512/512/Image/Png/noFilter",
-    "genre": "Strategy / Defense",
+    "genre": "Strategy",
     "playerCount": 18389,
     "totalVisits": "5.0B+",
     "rawVisits": 4964691601,
@@ -747,7 +797,10 @@ export const INITIAL_GAMES: Game[] = [
       "simulator",
       "tds",
       "tower defense simulator"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-da-hood",
@@ -759,7 +812,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ae6cda2dcf44b42ebf33fd1f24578e42/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ae6cda2dcf44b42ebf33fd1f24578e42/512/512/Image/Png/noFilter",
-    "genre": "Action / Sandbox",
+    "genre": "Action",
     "playerCount": 1900,
     "totalVisits": "2.9B+",
     "rawVisits": 2946350270,
@@ -785,7 +838,10 @@ export const INITIAL_GAMES: Game[] = [
       "action---sandbox",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Open World Action",
+    "genre_l1": "Action",
+    "genre_l2": "Open World Action"
   },
   {
     "id": "game-bloxburg",
@@ -797,7 +853,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-975ef139ad526667e977addf45793a71/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-975ef139ad526667e977addf45793a71/512/512/Image/Png/noFilter",
-    "genre": "Simulation / Roleplay",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 14307,
     "totalVisits": "10.1B+",
     "rawVisits": 10091794506,
@@ -823,7 +879,10 @@ export const INITIAL_GAMES: Game[] = [
       "simulation---roleplay",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-natural-disaster",
@@ -835,7 +894,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ac1c764a99cfae201fd4fe916170a218/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ac1c764a99cfae201fd4fe916170a218/512/512/Image/Png/noFilter",
-    "genre": "Survival / Classic",
+    "genre": "Survival",
     "playerCount": 8926,
     "totalVisits": "4.4B+",
     "rawVisits": 4442663557,
@@ -861,7 +920,8 @@ export const INITIAL_GAMES: Game[] = [
       "survival---classic",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "genre_l1": "Survival"
   },
   {
     "id": "game-strongest-battlegrounds",
@@ -873,7 +933,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-68c92fc62a8753793f7963e146b5197f/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-68c92fc62a8753793f7963e146b5197f/512/512/Image/Png/noFilter",
-    "genre": "Action / Anime",
+    "genre": "Action",
     "playerCount": 54227,
     "totalVisits": "19.2B+",
     "rawVisits": 19190019088,
@@ -903,7 +963,10 @@ export const INITIAL_GAMES: Game[] = [
       "tsb",
       "strongest battlegrounds",
       "saitama"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-anime-vanguards",
@@ -915,7 +978,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-31148a6446e3261000387cf3c62d4dff/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-31148a6446e3261000387cf3c62d4dff/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 21481,
     "totalVisits": "2.0B+",
     "rawVisits": 2038205619,
@@ -945,7 +1008,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "av",
       "anime vanguards"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-dandys-world",
@@ -957,7 +1023,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://t6.rbxcdn.com/180DAY-007dc222a830b5992e1a04073454e980",
     "bannerUrl": "https://t6.rbxcdn.com/180DAY-007dc222a830b5992e1a04073454e980",
-    "genre": "Horror / Survival",
+    "genre": "Variety",
     "playerCount": 42100,
     "totalVisits": "480M+",
     "rawVisits": 480120000,
@@ -999,7 +1065,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://t3.rbxcdn.com/180DAY-8a2116bd9d541c179d7bd4e611fe58b8",
     "bannerUrl": "https://t3.rbxcdn.com/180DAY-8a2116bd9d541c179d7bd4e611fe58b8",
-    "genre": "Horror / Survival",
+    "genre": "Variety",
     "playerCount": 28400,
     "totalVisits": "2.4B+",
     "rawVisits": 2400000000,
@@ -1042,7 +1108,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://t4.rbxcdn.com/180DAY-d111e601a049bc036dbee4dd47894778",
     "bannerUrl": "https://t4.rbxcdn.com/180DAY-d111e601a049bc036dbee4dd47894778",
-    "genre": "Horror / Puzzle",
+    "genre": "Variety",
     "playerCount": 12500,
     "totalVisits": "410M+",
     "rawVisits": 410000000,
@@ -1084,7 +1150,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-bf95a86e5f5e37bf61a5f33401e95deb/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-bf95a86e5f5e37bf61a5f33401e95deb/512/512/Image/Png/noFilter",
-    "genre": "Horror / Survival",
+    "genre": "Survival",
     "playerCount": 37398,
     "totalVisits": "9.2B+",
     "rawVisits": 9163276119,
@@ -1110,7 +1176,9 @@ export const INITIAL_GAMES: Game[] = [
       "horror---survival",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Horror",
+    "genre_l1": "Survival"
   },
   {
     "id": "game-slap-battles",
@@ -1122,7 +1190,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-8637ca6df36c828ef3df9f06a26e94a6/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-8637ca6df36c828ef3df9f06a26e94a6/512/512/Image/Png/noFilter",
-    "genre": "Action / Arena",
+    "genre": "Action",
     "playerCount": 11668,
     "totalVisits": "3.6B+",
     "rawVisits": 3629584050,
@@ -1149,7 +1217,10 @@ export const INITIAL_GAMES: Game[] = [
       "roblox",
       "multiplayer",
       "pvp"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-royale-high",
@@ -1161,7 +1232,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-70261ea10395ff2b3e27f1d562ade61c/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-70261ea10395ff2b3e27f1d562ade61c/512/512/Image/Png/noFilter",
-    "genre": "Social / Fantasy",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 6088,
     "totalVisits": "10.4B+",
     "rawVisits": 10446257659,
@@ -1187,7 +1258,10 @@ export const INITIAL_GAMES: Game[] = [
       "social---fantasy",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Dress Up",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Dress Up"
   },
   {
     "id": "game-build-a-boat",
@@ -1199,7 +1273,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-a16e27d3d8380da38b43960549590ca2/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-a16e27d3d8380da38b43960549590ca2/512/512/Image/Png/noFilter",
-    "genre": "Adventure / Building",
+    "genre": "Simulation",
     "playerCount": 19363,
     "totalVisits": "5.2B+",
     "rawVisits": 5182449401,
@@ -1227,7 +1301,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "babft",
       "build a boat"
-    ]
+    ],
+    "subgenre": "Sandbox",
+    "genre_l1": "Simulation",
+    "genre_l2": "Sandbox"
   },
   {
     "id": "game-bee-swarm",
@@ -1239,7 +1316,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-47a5cb3cce196ed1f9ddbc097c415ad1/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-47a5cb3cce196ed1f9ddbc097c415ad1/512/512/Image/Png/noFilter",
-    "genre": "Simulator / Adventure",
+    "genre": "Simulation",
     "playerCount": 22228,
     "totalVisits": "4.6B+",
     "rawVisits": 4557623684,
@@ -1266,7 +1343,10 @@ export const INITIAL_GAMES: Game[] = [
       "roblox",
       "multiplayer",
       "simulator"
-    ]
+    ],
+    "subgenre": "Incremental Simulator",
+    "genre_l1": "Simulation",
+    "genre_l2": "Incremental Simulator"
   },
   {
     "id": "game-work-at-pizza",
@@ -1278,7 +1358,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ae06e2703a3f516a9946173e656912c0/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ae06e2703a3f516a9946173e656912c0/512/512/Image/Png/noFilter",
-    "genre": "Simulation / Classic",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 5564,
     "totalVisits": "5.6B+",
     "rawVisits": 5571120627,
@@ -1304,7 +1384,10 @@ export const INITIAL_GAMES: Game[] = [
       "simulation---classic",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-theme-park-2",
@@ -1316,7 +1399,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-cdddc8bcd502f7c749cd5ea7692ba940/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-cdddc8bcd502f7c749cd5ea7692ba940/512/512/Image/Png/noFilter",
-    "genre": "Tycoon / Building",
+    "genre": "Simulation",
     "playerCount": 5550,
     "totalVisits": "1.6B+",
     "rawVisits": 1614850643,
@@ -1343,7 +1426,10 @@ export const INITIAL_GAMES: Game[] = [
       "roblox",
       "multiplayer",
       "tycoon"
-    ]
+    ],
+    "subgenre": "Tycoon",
+    "genre_l1": "Simulation",
+    "genre_l2": "Tycoon"
   },
   {
     "id": "game-piggy",
@@ -1355,7 +1441,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-88c605cc111c862403ae2d1e0f4bce6b/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-88c605cc111c862403ae2d1e0f4bce6b/512/512/Image/Png/noFilter",
-    "genre": "Horror / Puzzle",
+    "genre": "Survival",
     "playerCount": 5990,
     "totalVisits": "14.3B+",
     "rawVisits": 14326776901,
@@ -1381,7 +1467,9 @@ export const INITIAL_GAMES: Game[] = [
       "horror---puzzle",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Horror",
+    "genre_l1": "Survival"
   },
   {
     "id": "game-grand-piece-online",
@@ -1393,7 +1481,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ac5cae9ca606a1a3d2e9a81b3ad29247/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ac5cae9ca606a1a3d2e9a81b3ad29247/512/512/Image/Png/noFilter",
-    "genre": "Anime / Adventure",
+    "genre": "RPG",
     "playerCount": 21492,
     "totalVisits": "1.3B+",
     "rawVisits": 1298836355,
@@ -1421,7 +1509,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "gpo",
       "grand piece online"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-king-legacy",
@@ -1433,7 +1524,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-8d0a42cbf6f6c05180a90b8f99a5eb72/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-8d0a42cbf6f6c05180a90b8f99a5eb72/512/512/Image/Png/noFilter",
-    "genre": "Anime / RPG",
+    "genre": "RPG",
     "playerCount": 6444,
     "totalVisits": "4.1B+",
     "rawVisits": 4051974293,
@@ -1459,7 +1550,10 @@ export const INITIAL_GAMES: Game[] = [
       "anime---rpg",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-type-soul",
@@ -1471,7 +1565,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-95cec754219956ebd33e5bdf165145df/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-95cec754219956ebd33e5bdf165145df/512/512/Image/Png/noFilter",
-    "genre": "Anime / Action",
+    "genre": "RPG",
     "playerCount": 345,
     "totalVisits": "817.8M+",
     "rawVisits": 817752553,
@@ -1497,7 +1591,10 @@ export const INITIAL_GAMES: Game[] = [
       "anime---action",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-anime-defenders",
@@ -1509,7 +1606,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-2ef69e4e4d0be01a2b12ecb16536d54f/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-2ef69e4e4d0be01a2b12ecb16536d54f/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 184,
     "totalVisits": "3.4B+",
     "rawVisits": 3433488803,
@@ -1535,7 +1632,10 @@ export const INITIAL_GAMES: Game[] = [
       "tower-defense",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-driving-empire",
@@ -1547,7 +1647,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-53bcc30e65b73ea367490997918740ee/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-53bcc30e65b73ea367490997918740ee/512/512/Image/Png/noFilter",
-    "genre": "Racing / Driving",
+    "genre": "Simulation",
     "playerCount": 38675,
     "totalVisits": "3.3B+",
     "rawVisits": 3269497734,
@@ -1573,7 +1673,10 @@ export const INITIAL_GAMES: Game[] = [
       "racing---driving",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Vehicle Sim",
+    "genre_l1": "Simulation",
+    "genre_l2": "Vehicle Sim"
   },
   {
     "id": "game-speed-run-4",
@@ -1585,7 +1688,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ffcf22e41a17051fdc1628c6c545c0b7/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ffcf22e41a17051fdc1628c6c545c0b7/512/512/Image/Png/noFilter",
-    "genre": "Obby / Speedrun",
+    "genre": "Obby & Platformer",
     "playerCount": 1163,
     "totalVisits": "1.7B+",
     "rawVisits": 1746553544,
@@ -1611,7 +1714,9 @@ export const INITIAL_GAMES: Game[] = [
       "obby---speedrun",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Adventure",
+    "genre_l1": "Obby & Platformer"
   },
   {
     "id": "game-phantom-forces",
@@ -1623,7 +1728,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-717f6839a37d00ddc8bcc9863e7ae6da/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-717f6839a37d00ddc8bcc9863e7ae6da/512/512/Image/Png/noFilter",
-    "genre": "FPS / Tactical",
+    "genre": "Shooter",
     "playerCount": 2354,
     "totalVisits": "1.8B+",
     "rawVisits": 1796380565,
@@ -1651,7 +1756,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "pf",
       "phantom forces"
-    ]
+    ],
+    "subgenre": "Deathmatch Shooter",
+    "genre_l1": "Shooter",
+    "genre_l2": "Deathmatch Shooter"
   },
   {
     "id": "game-combat-warriors",
@@ -1663,7 +1771,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-aceb5959312903e9ffd26462c3584fcc/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-aceb5959312903e9ffd26462c3584fcc/512/512/Image/Png/noFilter",
-    "genre": "Fighting / Action",
+    "genre": "Action",
     "playerCount": 1998,
     "totalVisits": "1.4B+",
     "rawVisits": 1448631725,
@@ -1691,7 +1799,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "cw",
       "combat warriors"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-flee-the-facility",
@@ -1703,7 +1814,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e68a512ad1c725b492c66b366748f55c/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e68a512ad1c725b492c66b366748f55c/512/512/Image/Png/noFilter",
-    "genre": "Horror / Survival",
+    "genre": "Survival",
     "playerCount": 29647,
     "totalVisits": "6.0B+",
     "rawVisits": 5995046277,
@@ -1732,7 +1843,10 @@ export const INITIAL_GAMES: Game[] = [
       "ftf",
       "flee the facility",
       "beast"
-    ]
+    ],
+    "subgenre": "1 vs All",
+    "genre_l1": "Survival",
+    "genre_l2": "1 vs All"
   },
   {
     "id": "game-lumber-tycoon-2",
@@ -1744,7 +1858,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-ce843fd3f00692899556df857a836fd7/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-ce843fd3f00692899556df857a836fd7/512/512/Image/Png/noFilter",
-    "genre": "Tycoon / Classic",
+    "genre": "Simulation",
     "playerCount": 1959,
     "totalVisits": "1.3B+",
     "rawVisits": 1312309161,
@@ -1771,7 +1885,10 @@ export const INITIAL_GAMES: Game[] = [
       "roblox",
       "multiplayer",
       "tycoon"
-    ]
+    ],
+    "subgenre": "Tycoon",
+    "genre_l1": "Simulation",
+    "genre_l2": "Tycoon"
   },
   {
     "id": "game-restaurant-tycoon-2",
@@ -1783,7 +1900,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://t3.rbxcdn.com/180DAY-8a2116bd9d541c179d7bd4e611fe58b8",
     "bannerUrl": "https://t3.rbxcdn.com/180DAY-8a2116bd9d541c179d7bd4e611fe58b8",
-    "genre": "Tycoon / Management",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -1822,7 +1939,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e27277bbda2ba2efdb47a1863df2da3d/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e27277bbda2ba2efdb47a1863df2da3d/512/512/Image/Png/noFilter",
-    "genre": "Action / Fighting",
+    "genre": "Action",
     "playerCount": 157327,
     "totalVisits": "7.2B+",
     "rawVisits": 7189319413,
@@ -1852,7 +1969,10 @@ export const INITIAL_GAMES: Game[] = [
       "jujutsu shenanigans",
       "gojo",
       "sukuna"
-    ]
+    ],
+    "subgenre": "Battlegrounds & Fighting",
+    "genre_l1": "Action",
+    "genre_l2": "Battlegrounds & Fighting"
   },
   {
     "id": "game-berry-avenue",
@@ -1864,7 +1984,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-0ad132d9a875993bc0c73af94dcebddb/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-0ad132d9a875993bc0c73af94dcebddb/512/512/Image/Png/noFilter",
-    "genre": "Social / Roleplay",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 38269,
     "totalVisits": "8.7B+",
     "rawVisits": 8704250351,
@@ -1890,7 +2010,10 @@ export const INITIAL_GAMES: Game[] = [
       "social---roleplay",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-car-driving-indonesia",
@@ -1902,7 +2025,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://t4.rbxcdn.com/180DAY-dc729135d7789ab11a92a9d761648577",
     "bannerUrl": "https://t4.rbxcdn.com/180DAY-dc729135d7789ab11a92a9d761648577",
-    "genre": "Simulation / Driving",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -1942,7 +2065,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-878684cc2a3973ce1f37779de7a53ecf/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-878684cc2a3973ce1f37779de7a53ecf/512/512/Image/Png/noFilter",
-    "genre": "Roleplay / Police",
+    "genre": "Roleplay & Avatar Sim",
     "playerCount": 5958,
     "totalVisits": "1.6B+",
     "rawVisits": 1580121088,
@@ -1972,7 +2095,10 @@ export const INITIAL_GAMES: Game[] = [
       "emergency response",
       "liberty county",
       "police"
-    ]
+    ],
+    "subgenre": "Life",
+    "genre_l1": "Roleplay & Avatar Sim",
+    "genre_l2": "Life"
   },
   {
     "id": "game-all-star-td",
@@ -1984,7 +2110,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-1041ffa20fc03c82a0d076a8f979d9bc/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-1041ffa20fc03c82a0d076a8f979d9bc/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 6895,
     "totalVisits": "7.9B+",
     "rawVisits": 7916008503,
@@ -2012,7 +2138,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "astd",
       "all star tower defense"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-anime-last-stand",
@@ -2024,7 +2153,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-9e233ae020d9b35a75ec67637b42d3b6/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-9e233ae020d9b35a75ec67637b42d3b6/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 106,
     "totalVisits": "1.1B+",
     "rawVisits": 1081370483,
@@ -2052,7 +2181,10 @@ export const INITIAL_GAMES: Game[] = [
       "multiplayer",
       "als",
       "anime last stand"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-catalog-avatar",
@@ -2064,7 +2196,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-4091747afd807e31c643fac0b3ad3448/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-4091747afd807e31c643fac0b3ad3448/512/512/Image/Png/noFilter",
-    "genre": "Social / Avatar",
+    "genre": "Shopping",
     "playerCount": 68687,
     "totalVisits": "7.9B+",
     "rawVisits": 7865340511,
@@ -2090,7 +2222,10 @@ export const INITIAL_GAMES: Game[] = [
       "social---avatar",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Avatar Shopping",
+    "genre_l1": "Shopping",
+    "genre_l2": "Avatar Shopping"
   },
   {
     "id": "game-tower-heroes",
@@ -2102,7 +2237,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-7c6195e487b29ae55d02c38b8cc09756/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-7c6195e487b29ae55d02c38b8cc09756/512/512/Image/Png/noFilter",
-    "genre": "Tower Defense",
+    "genre": "Strategy",
     "playerCount": 1350,
     "totalVisits": "528.5M+",
     "rawVisits": 528477347,
@@ -2128,7 +2263,10 @@ export const INITIAL_GAMES: Game[] = [
       "tower-defense",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Tower Defense",
+    "genre_l1": "Strategy",
+    "genre_l2": "Tower Defense"
   },
   {
     "id": "game-sharkbite-2",
@@ -2140,7 +2278,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://t4.rbxcdn.com/180DAY-dc729135d7789ab11a92a9d761648577",
     "bannerUrl": "https://t4.rbxcdn.com/180DAY-dc729135d7789ab11a92a9d761648577",
-    "genre": "Survival / Action",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -2178,7 +2316,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e50353797d125464767287770cafd602/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e50353797d125464767287770cafd602/512/512/Image/Png/noFilter",
-    "genre": "Social / Party",
+    "genre": "Party & Casual",
     "playerCount": 2780,
     "totalVisits": "3.4B+",
     "rawVisits": 3415557235,
@@ -2204,7 +2342,10 @@ export const INITIAL_GAMES: Game[] = [
       "social---party",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Childhood Game",
+    "genre_l1": "Party & Casual",
+    "genre_l2": "Childhood Game"
   },
   {
     "id": "game-epic-minigames",
@@ -2216,7 +2357,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-a7cb7bb15c8f29fcfcf39d83800a60df/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-a7cb7bb15c8f29fcfcf39d83800a60df/512/512/Image/Png/noFilter",
-    "genre": "Party / Minigames",
+    "genre": "Party & Casual",
     "playerCount": 2425,
     "totalVisits": "2.4B+",
     "rawVisits": 2351221506,
@@ -2242,7 +2383,10 @@ export const INITIAL_GAMES: Game[] = [
       "party---minigames",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Minigame",
+    "genre_l1": "Party & Casual",
+    "genre_l2": "Minigame"
   },
   {
     "id": "game-rogue-lineage",
@@ -2254,7 +2398,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-e4f7aff307d47645c43eafae4a45d7c5/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-e4f7aff307d47645c43eafae4a45d7c5/512/512/Image/Png/noFilter",
-    "genre": "Hardcore RPG",
+    "genre": "RPG",
     "playerCount": 707,
     "totalVisits": "384.4M+",
     "rawVisits": 384368432,
@@ -2280,7 +2424,10 @@ export const INITIAL_GAMES: Game[] = [
       "hardcore-rpg",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Action RPG",
+    "genre_l1": "RPG",
+    "genre_l2": "Action RPG"
   },
   {
     "id": "game-phighting",
@@ -2292,7 +2439,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://t4.rbxcdn.com/180DAY-c86b7d253016e3d58e6a91a13f62dab7",
     "bannerUrl": "https://t4.rbxcdn.com/180DAY-c86b7d253016e3d58e6a91a13f62dab7",
-    "genre": "Action / Arena",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,
@@ -2330,7 +2477,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "Group",
     "iconUrl": "https://tr.rbxcdn.com/180DAY-3fab2edac3adb6050f42d3292937f9d8/512/512/Image/Png/noFilter",
     "bannerUrl": "https://tr.rbxcdn.com/180DAY-3fab2edac3adb6050f42d3292937f9d8/512/512/Image/Png/noFilter",
-    "genre": "FPS / Tactical",
+    "genre": "Shooter",
     "playerCount": 308,
     "totalVisits": "210.7M+",
     "rawVisits": 210740638,
@@ -2356,7 +2503,10 @@ export const INITIAL_GAMES: Game[] = [
       "fps---tactical",
       "roblox",
       "multiplayer"
-    ]
+    ],
+    "subgenre": "Deathmatch Shooter",
+    "genre_l1": "Shooter",
+    "genre_l2": "Deathmatch Shooter"
   },
   {
     "id": "game-total-drama",
@@ -2368,7 +2518,7 @@ export const INITIAL_GAMES: Game[] = [
     "creatorType": "User",
     "iconUrl": "https://t0.rbxcdn.com/180DAY-6b0a0f92f70c7748c90fb3d90dc56234",
     "bannerUrl": "https://t0.rbxcdn.com/180DAY-6b0a0f92f70c7748c90fb3d90dc56234",
-    "genre": "Social / Reality TV",
+    "genre": "Variety",
     "playerCount": 0,
     "totalVisits": "0",
     "rawVisits": 0,

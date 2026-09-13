@@ -18,7 +18,7 @@ import { safeImgSrc, safeAvatarSrc, Review } from '../types';
 import { ReviewCommentsModal } from './ReviewCommentsModal';
 
 export const CommunityView: React.FC = () => {
-  const { user, viewGame, viewList, likeReview } = useApp();
+  const { user, viewGame, viewList, likeReview, viewUserProfile, language, t } = useApp();
   const [activeTab, setActiveTab] = useState<'feed' | 'trending'>('feed');
   const [feedItems, setFeedItems] = useState<any[]>([]);
   const [trendingReviews, setTrendingReviews] = useState<any[]>([]);
@@ -67,10 +67,10 @@ export const CommunityView: React.FC = () => {
           <div className="space-y-1">
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
               <Users className="w-6 h-6 text-[#00E59B]" />
-              <span>Komunitas Bloxboxd</span>
+              <span>{t('community_title')}</span>
             </h1>
             <p className="text-xs text-gray-400">
-              Temukan aktivitas terbaru sesama gamer Roblox, ulasan paling populer, dan pemain teraktif.
+              {t('community_desc')}
             </p>
           </div>
 
@@ -85,7 +85,7 @@ export const CommunityView: React.FC = () => {
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Friend & Community Feed</span>
+              <span>{t('community_tab_feed')}</span>
             </button>
             <button
               onClick={() => setActiveTab('trending')}
@@ -96,7 +96,7 @@ export const CommunityView: React.FC = () => {
               }`}
             >
               <Trophy className="w-3.5 h-3.5" />
-              <span>Trending & Leaderboard</span>
+              <span>{t('community_tab_trending')}</span>
             </button>
           </div>
         </div>
@@ -107,7 +107,7 @@ export const CommunityView: React.FC = () => {
             {isLoadingFeed ? (
               <div className="py-20 flex flex-col items-center justify-center gap-3 text-gray-400 text-xs bg-[#151c23] rounded-2xl border border-[#232f3c]">
                 <Loader2 className="w-6 h-6 animate-spin text-[#00E59B]" />
-                <span>Memuat aktivitas komunitas...</span>
+                <span>{t('community_loading_feed')}</span>
               </div>
             ) : feedItems.length > 0 ? (
               <div className="space-y-3">
@@ -124,12 +124,18 @@ export const CommunityView: React.FC = () => {
                             <img 
                               src={safeAvatarSrc(act.userAvatar)} 
                               alt={act.username}
-                              className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10" 
+                              onClick={() => act.userId && viewUserProfile(act.userId)}
+                              className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 cursor-pointer hover:ring-2 hover:ring-[#00E59B] transition-all" 
                             />
                             <div>
                               <div className="flex items-center gap-2 flex-wrap text-xs">
-                                <strong className="text-white font-bold">{act.username}</strong>
-                                <span className="text-gray-400">mengulas</span>
+                                <strong 
+                                  onClick={() => act.userId && viewUserProfile(act.userId)}
+                                  className="text-white font-bold cursor-pointer hover:text-[#00E59B] transition-colors"
+                                >
+                                  {act.username}
+                                </strong>
+                                <span className="text-gray-400">{t('community_reviewed')}</span>
                                 <span 
                                   onClick={() => viewGame(act.gameId)}
                                   className="text-[#00E59B] font-bold hover:underline cursor-pointer"
@@ -138,7 +144,7 @@ export const CommunityView: React.FC = () => {
                                 </span>
                               </div>
                               <span className="text-[10px] text-gray-500">
-                                {new Date(act.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                {new Date(act.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                               </span>
                             </div>
                           </div>
@@ -172,7 +178,7 @@ export const CommunityView: React.FC = () => {
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#202934] hover:bg-[#283442] text-gray-300 hover:text-white transition-colors"
                             >
                               <ThumbsUp className="w-3.5 h-3.5 text-[#00E59B]" />
-                              <span>{act.likesCount || 0} Suka</span>
+                              <span>{act.likesCount || 0} {t('community_like')}</span>
                             </button>
                             <button
                               onClick={() => setSelectedReviewForComments({
@@ -194,7 +200,7 @@ export const CommunityView: React.FC = () => {
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#202934] hover:bg-[#283442] text-gray-300 hover:text-white transition-colors"
                             >
                               <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
-                              <span>Komentari</span>
+                              <span>{t('community_comment')}</span>
                             </button>
                           </div>
 
@@ -202,7 +208,7 @@ export const CommunityView: React.FC = () => {
                             onClick={() => viewGame(act.gameId)}
                             className="text-[#00E59B] text-xs font-bold hover:underline flex items-center gap-1"
                           >
-                            <span>Lihat Game</span>
+                            <span>{t('community_view_game')}</span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -220,12 +226,18 @@ export const CommunityView: React.FC = () => {
                         <img 
                           src={safeAvatarSrc(act.userAvatar)} 
                           alt={act.username}
-                          className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10" 
+                          onClick={() => act.userId && viewUserProfile(act.userId)}
+                          className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 cursor-pointer hover:ring-2 hover:ring-[#00E59B] transition-all" 
                         />
                         <div>
                           <div className="flex items-center gap-2 flex-wrap text-xs">
-                            <strong className="text-white font-bold">{act.username}</strong>
-                            <span className="text-gray-400">membuat daftar game baru:</span>
+                            <strong 
+                              onClick={() => act.userId && viewUserProfile(act.userId)}
+                              className="text-white font-bold cursor-pointer hover:text-[#00E59B] transition-colors"
+                            >
+                              {act.username}
+                            </strong>
+                            <span className="text-gray-400">{t('community_created_list')}</span>
                             <span 
                               onClick={() => viewList(act.listId)}
                               className="text-[#00A2FF] font-bold hover:underline cursor-pointer"
@@ -234,7 +246,7 @@ export const CommunityView: React.FC = () => {
                             </span>
                           </div>
                           <span className="text-[10px] text-gray-500">
-                            {new Date(act.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {new Date(act.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
                         </div>
                       </div>
@@ -248,13 +260,13 @@ export const CommunityView: React.FC = () => {
                       <div className="flex items-center justify-between pt-1 text-xs">
                         <span className="text-gray-400 text-xs flex items-center gap-1">
                           <ListOrdered className="w-3.5 h-3.5 text-[#00A2FF]" />
-                          <span>{act.itemCount} Game di dalam list</span>
+                          <span>{t('community_items_in_list', { count: act.itemCount })}</span>
                         </span>
                         <button
                           onClick={() => viewList(act.listId)}
                           className="px-3 py-1.5 rounded-lg bg-[#00A2FF]/10 text-[#00A2FF] hover:bg-[#00A2FF]/20 font-bold text-xs transition-colors flex items-center gap-1"
                         >
-                          <span>Buka List</span>
+                          <span>{t('community_open_list')}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -264,8 +276,8 @@ export const CommunityView: React.FC = () => {
               </div>
             ) : (
               <div className="py-20 text-center bg-[#182028] rounded-2xl border border-[#253240] p-8 space-y-2">
-                <p className="text-sm font-bold text-white">Belum ada aktivitas komunitas.</p>
-                <p className="text-xs text-gray-400">Jadilah yang pertama menulis ulasan atau membuat daftar game!</p>
+                <p className="text-sm font-bold text-white">{t('community_empty_feed')}</p>
+                <p className="text-xs text-gray-400">{t('community_empty_feed_prompt')}</p>
               </div>
             )}
           </div>
@@ -279,20 +291,20 @@ export const CommunityView: React.FC = () => {
               <div className="flex items-center gap-2 pb-2 border-b border-[#253240]">
                 <Flame className="w-5 h-5 text-rose-400" />
                 <h2 className="text-base font-extrabold text-white">
-                  Trending Reviews Minggu Ini
+                  {t('community_trending_reviews')}
                 </h2>
               </div>
 
               {isLoadingTrending ? (
                 <div className="py-20 flex flex-col items-center justify-center gap-2 text-gray-400 text-xs">
                   <Loader2 className="w-5 h-5 animate-spin text-[#00E59B]" />
-                  <span>Memuat review trending...</span>
+                  <span>{t('community_loading_trending')}</span>
                 </div>
               ) : trendingReviews.length > 0 ? (
                 <div className="space-y-3">
                   {trendingReviews.map((rev) => (
                     <div 
-                      key={rev.id}
+                      key={rev.id} 
                       className="bg-[#182028] border border-[#253240] rounded-2xl p-4 space-y-3 hover:border-[#2e3b4a] transition-all"
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -300,10 +312,16 @@ export const CommunityView: React.FC = () => {
                           <img 
                             src={safeAvatarSrc(rev.userAvatar)} 
                             alt={rev.username}
-                            className="w-9 h-9 rounded-full object-cover bg-black/40 border border-white/10" 
+                            onClick={() => rev.userId && viewUserProfile(rev.userId)}
+                            className="w-9 h-9 rounded-full object-cover bg-black/40 border border-white/10 cursor-pointer hover:ring-2 hover:ring-[#00E59B] transition-all" 
                           />
                           <div>
-                            <p className="text-xs font-bold text-white">{rev.username}</p>
+                            <p 
+                              onClick={() => rev.userId && viewUserProfile(rev.userId)}
+                              className="text-xs font-bold text-white cursor-pointer hover:text-[#00E59B] transition-colors"
+                            >
+                              {rev.username}
+                            </p>
                             <p 
                               onClick={() => viewGame(rev.gameId)}
                               className="text-xs text-[#00E59B] hover:underline cursor-pointer font-semibold truncate max-w-xs"
@@ -330,14 +348,14 @@ export const CommunityView: React.FC = () => {
                             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#202934] text-gray-300 hover:text-white"
                           >
                             <ThumbsUp className="w-3.5 h-3.5 text-rose-400" />
-                            <span>{rev.likesCount || 0} Likes</span>
+                            <span>{rev.likesCount || 0} {t('community_like')}</span>
                           </button>
                           <button
                             onClick={() => setSelectedReviewForComments(rev)}
                             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#202934] text-gray-300 hover:text-white"
                           >
                             <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
-                            <span>Komentar</span>
+                            <span>{t('community_comment')}</span>
                           </button>
                         </div>
 
@@ -345,7 +363,7 @@ export const CommunityView: React.FC = () => {
                           onClick={() => viewGame(rev.gameId)}
                           className="text-xs font-bold text-[#00E59B] hover:underline"
                         >
-                          Lihat Game ➔
+                          {t('community_view_game')} ➔
                         </button>
                       </div>
                     </div>
@@ -353,7 +371,7 @@ export const CommunityView: React.FC = () => {
                 </div>
               ) : (
                 <p className="text-xs text-gray-400 py-10 text-center bg-[#182028] rounded-2xl border border-[#253240]">
-                  Belum ada ulasan populer minggu ini.
+                  {t('community_empty_trending')}
                 </p>
               )}
             </div>
@@ -363,21 +381,22 @@ export const CommunityView: React.FC = () => {
               <div className="flex items-center gap-2 pb-2 border-b border-[#253240]">
                 <Trophy className="w-5 h-5 text-amber-400" />
                 <h2 className="text-base font-extrabold text-white">
-                  Leaderboard Pemain Teraktif
+                  {t('community_leaderboard')}
                 </h2>
               </div>
 
               {isLoadingTrending ? (
                 <div className="py-20 flex flex-col items-center justify-center gap-2 text-gray-400 text-xs">
                   <Loader2 className="w-5 h-5 animate-spin text-[#00E59B]" />
-                  <span>Memuat leaderboard...</span>
+                  <span>{t('community_loading_leaderboard')}</span>
                 </div>
               ) : leaderboard.length > 0 ? (
                 <div className="bg-[#182028] border border-[#253240] rounded-2xl divide-y divide-[#232c37] overflow-hidden shadow-md">
                   {leaderboard.map((player) => (
                     <div 
                       key={player.id} 
-                      className="p-3.5 flex items-center gap-3 hover:bg-[#1f2833] transition-colors"
+                      onClick={() => player.id && viewUserProfile(player.id)}
+                      className="p-3.5 flex items-center gap-3 hover:bg-[#1f2833] transition-colors cursor-pointer group"
                     >
                       {/* Rank Badge */}
                       <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs flex-shrink-0 ${
@@ -393,23 +412,25 @@ export const CommunityView: React.FC = () => {
                       <img 
                         src={safeAvatarSrc(player.avatarUrl)} 
                         alt={player.username}
-                        className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 flex-shrink-0" 
+                        className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 flex-shrink-0 group-hover:ring-2 group-hover:ring-[#00E59B] transition-all" 
                       />
 
                       {/* User Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-white truncate">{player.username}</p>
+                        <p className="text-xs font-bold text-white group-hover:text-[#00E59B] transition-colors truncate">
+                          {player.username}
+                        </p>
                         <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                          <span>{player.logsCount} Log Game</span>
+                          <span>{player.logsCount} {t('community_logs')}</span>
                           <span>•</span>
-                          <span>{player.reviewsCount} Review</span>
+                          <span>{player.reviewsCount} {t('community_reviews')}</span>
                         </div>
                       </div>
 
                       {/* Score Badge */}
                       <div className="text-right">
                         <span className="px-2 py-0.5 rounded bg-[#00E59B]/10 border border-[#00E59B]/20 text-[#00E59B] text-[10px] font-black">
-                          {player.score} Poin
+                          {player.score} {t('community_points')}
                         </span>
                       </div>
                     </div>
@@ -417,7 +438,7 @@ export const CommunityView: React.FC = () => {
                 </div>
               ) : (
                 <p className="text-xs text-gray-400 py-10 text-center bg-[#182028] rounded-2xl border border-[#253240]">
-                  Belum ada data pemain di leaderboard.
+                  {t('community_empty_leaderboard')}
                 </p>
               )}
             </div>

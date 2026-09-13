@@ -42,7 +42,10 @@ export const GameDetailView: React.FC = () => {
     customLists,
     createList,
     updateGame,
-    user
+    user,
+    viewUserProfile,
+    language,
+    t
   } = useApp();
 
   const [revealedSpoilers, setRevealedSpoilers] = useState<{ [id: string]: boolean }>({});
@@ -86,12 +89,12 @@ export const GameDetailView: React.FC = () => {
   if (!game) {
     return (
       <div className="max-w-4xl mx-auto py-20 px-4 text-center">
-        <p className="text-gray-400 mb-4">No experience selected.</p>
+        <p className="text-gray-400 mb-4">{language === 'id' ? 'Tidak ada pengalaman yang dipilih.' : 'No experience selected.'}</p>
         <button
           onClick={backToCatalog}
           className="px-4 py-2 bg-[#00E59B] hover:bg-[#00c988] text-black font-bold text-xs rounded-lg cursor-pointer transition-all shadow-md"
         >
-          Back to Catalog
+          {t('detail_back_catalog')}
         </button>
       </div>
     );
@@ -140,14 +143,14 @@ export const GameDetailView: React.FC = () => {
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#1b222a] hover:bg-[#232c37] border border-[#2d3744] hover:border-[#00E59B] text-xs font-bold text-white transition-all cursor-pointer shadow-sm group"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-[#00E59B] group-hover:-translate-x-0.5 transition-transform" />
-            <span>Back to Catalog</span>
+            <span>{t('detail_back_catalog')}</span>
           </button>
           <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400 truncate">
             <span 
               onClick={backToCatalog} 
               className="hover:text-white cursor-pointer hover:underline"
             >
-              Catalog
+              {t('detail_catalog_crumb')}
             </span>
             <span>/</span>
             <span className="text-white font-semibold truncate max-w-xs">{game.name}</span>
@@ -203,7 +206,7 @@ export const GameDetailView: React.FC = () => {
                 className="w-full py-2.5 px-4 rounded-lg bg-[#00E59B] hover:bg-[#00c988] text-black font-extrabold text-xs tracking-wide flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(0,229,155,0.35)]"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
-                <span>{userLog ? 'Edit Log or Review' : 'Log or Review'}</span>
+                <span>{userLog ? (language === 'id' ? 'Edit Catatan atau Review' : 'Edit Log or Review') : t('detail_log_review')}</span>
               </button>
 
               {/* Status Toggle Row */}
@@ -216,10 +219,10 @@ export const GameDetailView: React.FC = () => {
                       ? 'border-[#00E59B] bg-[#00E59B]/15 text-[#00E59B]'
                       : 'border-[#27323e] bg-[#1c232b] text-gray-400 hover:text-white hover:bg-[#242d38]'
                   }`}
-                  title={isPlayed ? 'Marked as Played' : 'Mark as Played'}
+                  title={isPlayed ? t('card_marked_played') : t('card_mark_played')}
                 >
                   <Eye className="w-4 h-4 mb-1" />
-                  <span>{isPlayed ? 'Played' : 'Played'}</span>
+                  <span>{t('card_played')}</span>
                 </button>
 
                 {/* Backlog / Want to Play Toggle */}
@@ -230,10 +233,10 @@ export const GameDetailView: React.FC = () => {
                       ? 'border-amber-400 bg-amber-400/15 text-amber-400'
                       : 'border-[#27323e] bg-[#1c232b] text-gray-400 hover:text-white hover:bg-[#242d38]'
                   }`}
-                  title={isBacklog ? 'In Backlog' : 'Want to Play'}
+                  title={isBacklog ? t('card_in_backlog') : t('card_add_backlog')}
                 >
                   <Bookmark className="w-4 h-4 mb-1" />
-                  <span>Backlog</span>
+                  <span>{t('card_backlog')}</span>
                 </button>
 
                 {/* Like Toggle */}
@@ -244,10 +247,10 @@ export const GameDetailView: React.FC = () => {
                       ? 'border-rose-500 bg-rose-500/15 text-rose-400'
                       : 'border-[#27323e] bg-[#1c232b] text-gray-400 hover:text-rose-400 hover:bg-[#242d38]'
                   }`}
-                  title={isLiked ? 'Liked' : 'Like'}
+                  title={isLiked ? t('card_liked') : t('card_like')}
                 >
                   <Heart className={`w-4 h-4 mb-1 ${isLiked ? 'fill-rose-500' : ''}`} />
-                  <span>Like</span>
+                  <span>{t('card_like')}</span>
                 </button>
               </div>
 
@@ -261,7 +264,7 @@ export const GameDetailView: React.FC = () => {
                 }`}
               >
                 <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-[#00E59B]' : ''}`} />
-                <span>{isFavorite ? 'Pinned in Top 4 Favorites' : 'Pin to Top 4 Favorites'}</span>
+                <span>{isFavorite ? (language === 'id' ? 'Tersemat di 4 Game Favorit' : 'Pinned in Top 4 Favorites') : (language === 'id' ? 'Sematkan ke 4 Favorit' : 'Pin to Top 4 Favorites')}</span>
               </button>
 
               {/* Direct Roblox Play CTA (PRD Section 3.3) */}
@@ -272,11 +275,11 @@ export const GameDetailView: React.FC = () => {
                   rel="noopener noreferrer"
                   className="w-full py-2.5 px-3 rounded-lg bg-[#00A2FF] hover:bg-[#0090e3] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-[0_0_16px_rgba(0,162,255,0.3)]"
                 >
-                  <span>Play on Roblox</span>
+                  <span>{t('detail_play_roblox')}</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
                 <p className="text-[10px] text-gray-400 text-center mt-1.5">
-                  Launches Roblox Client or opens official experience page
+                  {language === 'id' ? 'Membuka Roblox Client atau halaman resmi pengalaman' : 'Launches Roblox Client or opens official experience page'}
                 </p>
               </div>
 
@@ -286,7 +289,7 @@ export const GameDetailView: React.FC = () => {
                 className="w-full py-1.5 text-xs text-gray-400 hover:text-white flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Share2 className="w-3.5 h-3.5" />
-                <span>{copiedLink ? 'Link Copied!' : 'Share Experience'}</span>
+                <span>{copiedLink ? t('detail_link_copied') : (language === 'id' ? 'Bagikan Game' : 'Share Experience')}</span>
               </button>
             </div>
 
@@ -297,21 +300,27 @@ export const GameDetailView: React.FC = () => {
                 <span className="font-mono text-gray-300 select-all">{game.rootPlaceId}</span>
               </div>
               <div className="flex justify-between border-b border-[#212933] pb-1.5">
-                <span>Universe ID:</span>
+                <span>{t('detail_universe_id')}</span>
                 <span className="font-mono text-gray-300 select-all">{game.universeId}</span>
               </div>
               <div className="flex justify-between border-b border-[#212933] pb-1.5">
-                <span>Genre:</span>
+                <span>{t('detail_genre')}</span>
                 <span className="font-medium text-gray-200">{game.genre}</span>
               </div>
+              {game.subgenre && game.subgenre !== game.genre && (
+                <div className="flex justify-between border-b border-[#212933] pb-1.5">
+                  <span>{t('detail_subgenre')}</span>
+                  <span className="font-medium text-gray-200">{game.subgenre}</span>
+                </div>
+              )}
               <div className="flex justify-between border-b border-[#212933] pb-1.5">
-                <span>Active Players:</span>
+                <span>{t('detail_active_players')}</span>
                 <span className="font-medium text-[#00E59B]">
-                  {game.playerCount ? game.playerCount.toLocaleString() : 'Active'}
+                  {game.playerCount ? game.playerCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US') : t('card_active')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Total Visits:</span>
+                <span>{t('detail_total_visits')}</span>
                 <span className="font-medium text-gray-200">{game.totalVisits}</span>
               </div>
             </div>
@@ -323,13 +332,16 @@ export const GameDetailView: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-[#00E59B] mb-1">
                 <span>{game.genre}</span>
+                {game.subgenre && game.subgenre !== game.genre && (
+                  <span className="text-gray-400 font-normal">/ {game.subgenre}</span>
+                )}
                 {game.releaseYear && <span>• {game.releaseYear}</span>}
               </div>
               <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
                 {game.name}
               </h1>
               <p className="text-sm text-gray-300 mt-1 flex items-center gap-2">
-                <span>Developed by</span>
+                <span>{t('detail_developed_by')}</span>
                 <span className="font-bold text-white bg-[#1e2630] px-2.5 py-0.5 rounded-full border border-[#2b3542]">
                   {game.creatorName} ({game.creatorType})
                 </span>
@@ -339,7 +351,7 @@ export const GameDetailView: React.FC = () => {
             {/* Synopsis / Description */}
             <div className="bg-[#181e24] border border-[#26313d] rounded-2xl p-5 shadow-sm">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-2">
-                Synopsis
+                {t('detail_synopsis')}
               </h3>
               <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">
                 {game.description}
@@ -365,7 +377,7 @@ export const GameDetailView: React.FC = () => {
                     ? `${(game.rawVisits / 1_000_000_000).toFixed(1)}B+`
                     : game.rawVisits >= 1_000_000 
                       ? `${(game.rawVisits / 1_000_000).toFixed(1)}M+`
-                      : game.rawVisits.toLocaleString())
+                      : game.rawVisits.toLocaleString(language === 'id' ? 'id-ID' : 'en-US'))
                 : (game.totalVisits || '0');
 
               const backlogsCount = userLogs.filter(l => l.gameId === game.id && l.status === 'backlog').length 
@@ -376,7 +388,7 @@ export const GameDetailView: React.FC = () => {
                     ? `${(game.favoritedCount / 1_000_000).toFixed(1)}M`
                     : game.favoritedCount >= 1_000 
                       ? `${(game.favoritedCount / 1_000).toFixed(1)}K`
-                      : game.favoritedCount.toLocaleString())
+                      : game.favoritedCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US'))
                 : '0';
 
               const reviewsCount = gameReviews.length;
@@ -387,7 +399,7 @@ export const GameDetailView: React.FC = () => {
                   <div className="md:col-span-5 grid grid-cols-2 gap-3">
                     <div className="bg-[#181e24] border border-[#26313d] rounded-xl p-3.5 flex flex-col justify-between">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-gray-400">Total Visits</span>
+                        <span className="text-[11px] font-semibold text-gray-400">{t('detail_total_visits').replace(':', '')}</span>
                         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00E59B]/10 text-[#00E59B] border border-[#00E59B]/20">API</span>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
@@ -396,23 +408,23 @@ export const GameDetailView: React.FC = () => {
                           {totalVisitsDisplay}
                         </span>
                       </div>
-                      <span className="text-[10px] text-gray-500 mt-1">Roblox Official</span>
+                      <span className="text-[10px] text-gray-500 mt-1">{t('detail_roblox_official')}</span>
                     </div>
 
                     <div className="bg-[#181e24] border border-[#26313d] rounded-xl p-3.5 flex flex-col justify-between">
-                      <span className="text-[11px] font-semibold text-gray-400">In Backlogs</span>
+                      <span className="text-[11px] font-semibold text-gray-400">{t('detail_in_backlogs')}</span>
                       <div className="flex items-center gap-2 mt-2">
                         <Bookmark className="w-4 h-4 text-amber-400" />
                         <span className="text-xl font-bold text-white tracking-tight">
-                          {backlogsCount.toLocaleString()}
+                          {backlogsCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US')}
                         </span>
                       </div>
-                      <span className="text-[10px] text-gray-500 mt-1">Bloxboxd Lists</span>
+                      <span className="text-[10px] text-gray-500 mt-1">{t('detail_bloxboxd_lists')}</span>
                     </div>
 
                     <div className="bg-[#181e24] border border-[#26313d] rounded-xl p-3.5 flex flex-col justify-between">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-gray-400">Favorited</span>
+                        <span className="text-[11px] font-semibold text-gray-400">{t('detail_favorited')}</span>
                         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00A2FF]/10 text-[#00A2FF] border border-[#00A2FF]/20">API</span>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
@@ -421,18 +433,18 @@ export const GameDetailView: React.FC = () => {
                           {favoritedDisplay}
                         </span>
                       </div>
-                      <span className="text-[10px] text-gray-500 mt-1">Roblox Favorites</span>
+                      <span className="text-[10px] text-gray-500 mt-1">{language === 'id' ? 'Favorit Roblox' : 'Roblox Favorites'}</span>
                     </div>
 
                     <div className="bg-[#181e24] border border-[#26313d] rounded-xl p-3.5 flex flex-col justify-between">
-                      <span className="text-[11px] font-semibold text-gray-400">Reviews</span>
+                      <span className="text-[11px] font-semibold text-gray-400">{t('detail_reviews_count')}</span>
                       <div className="flex items-center gap-2 mt-2">
                         <MessageSquare className="w-4 h-4 text-purple-400" />
                         <span className="text-xl font-bold text-white tracking-tight">
-                          {reviewsCount.toLocaleString()}
+                          {reviewsCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US')}
                         </span>
                       </div>
-                      <span className="text-[10px] text-gray-500 mt-1">Community Reviews</span>
+                      <span className="text-[10px] text-gray-500 mt-1">{language === 'id' ? 'Ulasan Komunitas' : 'Community Reviews'}</span>
                     </div>
                   </div>
 
@@ -455,7 +467,7 @@ export const GameDetailView: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#26313d] pb-3">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-white">
-                    Community Reviews
+                    {t('detail_community_reviews')}
                   </h2>
                   <span className="text-xs font-semibold text-[#00E59B] bg-[#00E59B]/10 px-2 py-0.5 rounded-full">
                     {gameReviews.length}
@@ -473,7 +485,7 @@ export const GameDetailView: React.FC = () => {
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      Top Rated
+                      {t('detail_sort_top')}
                     </button>
                     <button
                       onClick={() => setActiveReviewFilter('recent')}
@@ -483,7 +495,7 @@ export const GameDetailView: React.FC = () => {
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      Recent
+                      {t('detail_sort_newest')}
                     </button>
                   </div>
 
@@ -492,7 +504,7 @@ export const GameDetailView: React.FC = () => {
                     className="px-3 py-1.5 rounded-lg bg-[#222a33] hover:bg-[#2c3642] border border-[#303c4a] text-xs font-bold text-white flex items-center gap-1.5 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5 text-[#00E59B]" />
-                    <span>Write Review</span>
+                    <span>{t('detail_write_review')}</span>
                   </button>
                 </div>
               </div>
@@ -511,15 +523,19 @@ export const GameDetailView: React.FC = () => {
                       >
                         {/* Reviewer Header */}
                         <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2.5">
+                          <div 
+                            onClick={() => viewUserProfile(rev.userId)}
+                            className="flex items-center gap-2.5 cursor-pointer group"
+                            title={`Lihat profil ${rev.username}`}
+                          >
                             <img
                               src={safeAvatarSrc(rev.userAvatar)}
                               alt={rev.username}
-                              className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10"
+                              className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10 group-hover:ring-[#00E59B] transition-all"
                             />
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-white">
+                                <span className="text-xs font-bold text-white group-hover:text-[#00E59B] transition-colors">
                                   {rev.username}
                                 </span>
                                 {rev.rating && (
@@ -552,7 +568,7 @@ export const GameDetailView: React.FC = () => {
                             <button
                               onClick={() => setActiveReviewComments(rev)}
                               className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-[#1e2630] text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-colors"
-                              title="Lihat & Tulis Komentar"
+                              title={language === 'id' ? "Lihat & Tulis Komentar" : "View & Write Comments"}
                             >
                               <MessageSquare className="w-3 h-3" />
                               <span>{rev.commentsCount || 0}</span>
@@ -561,7 +577,7 @@ export const GameDetailView: React.FC = () => {
                             {/* Report review (PRD Section 7) */}
                             <button
                               onClick={() => handleReport(rev.id)}
-                              title="Report inappropriate review"
+                              title={language === 'id' ? "Laporkan ulasan yang tidak pantas" : "Report inappropriate review"}
                               className="p-1 text-gray-400 hover:text-rose-400 transition-colors"
                             >
                               <ShieldAlert className="w-3.5 h-3.5" />
@@ -577,10 +593,10 @@ export const GameDetailView: React.FC = () => {
                           >
                             <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-400 mb-1">
                               <AlertTriangle className="w-4 h-4" />
-                              <span>This review contains spoilers for {game.name}</span>
+                              <span>{t('detail_spoiler_warning')} ({game.name})</span>
                             </div>
                             <span className="text-[11px] text-gray-400 underline">
-                              Click here to reveal
+                              {t('detail_show_spoiler')}
                             </span>
                           </div>
                         ) : (
@@ -591,7 +607,7 @@ export const GameDetailView: React.FC = () => {
 
                         {isReported && (
                           <div className="mt-2 text-[10px] text-amber-400 bg-amber-500/10 p-1.5 rounded text-center">
-                            Review has been reported to Bloxboxd moderators for review.
+                            {language === 'id' ? 'Ulasan telah dilaporkan ke moderator Bloxboxd untuk ditinjau.' : 'Review has been reported to Bloxboxd moderators for review.'}
                           </div>
                         )}
                       </div>
@@ -600,7 +616,7 @@ export const GameDetailView: React.FC = () => {
                 </div>
               ) : (
                 <div className="p-8 text-center bg-[#181e24] border border-[#252f3b] rounded-xl text-gray-400 text-xs">
-                  No written reviews yet for {game.name}. Be the first to leave your thoughts!
+                  {t('detail_no_reviews_title')} {t('detail_no_reviews_desc')}
                 </div>
               )}
 
@@ -611,13 +627,13 @@ export const GameDetailView: React.FC = () => {
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1b222a] hover:bg-[#252f3b] border border-[#2d3744] hover:border-[#00E59B] text-xs font-bold text-white transition-all cursor-pointer shadow-sm group"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 text-[#00E59B] group-hover:-translate-x-0.5 transition-transform" />
-                  <span>Back to Catalog</span>
+                  <span>{t('detail_back_catalog')}</span>
                 </button>
                 <button
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                   className="text-xs text-gray-400 hover:text-white transition-colors"
                 >
-                  Back to top ↑
+                  {language === 'id' ? 'Kembali ke atas ↑' : 'Back to top ↑'}
                 </button>
               </div>
             </div>
