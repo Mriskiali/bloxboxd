@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, lazy, Suspense, useTransition } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Game, GameLog, safeImgSrc } from './types';
 import { GENRE_CATEGORIES, isGameInGenreCategory } from './utils/genre';
 import { 
@@ -935,6 +936,7 @@ export default function App() {
   return (
     <AppProvider>
       <MainAppContent />
+      <Analytics />
     </AppProvider>
   );
 }
