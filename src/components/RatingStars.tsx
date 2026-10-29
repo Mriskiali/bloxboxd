@@ -27,13 +27,13 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
   };
 
   const getRatingLabel = (val: number) => {
-    if (val <= 0) return 'No rating';
-    if (val <= 1.0) return `${val} ★ Half-baked`;
-    if (val <= 2.0) return `${val} ★ Mediocre`;
-    if (val <= 3.0) return `${val} ★ Decent`;
-    if (val <= 4.0) return `${val} ★ Great`;
-    if (val < 5.0) return `${val} ★ Amazing`;
-    return `${val} ★ Masterpiece!`;
+    if (val <= 0) return 'Belum dinilai';
+    if (val <= 1.0) return 'Buruk';
+    if (val <= 2.0) return 'Biasa';
+    if (val <= 3.0) return 'Lumayan';
+    if (val <= 4.0) return 'Bagus';
+    if (val < 5.0) return 'Sangat bagus';
+    return 'Masterpiece';
   };
 
   return (
@@ -70,16 +70,16 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
             >
               {/* Background empty star */}
               <Star
-                className={`${starSizes[size]} text-line transition-colors`}
-                fill="#1c2228"
+                className={`${starSizes[size]} text-[#4a5866] transition-colors`}
+                fill="none"
               />
 
               {/* Half Star Fill */}
               {isHalf && (
                 <div className="absolute inset-0 p-0.5 overflow-hidden w-1/2 pointer-events-none">
                   <Star
-                    className={`${starSizes[size]} text-green drop-shadow-[0_0_8px_rgba(0,229,155,0.4)]`}
-                    fill="#00E59B"
+                    className={`${starSizes[size]} text-orange`}
+                    fill="#ff8000"
                   />
                 </div>
               )}
@@ -88,8 +88,8 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
               {isFull && (
                 <div className="absolute inset-0 p-0.5 pointer-events-none">
                   <Star
-                    className={`${starSizes[size]} text-green drop-shadow-[0_0_8px_rgba(0,229,155,0.4)]`}
-                    fill="#00E59B"
+                    className={`${starSizes[size]} text-orange`}
+                    fill="#ff8000"
                   />
                 </div>
               )}
@@ -99,7 +99,7 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
       </div>
 
       {showText && (
-        <span className="text-xs font-semibold tracking-wide text-green">
+        <span className={`ml-1 text-[11px] font-medium ${displayVal > 0 ? 'text-orange' : 'text-faint'}`}>
           {getRatingLabel(displayVal)}
         </span>
       )}

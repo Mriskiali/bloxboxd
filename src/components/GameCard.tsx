@@ -10,6 +10,13 @@ interface GameCardProps {
   priority?: boolean;
 }
 
+const compactCount = (n?: number, locale = 'id-ID'): string => {
+  if (!n || n <= 0) return '';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace('.', ',')}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace('.', ',')}k`;
+  return n.toLocaleString(locale);
+};
+
 /**
  * Poster-first card. No container box, no gradient scrim, no pill badges:
  * the poster carries the image, the caption carries the data, and the only
@@ -44,7 +51,10 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
           <span className="block truncate text-[13px] font-semibold text-ink group-hover:text-white">
             {game.name}
           </span>
-          <span className="block truncate text-[11px] text-faint">{game.creatorName}</span>
+          <span className="block truncate text-[11px] text-faint">
+            {game.creatorName}
+            {game.playerCount ? ` · ${compactCount(game.playerCount, language === 'id' ? 'id-ID' : 'en-US')} ${t('card_online')}` : ''}
+          </span>
         </span>
         <span className="flex items-center gap-1 text-[11px] font-semibold text-orange">
           <Star className="h-3 w-3 fill-orange" strokeWidth={0} />
@@ -143,7 +153,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
           <p className="mt-[3px] truncate text-[11px] leading-snug text-faint">
             {game.releaseYear || '—'}
             {game.genre ? ` · ${game.genre}` : ''}
-            {userRating ? ` · ${t('card_you_rated')} ${userRating.toFixed(1)}` : ''}
+            {game.playerCount ? ` · ${compactCount(game.playerCount, language === 'id' ? 'id-ID' : 'en-US')} ${t('card_online')}` : ''}
           </p>
         </div>
         <span className="mt-0.5 flex shrink-0 items-center gap-1 text-[11px] font-semibold text-orange">

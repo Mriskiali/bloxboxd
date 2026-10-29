@@ -172,38 +172,33 @@ export const ProfileView: React.FC = () => {
 
   if (isOwnProfile && !user) {
     return (
-      <div className="min-h-screen pb-20 pt-10 px-4">
-        <div className="max-w-2xl mx-auto bg-panel border border-line rounded-3xl p-8 sm:p-10 text-center space-y-6 shadow-[0_8px_24px_rgba(0,0,0,0.55)]">
-          <div className="w-20 h-20 mx-auto rounded-3xl bg-green/10 border border-green/30 flex items-center justify-center">
-            <span className="w-8 h-8 bg-green transform -rotate-12 rounded-[5px] shadow-[0_0_15px_rgba(0,229,155,0.7)]" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="bb-display text-[26px] sm:text-[30px]">
-              {t('profile_login_title')}
-            </h2>
-            <p className="text-sm text-muted max-w-md mx-auto leading-relaxed">
-              {t('profile_login_desc')}
-            </p>
-          </div>
+      <div className="mx-auto max-w-[1280px] px-4 pt-10 sm:px-6">
+        <div className="mx-auto max-w-xl border-y border-line py-14 text-center">
+          <h2 className="bb-display text-[26px] sm:text-[30px]">
+            {t('profile_login_title')}
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-[13px] leading-relaxed text-muted">
+            {t('profile_login_desc')}
+          </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left pt-2">
-            <div className="bg-bg p-4 rounded-[3px] border border-line space-y-1">
-              <span className="text-xs font-semibold text-green">{t('profile_feature_1_title')}</span>
-              <p className="text-xs text-ink">{t('profile_feature_1_desc')}</p>
+          <div className="mx-auto mt-8 grid max-w-lg grid-cols-1 gap-px border border-line bg-line sm:grid-cols-3">
+            <div className="bg-bg p-4 text-left">
+              <span className="bb-label block">{t('profile_feature_1_title')}</span>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{t('profile_feature_1_desc')}</p>
             </div>
-            <div className="bg-bg p-4 rounded-[3px] border border-line space-y-1">
-              <span className="text-xs font-semibold text-green">{t('profile_feature_2_title')}</span>
-              <p className="text-xs text-ink">{t('profile_feature_2_desc')}</p>
+            <div className="bg-bg p-4 text-left">
+              <span className="bb-label block">{t('profile_feature_2_title')}</span>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{t('profile_feature_2_desc')}</p>
             </div>
-            <div className="bg-bg p-4 rounded-[3px] border border-line space-y-1">
-              <span className="text-xs font-semibold text-green">{t('profile_feature_3_title')}</span>
-              <p className="text-xs text-ink">{t('profile_feature_3_desc')}</p>
+            <div className="bg-bg p-4 text-left">
+              <span className="bb-label block">{t('profile_feature_3_title')}</span>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{t('profile_feature_3_desc')}</p>
             </div>
           </div>
 
           <button
             onClick={() => setLoginModalOpen(true)}
-            className="px-8 py-3.5 bg-green hover:bg-[#00c94b] text-black font-semibold text-sm rounded-[3px] shadow-xl transition-colors  active:scale-95"
+            className="bb-btn bb-btn-primary mt-8"
           >
             {t('profile_login_btn')}
           </button>
@@ -301,32 +296,25 @@ export const ProfileView: React.FC = () => {
           {/* User Info Row */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
             <div className="flex items-center gap-4">
-              <div className="relative">
-                <img
-                  src={safeAvatarSrc(activeUser.avatarUrl)}
-                  alt={activeUser.username}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-[3px] object-cover bg-black border-2 border-green shadow-xl ring-4 ring-black/40"
-                />
-                <div className="absolute -bottom-1 -right-1 bg-green text-black text-[10px] font-semibold px-1.5 py-0.5 rounded shadow">
-                  PRO
-                </div>
-              </div>
+              <img
+                src={safeAvatarSrc(activeUser.avatarUrl)}
+                alt={activeUser.username}
+                className="h-20 w-20 rounded-full border border-line object-cover sm:h-24 sm:w-24"
+              />
 
               <div>
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="bb-display text-[26px] sm:text-[30px]">
                     {activeUser.username}
                   </h1>
-                  <span className="text-xs font-mono text-muted bg-panel-2 px-2.5 py-0.5 rounded-full border border-line">
-                    @{activeUser.handle || activeUser.username}
-                  </span>
+                  <span className="text-[13px] text-faint">@{activeUser.handle || activeUser.username}</span>
                   {activeUser.isRobloxVerified ? (
-                    <span className="text-[10px] font-bold text-green bg-green/10 px-2 py-0.5 rounded border border-green/30 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
+                    <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-green">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green" />
                       {t('profile_roblox_verified')}
                     </span>
                   ) : activeUser.robloxUserId ? (
-                    <span className="text-[10px] font-bold text-blue bg-blue/10 px-2 py-0.5 rounded border border-blue/30">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-blue">
                       {t('profile_roblox_linked')}
                     </span>
                   ) : null}
@@ -369,16 +357,11 @@ export const ProfileView: React.FC = () => {
                   </p>
                 )}
 
-                <div className="flex items-center gap-2.5 text-xs text-ink font-semibold mt-2.5">
-                  <span className="flex items-center gap-1.5 bg-panel px-3 py-1 rounded-[3px] border border-line">
-                    <strong className="text-white font-bold">{followStats.followersCount}</strong>
-                    <span className="text-muted">{t('profile_followers')}</span>
-                  </span>
-                  <span className="flex items-center gap-1.5 bg-panel px-3 py-1 rounded-[3px] border border-line">
-                    <strong className="text-white font-bold">{followStats.followingCount}</strong>
-                    <span className="text-muted">{t('profile_following')}</span>
-                  </span>
-                </div>
+                <p className="mt-2 text-[12px] text-faint">
+                  <span className="font-semibold text-ink">{followStats.followersCount}</span> {t('profile_followers')}
+                  <span className="px-1.5">·</span>
+                  <span className="font-semibold text-ink">{followStats.followingCount}</span> {t('profile_following')}
+                </p>
               </div>
             </div>
 
@@ -388,11 +371,7 @@ export const ProfileView: React.FC = () => {
                 <>
                   <button
                     onClick={() => setLoginModalOpen(true)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-[3px] text-xs font-bold transition-colors ${
-                      user?.robloxUserId
-                        ? 'bg-panel hover:bg-panel-2 border border-line text-ink hover:text-white'
-                        : 'bg-blue hover:bg-blue text-white'
-                    }`}
+                    className="bb-btn bb-btn-secondary"
                   >
                     <span className="w-2.5 h-2.5 bg-white transform -rotate-12 rounded-[2px]" />
                     <span>{user?.robloxUserId ? t('nav_switch_account') : t('nav_login_roblox')}</span>
@@ -400,7 +379,7 @@ export const ProfileView: React.FC = () => {
 
                   <button
                     onClick={() => setEditProfileModalOpen(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-[3px] bg-panel hover:bg-panel-2 border border-line text-xs font-bold text-ink hover:text-white transition-colors"
+                    className="bb-btn bb-btn-secondary"
                   >
                     <Settings className="w-3.5 h-3.5 text-green" />
                     <span>{t('nav_edit_profile')}</span>
@@ -410,11 +389,7 @@ export const ProfileView: React.FC = () => {
                 <button
                   onClick={handleToggleFollow}
                   disabled={isTogglingFollow}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-[3px] text-xs font-bold transition-colors active:scale-95 cursor-pointer ${
-                    isFollowing
-                      ? 'bg-panel-2 hover:bg-orange/10 hover:text-orange hover:border-orange/40 border border-line text-green'
-                      : 'bg-green hover:bg-[#00c94b] text-black font-semibold shadow-[0_0_20px_rgba(0,229,155,0.3)]'
-                  }`}
+                  className={`bb-btn ${isFollowing ? 'bb-btn-secondary' : 'bb-btn-primary'}`}
                 >
                   {isTogglingFollow ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -431,60 +406,40 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
 
-          {/* Stats Bar Counters (PRD Section 3.4) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-line">
-            <div 
-              onClick={() => { setActiveProfileTab('games'); setShelfFilter('played'); }}
-              className="bg-bg border border-line rounded-[3px] p-3 text-center cursor-pointer hover:border-green/50 transition-colors"
-            >
-              <span className="text-2xl font-semibold text-white">{playedCount}</span>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted mt-0.5">
-                {t('profile_played_count')}
-              </span>
-            </div>
-
-            <div 
-              onClick={() => setActiveProfileTab('reviews')}
-              className="bg-bg border border-line rounded-[3px] p-3 text-center cursor-pointer hover:border-green/50 transition-colors"
-            >
-              <span className="text-2xl font-semibold text-green">{userReviews.length}</span>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted mt-0.5">
-                {t('profile_reviews_count')}
-              </span>
-            </div>
-
-            <div 
-              onClick={() => { setActiveProfileTab('backlog'); }}
-              className="bg-bg border border-line rounded-[3px] p-3 text-center cursor-pointer hover:border-blue/50 transition-colors"
-            >
-              <span className="text-2xl font-semibold text-blue">{backlogCount}</span>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted mt-0.5">
-                {t('profile_backlog_count')}
-              </span>
-            </div>
-
-            <div 
-              onClick={() => setActiveProfileTab('diary')}
-              className="bg-bg border border-line rounded-[3px] p-3 text-center cursor-pointer hover:border-blue/50 transition-colors"
-            >
-              <span className="text-2xl font-semibold text-blue">{diaryLogs.length}</span>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-muted mt-0.5">
-                {t('profile_diary_count')}
-              </span>
-            </div>
+          {/* Stats: one flat strip, not four boxes */}
+          <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-3">
+            <button onClick={() => { setActiveProfileTab('games'); setShelfFilter('played'); }} className="group flex items-baseline gap-1.5">
+              <span className="text-[17px] font-semibold text-white">{playedCount}</span>
+              <span className="text-[11px] text-faint group-hover:text-muted">{t('profile_played_count')}</span>
+            </button>
+            <span className="h-3.5 w-px bg-line" />
+            <button onClick={() => setActiveProfileTab('reviews')} className="group flex items-baseline gap-1.5">
+              <span className="text-[17px] font-semibold text-white">{userReviews.length}</span>
+              <span className="text-[11px] text-faint group-hover:text-muted">{t('profile_reviews_count')}</span>
+            </button>
+            <span className="h-3.5 w-px bg-line" />
+            <button onClick={() => setActiveProfileTab('backlog')} className="group flex items-baseline gap-1.5">
+              <span className="text-[17px] font-semibold text-white">{backlogCount}</span>
+              <span className="text-[11px] text-faint group-hover:text-muted">{t('profile_backlog_count')}</span>
+            </button>
+            <span className="h-3.5 w-px bg-line" />
+            <button onClick={() => setActiveProfileTab('diary')} className="group flex items-baseline gap-1.5">
+              <span className="text-[17px] font-semibold text-white">{diaryLogs.length}</span>
+              <span className="text-[11px] text-faint group-hover:text-muted">{t('profile_diary_count')}</span>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Profile Navigation Tabs (PRD Section 3.4) */}
-      <div className="bg-bg border-b border-line sticky top-16 z-20">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar smooth-touch-scroll">
+      <div className="sticky top-12 z-20 border-b border-line bg-bg">
+        <div className="mx-auto flex max-w-[1280px] items-center gap-5 overflow-x-auto px-4 no-scrollbar smooth-touch-scroll sm:px-6">
           <button
             onClick={() => setActiveProfileTab('overview')}
-            className={`px-3.5 py-1.5 rounded-[2px] text-xs font-bold transition-colors whitespace-nowrap ${
+            className={`relative flex items-center gap-1.5 whitespace-nowrap py-3 text-[13px] font-medium transition-colors ${
               activeProfileTab === 'overview'
-                ? 'bg-green text-black'
-                : 'text-muted hover:text-white hover:bg-panel'
+                ? 'text-white border-b-2 border-green -mb-px'
+                : 'text-muted hover:text-ink'
             }`}
           >
             {t('profile_tab_overview')}
@@ -492,10 +447,10 @@ export const ProfileView: React.FC = () => {
 
           <button
             onClick={() => setActiveProfileTab('diary')}
-            className={`px-3.5 py-1.5 rounded-[2px] text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+            className={`relative flex items-center gap-1.5 whitespace-nowrap py-3 text-[13px] font-medium transition-colors ${
               activeProfileTab === 'diary'
-                ? 'bg-green text-black'
-                : 'text-muted hover:text-white hover:bg-panel'
+                ? 'text-white border-b-2 border-green -mb-px'
+                : 'text-muted hover:text-ink'
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -504,10 +459,10 @@ export const ProfileView: React.FC = () => {
 
           <button
             onClick={() => setActiveProfileTab('games')}
-            className={`px-3.5 py-1.5 rounded-[2px] text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+            className={`relative flex items-center gap-1.5 whitespace-nowrap py-3 text-[13px] font-medium transition-colors ${
               activeProfileTab === 'games'
-                ? 'bg-green text-black'
-                : 'text-muted hover:text-white hover:bg-panel'
+                ? 'text-white border-b-2 border-green -mb-px'
+                : 'text-muted hover:text-ink'
             }`}
           >
             <Eye className="w-3.5 h-3.5" />
@@ -516,10 +471,10 @@ export const ProfileView: React.FC = () => {
 
           <button
             onClick={() => setActiveProfileTab('reviews')}
-            className={`px-3.5 py-1.5 rounded-[2px] text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+            className={`relative flex items-center gap-1.5 whitespace-nowrap py-3 text-[13px] font-medium transition-colors ${
               activeProfileTab === 'reviews'
-                ? 'bg-green text-black'
-                : 'text-muted hover:text-white hover:bg-panel'
+                ? 'text-white border-b-2 border-green -mb-px'
+                : 'text-muted hover:text-ink'
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
@@ -528,10 +483,10 @@ export const ProfileView: React.FC = () => {
 
           <button
             onClick={() => setActiveProfileTab('backlog')}
-            className={`px-3.5 py-1.5 rounded-[2px] text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+            className={`relative flex items-center gap-1.5 whitespace-nowrap py-3 text-[13px] font-medium transition-colors ${
               activeProfileTab === 'backlog'
-                ? 'bg-green text-black'
-                : 'text-muted hover:text-white hover:bg-panel'
+                ? 'text-white border-b-2 border-green -mb-px'
+                : 'text-muted hover:text-ink'
             }`}
           >
             <Bookmark className="w-3.5 h-3.5" />
@@ -557,67 +512,59 @@ export const ProfileView: React.FC = () => {
                 {isOwnProfile && (
                   <button
                     onClick={() => setEditProfileModalOpen(true)}
-                    className="text-xs text-green hover:underline font-semibold"
+                    className="text-[11px] font-semibold text-faint hover:text-ink"
                   >
                     {t('profile_change_favs')}
                   </button>
                 )}
               </div>
 
-              {/* 4 Poster Grid ala Letterboxd */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {/* Top 4: 2:3 posters with captions, Letterboxd-style */}
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 {[0, 1, 2, 3].map((slotIndex) => {
                   const game = favoriteGames[slotIndex];
                   if (game) {
                     return (
-                      <div 
-                        key={game.id} 
-                        onClick={() => viewGame(game.id)}
-                        className="group relative aspect-square rounded-[3px] overflow-hidden bg-panel border-2 border-line hover:border-green cursor-pointer transition-colors duration-300 shadow-xl"
-                      >
-                        <img
-                          src={safeImgSrc(game.iconUrl)}
-                          alt={game.name}
-                          className="w-full h-full object-cover group- transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-80" />
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <span className="text-[10px] font-bold text-green uppercase tracking-[0.08em]">
-                            #{slotIndex + 1} {t('profile_shelf_favorites')}
-                          </span>
-                          <h4 className="text-xs font-bold text-white truncate">
-                            {game.name}
-                          </h4>
-                        </div>
-                      </div>
+                      <article key={game.id} className="group">
+                        <button
+                          onClick={() => viewGame(game.id)}
+                          className="bb-poster w-full hover:border-[#3d4d5c]"
+                          aria-label={game.name}
+                        >
+                          <img src={safeImgSrc(game.iconUrl)} alt="" />
+                        </button>
+                        <p className="mt-1.5 truncate text-[12px] font-semibold text-ink group-hover:text-white">
+                          {game.name}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-[0.08em] text-faint">
+                          #{slotIndex + 1} {t('profile_shelf_favorites')}
+                        </p>
+                      </article>
                     );
                   }
 
                   if (isOwnProfile) {
                     return (
-                      <div
+                      <button
                         key={`empty-${slotIndex}`}
                         onClick={() => setEditProfileModalOpen(true)}
-                        className="aspect-square rounded-[3px] border-2 border-dashed border-line hover:border-green bg-panel/50 flex flex-col items-center justify-center p-4 text-center cursor-pointer transition-colors group"
+                        className="flex aspect-[2/3] flex-col items-center justify-center border border-dashed border-line text-center transition-colors hover:border-[#43525f]"
                       >
-                        <Plus className="w-6 h-6 text-faint group-hover:text-green transition-colors mb-2" />
-                        <span className="text-xs font-semibold text-muted group-hover:text-white">
+                        <Plus className="mb-1.5 h-5 w-5 text-faint" />
+                        <span className="px-2 text-[11px] text-faint">
                           {t('profile_add_fav', { num: slotIndex + 1 })}
                         </span>
-                      </div>
+                      </button>
                     );
                   }
 
                   return (
                     <div
                       key={`empty-${slotIndex}`}
-                      className="aspect-square rounded-[3px] border-2 border-dashed border-line bg-panel/30 flex flex-col items-center justify-center p-4 text-center"
+                      className="flex aspect-[2/3] flex-col items-center justify-center border border-line-soft text-center"
                     >
-                      <span className="text-[10px] uppercase font-bold text-faint">
-                        #{slotIndex + 1} {t('profile_shelf_favorites')}
-                      </span>
-                      <span className="text-xs text-faint mt-1">
-                        {t('profile_empty_fav')}
+                      <span className="text-[10px] uppercase tracking-[0.08em] text-faint">
+                        #{slotIndex + 1}
                       </span>
                     </div>
                   );
@@ -671,10 +618,10 @@ export const ProfileView: React.FC = () => {
                         </div>
 
                         {log.rating ? (
-                          <div className="flex items-center gap-1 text-xs font-bold text-green bg-black/40 px-2.5 py-1 rounded-[2px]">
-                            <Star className="w-3.5 h-3.5 fill-green" />
-                            <span>{log.rating.toFixed(1)}</span>
-                          </div>
+                          <span className="flex items-center gap-1 text-[12px] font-semibold text-orange">
+                            <Star className="h-3 w-3 fill-orange" strokeWidth={0} />
+                            {log.rating.toFixed(1)}
+                          </span>
                         ) : (
                           <span className="text-xs font-semibold text-muted bg-panel-2 px-2 py-0.5 rounded">
                             {log.status}

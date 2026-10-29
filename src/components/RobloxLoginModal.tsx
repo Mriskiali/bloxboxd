@@ -341,17 +341,11 @@ export const RobloxLoginModal: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-line pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[2px] bg-green/10 border border-green/30 flex items-center justify-center">
-              <span className="w-3.5 h-3.5 bg-green transform -rotate-12 rounded-[2px]" />
-            </div>
             <div>
-              <h2 className="text-base sm:text-lg font-semibold text-white flex items-center gap-1.5">
-                <span>{t('login_modal_title')}</span>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-green">
-                  {t('login_modal_badge_safe')}
-                </span>
+              <h2 className="text-[15px] font-semibold text-white">
+                {t('login_modal_title')}
               </h2>
-              <p className="text-[11px] text-muted">
+              <p className="mt-0.5 text-[12px] text-muted">
                 {t('login_modal_subtitle')}
               </p>
             </div>
@@ -366,7 +360,7 @@ export const RobloxLoginModal: React.FC = () => {
 
         {/* Currently Connected User Card (if any) */}
         {user && isCurrentRobloxUser && (
-          <div className="bg-bg border border-line rounded-[3px] p-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 border-y border-line py-3">
             <div className="flex items-center gap-3 min-w-0">
               <img
                 src={safeAvatarSrc(user.avatarUrl)}
@@ -390,7 +384,7 @@ export const RobloxLoginModal: React.FC = () => {
 
             <button
               onClick={handleLogout}
-              className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold rounded-[2px] transition-colors flex items-center gap-1 whitespace-nowrap"
+              className="flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-faint transition-colors hover:text-orange"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>{t('login_modal_logout_btn')}</span>
