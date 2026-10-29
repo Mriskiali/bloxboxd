@@ -1,9 +1,19 @@
 import { Game } from '../types';
 
-export type VibeType = 'all' | 'horror' | 'cozy' | 'hidden-gem' | 'high-production' | 'competitive';
+export type PlayStyle = 'all' | 'solo' | 'coop' | 'pvp';
+export type FocusedCategory = 'all' | 'horror' | 'fps' | 'cozy' | 'story' | 'hidden-gem';
 
-export interface VibeDefinition {
-  id: VibeType;
+export interface PlayStyleOption {
+  id: PlayStyle;
+  labelId: string;
+  labelEn: string;
+  emoji: string;
+  descId: string;
+  descEn: string;
+}
+
+export interface FocusedCategoryOption {
+  id: FocusedCategory;
   labelId: string;
   labelEn: string;
   emoji: string;
@@ -13,127 +23,200 @@ export interface VibeDefinition {
   descEn: string;
 }
 
-export const VIBES: VibeDefinition[] = [
+export const PLAY_STYLES: PlayStyleOption[] = [
   {
     id: 'all',
-    labelId: 'Semua Suasana',
-    labelEn: 'All Vibes',
-    emoji: '✨',
-    badgeId: 'Kurasi Pilihan',
-    badgeEn: 'Curated Pick',
-    descId: 'Rekomendasi acak game Roblox dengan rating komunitas tinggi.',
-    descEn: 'Random recommendation of high-rated Roblox experiences.'
+    labelId: 'Bebas / Siapa Saja',
+    labelEn: 'Any Style',
+    emoji: '🎮',
+    descId: 'Semua tipe permainan',
+    descEn: 'Any play style'
   },
   {
-    id: 'horror',
-    labelId: 'Horor Mabar',
-    labelEn: 'Co-op Horror',
-    emoji: '👻',
-    badgeId: 'Atmosferik & Tegang',
-    badgeEn: 'Spooky & Intense',
-    descId: 'Game horor seru dengan atmosfer mencekam, cocok dimainkan bareng teman.',
-    descEn: 'Thrilling horror games with chilling atmospheres, best played with friends.'
+    id: 'solo',
+    labelId: 'Solo (Fokus Sendiri)',
+    labelEn: 'Solo (Immersive)',
+    emoji: '👤',
+    descId: 'Story, puzzle, obby & pengalaman mendalam',
+    descEn: 'Stories, puzzles, obbies & immersive single player'
   },
   {
-    id: 'cozy',
-    labelId: 'Cozy & Santai',
-    labelEn: 'Cozy & Chill',
-    emoji: '☕',
-    badgeId: 'Santai Tanpa Tekanan',
-    badgeEn: 'Relaxing & Aesthetic',
-    descId: 'Pengalaman santai, eksplorasi indah, dan simulasi tanpa kompetisi toxic.',
-    descEn: 'Calm exploration, aesthetic worlds, and chill sims without competitive stress.'
+    id: 'coop',
+    labelId: 'Mabar Teman (2–4 Orang)',
+    labelEn: 'Co-op (2–4 Players)',
+    emoji: '👥',
+    descId: 'Horor survival, petualangan bersama, minigames',
+    descEn: 'Survival horror, co-op adventures, fun minigames'
   },
   {
-    id: 'hidden-gem',
-    labelId: 'Hidden Gems',
-    labelEn: 'Hidden Gems',
-    emoji: '💎',
-    badgeId: 'Underrated Berkualitas',
-    badgeEn: 'High-Rated Underrated',
-    descId: 'Game berkualitas tinggi dengan rating komunitas tinggi tapi belum terlalu mainstream.',
-    descEn: 'High quality games with great like ratios that deserve way more attention.'
-  },
-  {
-    id: 'high-production',
-    labelId: 'Grafis & Mekanik Top',
-    labelEn: 'High Production',
-    emoji: '🏆',
-    badgeId: 'Standar Standalone',
-    badgeEn: 'Masterpiece Quality',
-    descId: 'Game dengan visual, animasi, dan kedalaman gameplay sekelas game PC mandiri.',
-    descEn: 'Experiences with visuals, sound design, and depth rivaling standalone PC titles.'
-  },
-  {
-    id: 'competitive',
-    labelId: 'Kompetitif & PvP',
-    labelEn: 'Competitive & PvP',
+    id: 'pvp',
+    labelId: 'Kompetitif / PvP',
+    labelEn: 'Competitive / PvP',
     emoji: '⚔️',
-    badgeId: 'Skill-Based & Adrenalin',
-    badgeEn: 'Fast-Paced Action',
-    descId: 'Action cepat, shooter skill-based, dan arena tempur yang menantang.',
-    descEn: 'Fast-paced shooters, battlegrounds, and skill-based multiplayer combat.'
+    descId: 'Shooter, duel, battlegrounds & adu mekanik',
+    descEn: 'Shooters, duels, battlegrounds & skill checks'
   }
 ];
 
-export function isGameMatchingVibe(game: Game, vibe: VibeType): boolean {
-  if (vibe === 'all') return true;
+export const FOCUSED_CATEGORIES: FocusedCategoryOption[] = [
+  {
+    id: 'all',
+    labelId: 'Semua Genre',
+    labelEn: 'All Genres',
+    emoji: '✨',
+    badgeId: 'Kurasi Terbaik',
+    badgeEn: 'Curated Pick',
+    descId: 'Koleksi pilihan game Roblox berkualitas tinggi.',
+    descEn: 'Collection of high quality curated Roblox experiences.'
+  },
+  {
+    id: 'horror',
+    labelId: 'Horor & Survival Asli',
+    labelEn: 'True Horror & Survival',
+    emoji: '👻',
+    badgeId: 'Atmosfer Mencekam',
+    badgeEn: 'Atmospheric Horror',
+    descId: 'Hanya game horor atmosferik & escape survival resmi (bukan obby murahan).',
+    descEn: 'Authentic atmospheric horror and escape survival (no spam/fake games).'
+  },
+  {
+    id: 'fps',
+    labelId: 'FPS & Tembak-tembakan',
+    labelEn: 'FPS & Shooters',
+    emoji: '🔫',
+    badgeId: 'Mekanik Senjata Top',
+    badgeEn: 'Tactical Gunplay',
+    descId: 'Shooter taktis dan adu aim dengan mekanik senjata responsif.',
+    descEn: 'Tactical shooters and precision aim games with responsive mechanics.'
+  },
+  {
+    id: 'cozy',
+    labelId: 'Cozy, Hangout & Relax',
+    labelEn: 'Cozy, Hangout & Chill',
+    emoji: '☕',
+    badgeId: 'Santai & Estetik',
+    badgeEn: 'Relaxing & Aesthetic',
+    descId: 'Eksplorasi estetis, hangout sosial, dress up & simulasi santai.',
+    descEn: 'Aesthetic exploration, social hangouts, dress up & calm sims.'
+  },
+  {
+    id: 'story',
+    labelId: 'Petualangan & Story Tamat',
+    labelEn: 'Adventure & RPG Story',
+    emoji: '🗺️',
+    badgeId: 'Alur Cerita & Progresi',
+    badgeEn: 'Narrative & Progression',
+    descId: 'Game dengan progresi dunia, lore, atau alur cerita yang bisa diselesaikan.',
+    descEn: 'Worlds with lore, exploration, or complete story campaigns.'
+  },
+  {
+    id: 'hidden-gem',
+    labelId: 'Hidden Gems (Underrated)',
+    labelEn: 'Hidden Gems (Underrated)',
+    emoji: '💎',
+    badgeId: 'Rasio Like > 85%',
+    badgeEn: '85%+ Like Ratio',
+    descId: 'Rating komunitas sangat tinggi tapi pemain aktif masih di bawah 10.000.',
+    descEn: 'Very high positive rating, modest player count, no corporate cash-grabs.'
+  }
+];
 
-  const g = (game.genre || '').toLowerCase();
+/**
+ * STRICT filtering based on canonical Roblox API taxonomy:
+ * Evaluates genre_l1, genre_l2, subgenre, genre, and verified tags.
+ * Deliberately excludes loose keyword searches on game description/title
+ * to eliminate keyword-stuffed simulator spam.
+ */
+export function isGameMatchingFocus(
+  game: Game,
+  style: PlayStyle,
+  cat: FocusedCategory
+): boolean {
+  const g1 = (game.genre_l1 || '').toLowerCase();
+  const g2 = (game.genre_l2 || '').toLowerCase();
   const sub = (game.subgenre || '').toLowerCase();
-  const l1 = (game.genre_l1 || '').toLowerCase();
-  const l2 = (game.genre_l2 || '').toLowerCase();
-  const name = (game.name || '').toLowerCase();
-  const desc = (game.description || '').toLowerCase();
-  const text = `${g} ${sub} ${l1} ${l2} ${name} ${desc}`;
+  const g = (game.genre || '').toLowerCase();
+  const tags = (game.tags || []).map(t => t.toLowerCase());
 
-  if (vibe === 'horror') {
-    return text.includes('horror') || 
-           text.includes('scary') || 
-           text.includes('survival') || 
-           text.includes('ghost') || 
-           text.includes('monster') || 
-           text.includes('escape') ||
-           sub.includes('horror');
+  // 1. Strict Category Matching
+  if (cat === 'horror') {
+    const isHorrorTaxonomy = 
+      g1 === 'survival' || 
+      g === 'survival' || 
+      sub === 'escape' || 
+      g2 === 'escape' || 
+      sub === 'horror' ||
+      g2 === 'horror' ||
+      tags.includes('horror') ||
+      tags.includes('escape') ||
+      game.name.toLowerCase().includes('doors') ||
+      game.name.toLowerCase().includes('pressure');
+    if (!isHorrorTaxonomy) return false;
+  } else if (cat === 'fps') {
+    const isFpsTaxonomy = 
+      g1 === 'shooter' || 
+      g === 'shooter' || 
+      sub === 'fps' || 
+      g2 === 'fps' || 
+      tags.includes('shooter') || 
+      tags.includes('fps') ||
+      game.name.toLowerCase().includes('rivals') ||
+      game.name.toLowerCase().includes('frontlines');
+    if (!isFpsTaxonomy) return false;
+  } else if (cat === 'cozy') {
+    const isCozyTaxonomy = 
+      g1 === 'roleplay & avatar sim' || 
+      g === 'roleplay & avatar sim' || 
+      sub === 'life' || 
+      sub === 'dress up' || 
+      tags.includes('social---fashion') || 
+      tags.includes('avatar') ||
+      tags.includes('roleplay');
+    if (!isCozyTaxonomy) return false;
+  } else if (cat === 'story') {
+    const isStoryTaxonomy = 
+      g1 === 'rpg' || 
+      g === 'rpg' || 
+      g1 === 'action' ||
+      sub.includes('rpg') || 
+      sub.includes('adventure') ||
+      tags.includes('rpg') || 
+      tags.includes('adventure');
+    if (!isStoryTaxonomy) return false;
+  } else if (cat === 'hidden-gem') {
+    const totalVotes = (game.upVotes || 0) + (game.downVotes || 0);
+    const likeRatio = totalVotes > 0 ? (game.upVotes || 0) / totalVotes : 0;
+    const isHighQuality = game.ratingAverage >= 4.2 || likeRatio >= 0.85;
+    const isUnderrated = (game.playerCount || 0) >= 30 && (game.playerCount || 0) <= 9000;
+    if (!isHighQuality || !isUnderrated) return false;
   }
 
-  if (vibe === 'cozy') {
-    return text.includes('roleplay') || 
-           text.includes('hangout') || 
-           text.includes('cafe') || 
-           text.includes('vibes') || 
-           text.includes('chill') || 
-           text.includes('avatar') || 
-           text.includes('simulation') || 
-           text.includes('house') ||
-           g.includes('roleplay');
-  }
-
-  if (vibe === 'hidden-gem') {
-    // High rating, good upvotes, but player count is modest (< 10k)
-    const isHighRating = game.ratingAverage >= 4.2 || ((game.upVotes || 0) / Math.max(1, (game.upVotes || 0) + (game.downVotes || 0))) >= 0.85;
-    const isNotOverhyped = (game.playerCount || 0) < 10000;
-    return isHighRating && isNotOverhyped;
-  }
-
-  if (vibe === 'high-production') {
-    return game.ratingAverage >= 4.4 || 
-           text.includes('story') || 
-           text.includes('fps') || 
-           text.includes('cinematic') || 
-           (game.rawVisits || 0) > 50_000_000;
-  }
-
-  if (vibe === 'competitive') {
-    return text.includes('shooter') || 
-           text.includes('fps') || 
-           text.includes('pvp') || 
-           text.includes('fighting') || 
-           text.includes('battleground') || 
-           text.includes('battle') || 
-           text.includes('arena') ||
-           g.includes('shooter') || 
-           g.includes('action');
+  // 2. Play Style Matching
+  if (style === 'solo') {
+    // Solo favors story, horror, obbies, single-player friendly
+    const isMultiplayerOnly = g1 === 'party & casual' && sub === 'minigame';
+    if (isMultiplayerOnly) return false;
+  } else if (style === 'coop') {
+    // Co-op favors horror survival, adventure, party, casual
+    const isCoopFriendly = 
+      g1 === 'survival' || 
+      g1 === 'party & casual' || 
+      g1 === 'roleplay & avatar sim' || 
+      tags.includes('multiplayer') ||
+      cat === 'horror' ||
+      cat === 'cozy';
+    if (!isCoopFriendly) return false;
+  } else if (style === 'pvp') {
+    // PvP strictly requires shooter, fighting, battleground, competitive action
+    const isPvp = 
+      g1 === 'shooter' || 
+      g1 === 'action' || 
+      g.includes('fighting') || 
+      sub.includes('battleground') || 
+      sub.includes('fps') ||
+      tags.includes('shooter') ||
+      tags.includes('action');
+    if (!isPvp) return false;
   }
 
   return true;

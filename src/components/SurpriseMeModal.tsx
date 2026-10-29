@@ -1,19 +1,26 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   X, 
-  Dices, 
   Sparkles, 
   Play, 
   Bookmark, 
   Star, 
   Users, 
-  ExternalLink,
   ChevronRight,
-  Check
+  Check,
+  RotateCw,
+  Compass
 } from 'lucide-react';
 import { Game, safeImgSrc } from '../types';
 import { useApp } from '../context/AppContext';
-import { VIBES, VibeType, isGameMatchingVibe, launchRobloxExperience } from '../utils/vibe';
+import { 
+  PLAY_STYLES, 
+  FOCUSED_CATEGORIES, 
+  PlayStyle, 
+  FocusedCategory, 
+  isGameMatchingFocus, 
+  launchRobloxExperience 
+} from '../utils/vibe';
 
 interface SurpriseMeModalProps {
   isOpen: boolean;
@@ -22,72 +29,64 @@ interface SurpriseMeModalProps {
 
 export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClose }) => {
   const { games, viewGame, toggleGameStatus, getUserLogForGame, user, language, showToast } = useApp();
-  const [selectedVibe, setSelectedVibe] = useState<VibeType>('all');
-  const [pickedGame, setPickedGame] = useState<Game | null>(null);
-  const [isShuffling, setIsShuffling] = useState(false);
 
-  // Filter candidates matching vibe
-  const candidateGames = useMemo(() => {
-    return games.filter(g => isGameMatchingVibe(g, selectedVibe));
-  }, [games, selectedVibe]);
+  const [selectedStyle, setSelectedStyle] = useState<PlayStyle>('coop');
+  const [selectedCategory, setSelectedCategory] = useState<FocusedCategory>('horror');
+  const [shuffleSeed, setShuffleSeed] = useState(0);
 
-  // Pick random game from candidates
-  const pickRandom = (vibe: VibeType = selectedVibe) => {
-    const list = games.filter(g => isGameMatchingVibe(g, vibe));
-    if (list.length === 0) {
-      setPickedGame(null);
-      return;
+  // Filter candidates matching both play style and category strictly
+  const matchingGames = useMemo(() => {
+    return games.filter(g => isGameMatchingFocus(g, selectedStyle, selectedCategory));
+  }, [games, selectedStyle, selectedCategory]);
+
+  // Curated showcase: pick top 3-4 games, supporting shuffling
+  const showcaseGames = useMemo(() => {
+    if (matchingGames.length === 0) return [];
+    
+    // Sort by a composite of rating + popularity
+    const sorted = [...matchingGames].sort((a, b) => {
+      const scoreA = (a.ratingAverage * 10) + Math.min(10, Math.log10(Math.max(1, a.playerCount || 0)) * 2);
+      const scoreB = (b.ratingAverage * 10) + Math.min(10, Math.log10(Math.max(1, b.playerCount || 0)) * 2);
+      return scoreB - scoreA;
+    });
+
+    if (sorted.length <= 3) return sorted;
+
+    // Use seed to cycle through batches of 3
+    const offset = (shuffleSeed * 3) % sorted.length;
+    const batch = [];
+    for (let i = 0; i < 3; i++) {
+      batch.push(sorted[(offset + i) % sorted.length]);
     }
-
-    setIsShuffling(true);
-    setTimeout(() => {
-      // Pick one different from current if possible
-      const available = pickedGame && list.length > 1 
-        ? list.filter(g => g.id !== pickedGame.id) 
-        : list;
-      const random = available[Math.floor(Math.random() * available.length)];
-      setPickedGame(random);
-      setIsShuffling(false);
-    }, 180);
-  };
-
-  // Re-pick when modal opens or vibe changes
-  useEffect(() => {
-    if (isOpen) {
-      pickRandom(selectedVibe);
-    }
-  }, [isOpen, selectedVibe]);
+    return batch;
+  }, [matchingGames, shuffleSeed]);
 
   if (!isOpen) return null;
 
-  const activeVibeDef = VIBES.find(v => v.id === selectedVibe) || VIBES[0];
-  const userLog = pickedGame ? getUserLogForGame(pickedGame.id) : undefined;
-  const isBacklog = userLog?.status === 'backlog';
+  const activeCategoryDef = FOCUSED_CATEGORIES.find(c => c.id === selectedCategory) || FOCUSED_CATEGORIES[0];
 
-  const handleSaveBacklog = (e: React.MouseEvent) => {
+  const handleShuffle = () => {
+    setShuffleSeed(prev => prev + 1);
+  };
+
+  const handleSaveBacklog = (e: React.MouseEvent, game: Game) => {
     e.stopPropagation();
-    if (!pickedGame) return;
     if (!user) {
       showToast(language === 'id' ? 'Masuk dengan Roblox untuk simpan backlog' : 'Sign in with Roblox to save backlog', 'info');
       return;
     }
-    toggleGameStatus(pickedGame.id, 'backlog');
+    const isBacklog = getUserLogForGame(game.id)?.status === 'backlog';
+    toggleGameStatus(game.id, 'backlog');
     showToast(
       isBacklog 
         ? (language === 'id' ? 'Dihapus dari Backlog' : 'Removed from Backlog')
-        : (language === 'id' ? `"${pickedGame.name}" disimpan ke Backlog!` : `"${pickedGame.name}" added to Backlog!`),
+        : (language === 'id' ? `"${game.name}" disimpan ke Backlog!` : `"${game.name}" added to Backlog!`),
       'success'
     );
   };
 
-  const handlePlayNow = () => {
-    if (!pickedGame) return;
-    launchRobloxExperience(pickedGame.rootPlaceId);
-  };
-
-  const handleViewDetail = () => {
-    if (!pickedGame) return;
-    viewGame(pickedGame.id);
+  const handleViewDetail = (gameId: string) => {
+    viewGame(gameId);
     onClose();
   };
 
@@ -98,22 +97,22 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
     >
       <div 
         onClick={(e) => e.stopPropagation()} 
-        className="relative w-full max-w-xl rounded-[3px] bg-panel border border-line p-6 shadow-[0_20px_48px_rgba(0,0,0,0.7)] space-y-5 my-8"
+        className="relative w-full max-w-2xl rounded-[3px] bg-panel border border-line p-5 sm:p-6 shadow-[0_20px_48px_rgba(0,0,0,0.7)] space-y-5 my-8 max-h-[90vh] flex flex-col"
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-line pb-4">
+        <div className="flex items-center justify-between border-b border-line pb-3.5 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-[3px] bg-green/15 text-green border border-green/25">
-              <Dices className="w-5 h-5" />
+              <Compass className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
-                <span>{language === 'id' ? 'Bingung Mau Main Apa?' : 'Not Sure What to Play?'}</span>
+                <span>{language === 'id' ? 'Game Finder: Rekomendasi Terfokus' : 'Game Finder: Curated Recommendations'}</span>
               </h3>
               <p className="text-[11px] text-muted">
-                {language === 'id' ? 'Rekomendasi game Roblox terkurasi sesuai mood kamu' : 'Curated Roblox recommendations tailored to your vibe'}
+                {language === 'id' ? 'Temukan game berkualitas berdasarkan siapa yang main & mood kamu' : 'Find quality experiences by group size and exact mood'}
               </p>
             </div>
           </div>
@@ -126,140 +125,199 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
           </button>
         </div>
 
-        {/* Vibe Selector Pills */}
-        <div className="space-y-2">
-          <label className="text-[11px] font-semibold text-muted uppercase tracking-wider block">
-            {language === 'id' ? 'Pilih Suasana / Mood' : 'Choose Your Vibe'}
-          </label>
-          <div className="flex flex-wrap gap-1.5">
-            {VIBES.map(vibe => {
-              const active = selectedVibe === vibe.id;
-              return (
-                <button
-                  key={vibe.id}
-                  type="button"
-                  onClick={() => setSelectedVibe(vibe.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[3px] text-xs font-semibold transition-all cursor-pointer ${
-                    active
-                      ? 'bg-green text-black shadow-[0_2px_8px_rgba(0,224,84,0.3)]'
-                      : 'bg-bg text-ink hover:text-white hover:bg-panel-2 border border-line'
-                  }`}
-                >
-                  <span>{vibe.emoji}</span>
-                  <span>{language === 'id' ? vibe.labelId : vibe.labelEn}</span>
-                </button>
-              );
-            })}
+        {/* Step 1 & 2 Filter Bar */}
+        <div className="space-y-4 flex-shrink-0 bg-bg p-3.5 rounded-[3px] border border-line">
+          {/* Step 1: Main Sama Siapa */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-green">
+                {language === 'id' ? 'Langkah 1: Main Sama Siapa?' : 'Step 1: Who is Playing?'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              {PLAY_STYLES.map(style => {
+                const active = selectedStyle === style.id;
+                return (
+                  <button
+                    key={style.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedStyle(style.id);
+                      setShuffleSeed(0);
+                    }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[2px] text-xs font-semibold transition-all cursor-pointer truncate ${
+                      active
+                        ? 'bg-green text-black shadow-[0_2px_8px_rgba(0,224,84,0.25)]'
+                        : 'bg-panel hover:bg-panel-2 text-ink hover:text-white border border-line'
+                    }`}
+                  >
+                    <span>{style.emoji}</span>
+                    <span className="truncate">{language === 'id' ? style.labelId.split(' ')[0] : style.labelEn.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Step 2: Kategori Pilihan */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-green">
+                {language === 'id' ? 'Langkah 2: Pilih Kategori / Mood' : 'Step 2: Choose Category / Mood'}
+              </span>
+              <span className="text-[10px] text-faint">
+                {matchingGames.length} {language === 'id' ? 'game terverifikasi' : 'verified games'}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {FOCUSED_CATEGORIES.map(cat => {
+                const active = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setShuffleSeed(0);
+                    }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[2px] text-xs font-semibold transition-all cursor-pointer ${
+                      active
+                        ? 'bg-white text-black shadow-[0_2px_8px_rgba(255,255,255,0.25)]'
+                        : 'bg-panel hover:bg-panel-2 text-ink hover:text-white border border-line'
+                    }`}
+                  >
+                    <span>{cat.emoji}</span>
+                    <span>{language === 'id' ? cat.labelId : cat.labelEn}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Picked Game Card Display */}
-        {pickedGame ? (
-          <div className={`p-4 rounded-[3px] bg-bg border border-line space-y-4 transition-all duration-150 ${
-            isShuffling ? 'opacity-40 scale-[0.98]' : 'opacity-100 scale-100'
-          }`}>
-            <div className="flex gap-4 items-start">
-              <img
-                src={safeImgSrc(pickedGame.iconUrl)}
-                alt={pickedGame.name}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-[3px] object-cover border border-line flex-shrink-0 bg-black"
-              />
-              <div className="min-w-0 flex-1 space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-[2px] bg-green/10 border border-green/20 text-green uppercase tracking-wider">
-                    {language === 'id' ? activeVibeDef.badgeId : activeVibeDef.badgeEn}
-                  </span>
-                  <span className="text-[11px] text-faint">
-                    {pickedGame.genre}
-                  </span>
+        {/* Results Showcase Area */}
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+          {showcaseGames.length > 0 ? (
+            showcaseGames.map((game, index) => {
+              const isBacklog = getUserLogForGame(game.id)?.status === 'backlog';
+              const totalVotes = (game.upVotes || 0) + (game.downVotes || 0);
+              const likePct = totalVotes > 0 ? Math.round(((game.upVotes || 0) / totalVotes) * 100) : 90;
+
+              return (
+                <div 
+                  key={game.id}
+                  className="p-3.5 rounded-[3px] bg-bg border border-line hover:border-line-soft transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
+                >
+                  <div 
+                    onClick={() => handleViewDetail(game.id)}
+                    className="flex items-center gap-3.5 min-w-0 flex-1 cursor-pointer"
+                  >
+                    <img
+                      src={safeImgSrc(game.iconUrl)}
+                      alt={game.name}
+                      className="w-14 h-14 rounded-[3px] object-cover border border-line flex-shrink-0 bg-black group-hover:border-green/50 transition-colors"
+                    />
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-green uppercase tracking-wider bg-green/10 border border-green/20 px-1.5 py-0.2 rounded-[2px]">
+                          #{index + 1}
+                        </span>
+                        <h4 className="text-sm font-bold text-white truncate group-hover:text-green transition-colors">
+                          {game.name}
+                        </h4>
+                      </div>
+
+                      <p className="text-[11px] text-muted truncate">
+                        {game.creatorName} · <span className="text-ink">{game.genre}</span>
+                      </p>
+
+                      <div className="flex items-center gap-3 text-[11px]">
+                        <span className="flex items-center gap-1 text-orange font-bold">
+                          <Star className="w-3 h-3 fill-orange" />
+                          <span>{game.ratingAverage.toFixed(1)}</span>
+                        </span>
+                        <span className="text-faint">·</span>
+                        <span className="text-green font-medium">
+                          {likePct}% suka
+                        </span>
+                        {game.playerCount !== undefined && game.playerCount > 0 && (
+                          <>
+                            <span className="text-faint">·</span>
+                            <span className="text-muted flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              <span>{game.playerCount.toLocaleString()}</span>
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end border-t sm:border-t-0 border-line/60 pt-2 sm:pt-0">
+                    <button
+                      type="button"
+                      onClick={(e) => handleSaveBacklog(e, game)}
+                      title={isBacklog ? 'Tersimpan di Backlog' : 'Simpan ke Backlog'}
+                      className={`p-2 rounded-[2px] border transition-colors cursor-pointer ${
+                        isBacklog 
+                          ? 'bg-green/15 text-green border-green/30' 
+                          : 'bg-panel hover:bg-panel-2 text-muted hover:text-white border-line'
+                      }`}
+                    >
+                      {isBacklog ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => launchRobloxExperience(game.rootPlaceId)}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-[2px] bg-green hover:bg-[#00c94b] text-black font-bold text-xs shadow-[0_2px_8px_rgba(0,224,84,0.25)] transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>{language === 'id' ? 'Main' : 'Play'}</span>
+                    </button>
+                  </div>
                 </div>
-
-                <h4 className="text-base font-bold text-white line-clamp-1">
-                  {pickedGame.name}
-                </h4>
-
-                <p className="text-xs text-muted">
-                  {language === 'id' ? 'Oleh' : 'By'} <strong className="text-white font-medium">{pickedGame.creatorName}</strong>
-                </p>
-
-                <div className="flex items-center gap-3 pt-1 text-xs">
-                  <span className="flex items-center gap-1 text-orange font-bold">
-                    <Star className="w-3.5 h-3.5 fill-orange" />
-                    <span>{pickedGame.ratingAverage.toFixed(1)}</span>
-                  </span>
-                  {pickedGame.playerCount !== undefined && pickedGame.playerCount > 0 && (
-                    <span className="flex items-center gap-1 text-muted">
-                      <Users className="w-3.5 h-3.5" />
-                      <span>{pickedGame.playerCount.toLocaleString()} online</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {pickedGame.description && (
-              <p className="text-xs text-ink leading-relaxed line-clamp-2 pt-1 border-t border-line/60">
-                {pickedGame.description}
+              );
+            })
+          ) : (
+            <div className="text-center py-10 space-y-3 bg-bg rounded-[3px] border border-line">
+              <p className="text-xs text-muted">
+                {language === 'id'
+                  ? 'Tidak ada game yang cocok dengan kombinasi filter ini.'
+                  : 'No games match this combination.'}
               </p>
-            )}
-
-            {/* Quick Action CTAs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-line">
               <button
                 type="button"
-                onClick={handlePlayNow}
-                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-[3px] bg-green hover:bg-[#00c94b] text-black font-bold text-xs shadow-[0_2px_10px_rgba(0,224,84,0.3)] transition-all cursor-pointer"
+                onClick={() => {
+                  setSelectedStyle('all');
+                  setSelectedCategory('all');
+                }}
+                className="bb-btn bb-btn-primary text-xs"
               >
-                <Play className="w-4 h-4 fill-current" />
-                <span>{language === 'id' ? 'Mainkan di Roblox' : 'Play on Roblox'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => pickRandom()}
-                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-[3px] bg-panel-2 hover:bg-panel border border-line text-white font-semibold text-xs transition-colors cursor-pointer"
-              >
-                <Dices className={`w-4 h-4 text-green ${isShuffling ? 'animate-spin' : ''}`} />
-                <span>{language === 'id' ? 'Acak Game Lain' : 'Pick Another'}</span>
+                {language === 'id' ? 'Reset ke Semua Pilihan' : 'Reset All Filters'}
               </button>
             </div>
+          )}
+        </div>
 
-            <div className="flex items-center justify-between text-xs pt-1 text-muted">
-              <button
-                type="button"
-                onClick={handleSaveBacklog}
-                className={`flex items-center gap-1.5 transition-colors cursor-pointer ${
-                  isBacklog ? 'text-green font-semibold' : 'hover:text-white'
-                }`}
-              >
-                {isBacklog ? <Check className="w-3.5 h-3.5 text-green" /> : <Bookmark className="w-3.5 h-3.5" />}
-                <span>{isBacklog ? (language === 'id' ? 'Tersimpan di Backlog' : 'Saved in Backlog') : (language === 'id' ? 'Simpan ke Backlog' : 'Save to Backlog')}</span>
-              </button>
+        {/* Footer with Shuffle Option */}
+        <div className="flex items-center justify-between border-t border-line pt-3 flex-shrink-0 text-xs">
+          <p className="text-faint text-[11px]">
+            {language === 'id' ? 'Klik Main untuk meluncurkan Roblox client secara instan.' : 'Click Play to launch Roblox client instantly.'}
+          </p>
 
-              <button
-                type="button"
-                onClick={handleViewDetail}
-                className="flex items-center gap-1 text-ink hover:text-white font-medium transition-colors cursor-pointer"
-              >
-                <span>{language === 'id' ? 'Detail & Ulasan' : 'Details & Reviews'}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-8 space-y-3">
-            <p className="text-xs text-muted">
-              {language === 'id' ? 'Tidak ada game yang cocok dengan suasana ini.' : 'No experiences matching this vibe.'}
-            </p>
+          {matchingGames.length > 3 && (
             <button
               type="button"
-              onClick={() => setSelectedVibe('all')}
-              className="bb-btn bb-btn-primary text-xs"
+              onClick={handleShuffle}
+              className="flex items-center gap-1.5 text-xs font-semibold text-ink hover:text-green transition-colors cursor-pointer"
             >
-              {language === 'id' ? 'Tampilkan Semua Suasana' : 'Show All Vibes'}
+              <RotateCw className="w-3.5 h-3.5" />
+              <span>{language === 'id' ? 'Opsi Lainnya' : 'More Options'}</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
