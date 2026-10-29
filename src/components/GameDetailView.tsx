@@ -17,6 +17,7 @@ import {
   Compass,
   Calendar,
   ThumbsUp,
+  Play,
   ChevronDown
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -24,6 +25,7 @@ import { RatingStars } from './RatingStars';
 import { RatingHistogram } from './RatingHistogram';
 import { ReviewCommentsModal } from './ReviewCommentsModal';
 import { safeImgSrc, safeAvatarSrc, Review, DEFAULT_ICON_URL } from '../types';
+import { launchRobloxExperience } from '../utils/vibe';
 
 export const GameDetailView: React.FC = () => {
   const { 
@@ -269,17 +271,26 @@ export const GameDetailView: React.FC = () => {
 
               {/* Direct Roblox Play CTA (PRD Section 3.3) */}
               <div className="pt-2 border-t border-line">
-                <a
-                  href={robloxWebLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bb-btn bb-btn-secondary w-full"
+                <button
+                  type="button"
+                  onClick={() => launchRobloxExperience(game.rootPlaceId)}
+                  className="bb-btn bb-btn-primary w-full cursor-pointer flex items-center justify-center gap-2"
                 >
+                  <Play className="w-3.5 h-3.5 fill-current" />
                   <span>{t('detail_play_roblox')}</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-                <p className="text-[10px] text-muted text-center mt-1.5">
-                  {language === 'id' ? 'Membuka Roblox Client atau halaman resmi pengalaman' : 'Launches Roblox Client or opens official experience page'}
+                </button>
+                <p className="text-[10px] text-muted text-center mt-1.5 flex items-center justify-center gap-1.5">
+                  <span>{language === 'id' ? 'Buka Roblox App' : 'Launch Roblox App'}</span>
+                  <span>·</span>
+                  <a
+                    href={robloxWebLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white underline underline-offset-2 inline-flex items-center gap-0.5"
+                  >
+                    <span>{language === 'id' ? 'Web Resmi' : 'Official Web'}</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
                 </p>
               </div>
 
