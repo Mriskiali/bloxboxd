@@ -205,11 +205,13 @@ export const translations = {
     lists_curated_by: 'Dibuat oleh',
     lists_like: 'Suka',
     lists_delete_btn: 'Hapus List',
+    lists_edit_btn: 'Edit List',
     lists_delete_confirm: 'Yakin ingin menghapus list ini?',
     lists_clear_confirm: 'Yakin ingin menghapus semua list kamu?',
     lists_empty_title: 'Belum ada daftar game publik',
     lists_empty_desc: 'Jadilah yang pertama membuat dan membagikan daftar game Roblox pilihanmu!',
     modal_create_list_title: 'Buat Daftar Game Baru',
+    modal_edit_list_title: 'Edit Daftar Game',
     modal_create_list_name: 'Judul Daftar',
     modal_create_list_name_ph: 'Contoh: Game Horor Roblox Terbaik 2026',
     modal_create_list_desc: 'Deskripsi / Catatan',
@@ -221,6 +223,7 @@ export const translations = {
     modal_create_list_search_ph: 'Ketik judul game...',
     modal_create_list_selected: 'Game Terpilih ({count}):',
     modal_create_list_save: 'Simpan & Publikasikan Daftar',
+    modal_edit_list_save: 'Simpan Perubahan',
     modal_create_list_cancel: 'Batal',
 
     // Community View (CommunityView.tsx)
@@ -592,11 +595,13 @@ export const translations = {
     lists_curated_by: 'Curated by',
     lists_like: 'Like',
     lists_delete_btn: 'Delete List',
+    lists_edit_btn: 'Edit List',
     lists_delete_confirm: 'Are you sure you want to delete this list?',
     lists_clear_confirm: 'Are you sure you want to clear all your lists?',
     lists_empty_title: 'No public lists yet',
     lists_empty_desc: 'Be the first to create and share a curated list of Roblox games!',
     modal_create_list_title: 'Create New List',
+    modal_edit_list_title: 'Edit Game List',
     modal_create_list_name: 'List Title',
     modal_create_list_name_ph: 'e.g. Best Roblox Horror Games 2026',
     modal_create_list_desc: 'Description / Notes',
@@ -608,6 +613,7 @@ export const translations = {
     modal_create_list_search_ph: 'Type experience title...',
     modal_create_list_selected: 'Selected Experiences ({count}):',
     modal_create_list_save: 'Save & Publish List',
+    modal_edit_list_save: 'Save Changes',
     modal_create_list_cancel: 'Cancel',
 
     // Community View (CommunityView.tsx)

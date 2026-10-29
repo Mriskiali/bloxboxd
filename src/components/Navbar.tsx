@@ -382,13 +382,86 @@ export const Navbar: React.FC = () => {
 
               {profileMenuOpen && (
                 <>
-                  {/* Backdrop on mobile so tapping outside closes it immediately */}
+                  {/* Backdrop on mobile */}
                   <div
                     className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs md:hidden"
                     onClick={() => setProfileMenuOpen(false)}
                   />
 
-                  <div className="fixed inset-x-4 top-14 z-50 overflow-hidden rounded-[8px] border border-line bg-[#181d22] shadow-[0_20px_48px_rgba(0,0,0,0.8)] md:absolute md:inset-x-auto md:top-full md:right-0 md:mt-1 md:w-60 md:rounded-[3px] md:shadow-[0_8px_24px_rgba(0,0,0,0.55)]">
+                  {/* Mobile Native Bottom Sheet */}
+                  <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-[14px] border-t border-line bg-[#181d22] shadow-[0_-8px_32px_rgba(0,0,0,0.8)] pb-6 pt-2.5 px-4 md:hidden animate-in slide-in-from-bottom duration-150">
+                    <div className="mx-auto w-10 h-1 rounded-full bg-line/80 mb-3" />
+
+                    <div className="flex items-center gap-3 pb-3 border-b border-line">
+                      <img
+                        src={safeAvatarSrc(user.avatarUrl)}
+                        alt=""
+                        className="h-10 w-10 rounded-full border border-line object-cover flex-shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <p className="truncate text-sm font-bold text-white">{user.displayName}</p>
+                          {user.isVerifiedOwner && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-green bg-green/10 px-1 py-0.5 rounded border border-green/20">
+                              <ShieldCheck className="h-2.5 w-2.5" /> {t('nav_verified')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="truncate text-xs text-muted">@{user.username}</p>
+                      </div>
+                      <button
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="p-1.5 text-muted hover:text-white"
+                        aria-label="Close"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+
+                    <div className="py-2 space-y-0.5">
+                      {[
+                        { icon: User, label: t('nav_my_profile'), action: () => { setSelectedUserId(null); setActiveTab('profile'); setActiveProfileTab('overview'); } },
+                        { icon: Compass, label: t('nav_my_collection'), action: () => { setSelectedUserId(null); setActiveTab('profile'); setActiveProfileTab('games'); } },
+                        { icon: ShieldCheck, label: t('nav_switch_account'), action: () => setLoginModalOpen(true) },
+                        { icon: Settings, label: t('nav_edit_profile'), action: () => setEditProfileModalOpen(true) }
+                      ].map(({ icon: Icon, label, action }) => (
+                        <button
+                          key={label}
+                          onClick={() => { action(); setProfileMenuOpen(false); }}
+                          className="flex w-full items-center gap-3 px-3 py-2.5 rounded-[3px] text-left text-xs font-medium text-ink hover:bg-panel-2 hover:text-white min-h-[44px]"
+                        >
+                          <Icon className="h-4 w-4 text-muted" />
+                          <span>{label}</span>
+                        </button>
+                      ))}
+
+                      <button
+                        onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+                        className="flex w-full items-center justify-between px-3 py-2.5 rounded-[3px] text-left text-xs font-medium text-ink hover:bg-panel-2 hover:text-white min-h-[44px]"
+                      >
+                        <span className="flex items-center gap-3">
+                          <Globe className="h-4 w-4 text-muted" />
+                          <span>{t('nav_lang_toggle')}</span>
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-green bg-green/10 px-1.5 py-0.5 rounded border border-green/20">
+                          {language === 'id' ? 'ID' : 'EN'}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="pt-2 border-t border-line">
+                      <button
+                        onClick={() => { logoutRobloxAccount(); setProfileMenuOpen(false); }}
+                        className="flex w-full items-center justify-center gap-2 py-2.5 rounded-[3px] bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/25 text-xs font-semibold min-h-[44px] transition-colors"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>{t('nav_logout')}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Desktop Dropdown */}
+                  <div className="hidden md:block absolute right-0 top-full mt-1 w-60 overflow-hidden rounded-[3px] border border-line bg-[#181d22] shadow-[0_12px_28px_rgba(0,0,0,0.65)] z-50">
                     <div className="border-b border-line px-3.5 py-2.5 bg-bg/50">
                       <p className="truncate text-[13px] font-semibold text-white">{user.displayName}</p>
                       <p className="truncate text-[11px] text-faint">@{user.username}</p>
@@ -409,7 +482,7 @@ export const Navbar: React.FC = () => {
                         <button
                           key={label}
                           onClick={() => { action(); setProfileMenuOpen(false); }}
-                          className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-white min-h-[40px]"
+                          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-white"
                         >
                           <Icon className="h-3.5 w-3.5" />
                           {label}
@@ -418,7 +491,7 @@ export const Navbar: React.FC = () => {
 
                       <button
                         onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
-                        className="flex w-full items-center justify-between px-3.5 py-2.5 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-white min-h-[40px]"
+                        className="flex w-full items-center justify-between px-3.5 py-2 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-white"
                       >
                         <span className="flex items-center gap-2.5">
                           <Globe className="h-3.5 w-3.5" />
@@ -433,7 +506,7 @@ export const Navbar: React.FC = () => {
                     <div className="border-t border-line py-1">
                       <button
                         onClick={() => { logoutRobloxAccount(); setProfileMenuOpen(false); }}
-                        className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-orange min-h-[40px]"
+                        className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-orange"
                       >
                         <LogOut className="h-3.5 w-3.5" />
                         {t('nav_logout')}

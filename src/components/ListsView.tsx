@@ -8,10 +8,11 @@ import {
   Award, 
   Check, 
   X, 
-  Sparkles,
-  Search,
-  ExternalLink,
-  Trash2
+  Sparkles, 
+  Search, 
+  ExternalLink, 
+  Trash2,
+  Pencil
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CustomList, safeImgSrc, safeAvatarSrc } from '../types';
@@ -25,9 +26,10 @@ export const ListsView: React.FC = () => {
     getGameById, 
     setActiveTab, 
     likeList, 
-    activeTab,
-    games,
+    activeTab, 
+    games, 
     createList,
+    updateList,
     deleteList,
     clearAllLists,
     showConfirm,
@@ -40,6 +42,7 @@ export const ListsView: React.FC = () => {
   } = useApp();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editingListId, setEditingListId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [isRanked, setIsRanked] = useState(true);
@@ -48,21 +51,50 @@ export const ListsView: React.FC = () => {
 
   const currentList = selectedListId ? customLists.find(l => l.id === selectedListId) : null;
 
-  const handleCreateList = (e: React.FormEvent) => {
+  const handleOpenCreate = () => {
+    setEditingListId(null);
+    setNewTitle('');
+    setNewDesc('');
+    setIsRanked(true);
+    setSelectedGameIds([]);
+    setCreateModalOpen(true);
+  };
+
+  const handleOpenEdit = (list: CustomList) => {
+    setEditingListId(list.id);
+    setNewTitle(list.title);
+    setNewDesc(list.description || '');
+    setIsRanked(Boolean(list.isRanked));
+    setSelectedGameIds(list.items.map(it => it.gameId));
+    setCreateModalOpen(true);
+  };
+
+  const handleSaveList = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || selectedGameIds.length === 0) return;
 
-    createList({
-      title: newTitle.trim(),
-      description: newDesc.trim(),
-      isRanked,
-      isPublic: true,
-      gameIds: selectedGameIds
-    });
+    if (editingListId) {
+      updateList(editingListId, {
+        title: newTitle.trim(),
+        description: newDesc.trim(),
+        isRanked,
+        isPublic: true,
+        gameIds: selectedGameIds
+      });
+    } else {
+      createList({
+        title: newTitle.trim(),
+        description: newDesc.trim(),
+        isRanked,
+        isPublic: true,
+        gameIds: selectedGameIds
+      });
+    }
 
     setNewTitle('');
     setNewDesc('');
     setSelectedGameIds([]);
+    setEditingListId(null);
     setCreateModalOpen(false);
   };
 
@@ -116,22 +148,35 @@ export const ListsView: React.FC = () => {
                 <span>{currentList.likesCount} {t('lists_like')}</span>
               </button>
 
-              <button
-                onClick={() => {
-                  showConfirm({
-                    title: language === 'id' ? 'Hapus Daftar Game' : 'Delete Game List',
-                    message: t('lists_delete_confirm'),
-                    confirmText: language === 'id' ? 'Ya, Hapus' : 'Yes, Delete',
-                    isDestructive: true,
-                    onConfirm: () => deleteList(currentList.id)
-                  });
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-semibold transition-colors cursor-pointer"
-                title={t('lists_delete_btn')}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{t('lists_delete_btn')}</span>
-              </button>
+              {user && currentList.userId === user.id && (
+                <>
+                  <button
+                    onClick={() => handleOpenEdit(currentList)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-panel hover:bg-panel-2 text-ink hover:text-white border border-line text-xs font-semibold transition-colors cursor-pointer"
+                    title={t('lists_edit_btn')}
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-blue" />
+                    <span>{t('lists_edit_btn')}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      showConfirm({
+                        title: language === 'id' ? 'Hapus Daftar Game' : 'Delete Game List',
+                        message: t('lists_delete_confirm'),
+                        confirmText: language === 'id' ? 'Ya, Hapus' : 'Yes, Delete',
+                        isDestructive: true,
+                        onConfirm: () => deleteList(currentList.id)
+                      });
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                    title={t('lists_delete_btn')}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{t('lists_delete_btn')}</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -268,7 +313,7 @@ export const ListsView: React.FC = () => {
               if (!user) {
                 setLoginModalOpen(true);
               } else {
-                setCreateModalOpen(true);
+                handleOpenCreate();
               }
             }}
             className="bb-btn bb-btn-primary"
@@ -374,22 +419,35 @@ export const ListsView: React.FC = () => {
                     <span>{list.likesCount}</span>
                   </div>
                   {user && list.userId === user.id && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        showConfirm({
-                          title: language === 'id' ? 'Hapus Daftar Game' : 'Delete Game List',
-                          message: t('lists_delete_confirm'),
-                          confirmText: language === 'id' ? 'Ya, Hapus' : 'Yes, Delete',
-                          isDestructive: true,
-                          onConfirm: () => deleteList(list.id)
-                        });
-                      }}
-                      className="p-1 rounded-[2px] text-faint hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                      title={t('lists_delete_btn')}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEdit(list);
+                        }}
+                        className="p-1 rounded-[2px] text-faint hover:text-blue hover:bg-blue/10 transition-colors cursor-pointer"
+                        title={t('lists_edit_btn')}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showConfirm({
+                            title: language === 'id' ? 'Hapus Daftar Game' : 'Delete Game List',
+                            message: t('lists_delete_confirm'),
+                            confirmText: language === 'id' ? 'Ya, Hapus' : 'Yes, Delete',
+                            isDestructive: true,
+                            onConfirm: () => deleteList(list.id)
+                          });
+                        }}
+                        className="p-1 rounded-[2px] text-faint hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        title={t('lists_delete_btn')}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -399,24 +457,24 @@ export const ListsView: React.FC = () => {
       </div>
       )}
 
-      {/* Create List Modal */}
+      {/* Create / Edit List Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75  overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs overflow-y-auto">
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-panel border border-line rounded-[3px] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.55)] space-y-5 my-8"
+            className="w-full max-w-xl bg-panel border border-line rounded-[3px] p-5 sm:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.65)] space-y-4 my-8 max-h-[92vh] flex flex-col"
           >
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <h3 className="bb-label">{t('modal_create_list_title')}</h3>
+            <div className="flex items-center justify-between border-b border-line pb-3 flex-shrink-0">
+              <h3 className="bb-label">{editingListId ? t('modal_edit_list_title') : t('modal_create_list_title')}</h3>
               <button 
                 onClick={() => setCreateModalOpen(false)}
-                className="text-muted hover:text-white p-1"
+                className="text-muted hover:text-white p-1 rounded-[2px] hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateList} className="space-y-4">
+            <form onSubmit={handleSaveList} className="space-y-4 overflow-y-auto pr-1 flex-1">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1">
                   {t('modal_create_list_name')}
@@ -427,7 +485,7 @@ export const ListsView: React.FC = () => {
                   placeholder={t('modal_create_list_name_ph')}
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full bg-panel border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-blue outline-none"
+                  className="w-full bg-bg border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-green outline-none"
                 />
               </div>
 
@@ -440,7 +498,7 @@ export const ListsView: React.FC = () => {
                   placeholder={t('modal_create_list_desc_ph')}
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full bg-panel border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-blue outline-none"
+                  className="w-full bg-bg border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-green outline-none"
                 />
               </div>
 
@@ -450,7 +508,7 @@ export const ListsView: React.FC = () => {
                   id="rankedCheck"
                   checked={isRanked}
                   onChange={(e) => setIsRanked(e.target.checked)}
-                  className="w-4 h-4 rounded accent-[#00A2FF]"
+                  className="rounded border-line bg-panel text-green focus:ring-0 cursor-pointer"
                 />
                 <label htmlFor="rankedCheck" className="text-xs font-medium text-ink cursor-pointer">
                   {t('modal_create_list_ranked')}
@@ -470,7 +528,7 @@ export const ListsView: React.FC = () => {
                   className="w-full bg-bg border border-line rounded-[2px] px-3 py-1.5 text-xs text-white mb-2"
                 />
 
-                <div className="max-h-48 overflow-y-auto space-y-1.5 bg-bg p-2 rounded-[3px] border border-line">
+                <div className="max-h-48 overflow-y-auto space-y-1 bg-bg p-2 rounded-[3px] border border-line">
                   {games
                     .filter(g => g.name.toLowerCase().includes(gameSearch.toLowerCase()))
                     .map(g => {
@@ -480,34 +538,35 @@ export const ListsView: React.FC = () => {
                           key={g.id}
                           onClick={() => toggleGameSelection(g.id)}
                           className={`flex items-center justify-between p-2 rounded-[2px] cursor-pointer text-xs transition-colors ${
-                            isSelected ? 'bg-blue/20 text-white' : 'hover:bg-panel-2 text-ink'
+                            isSelected ? 'bg-green/15 text-white border border-green/30' : 'hover:bg-panel-2 text-ink'
                           }`}
                         >
-                          <div className="flex items-center gap-2.5">
-                            <img src={safeImgSrc(g.iconUrl)} alt={g.name} className="w-7 h-7 rounded object-cover" />
-                            <span className="font-semibold">{g.name}</span>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <img src={safeImgSrc(g.iconUrl)} alt={g.name} className="w-7 h-7 rounded object-cover flex-shrink-0" />
+                            <span className="font-semibold truncate">{g.name}</span>
                           </div>
-                          {isSelected && <Check className="w-4 h-4 text-blue" />}
+                          {isSelected && <Check className="w-4 h-4 text-green flex-shrink-0 ml-2" />}
                         </div>
                       );
                     })}
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-muted hover:text-white"
+                  className="px-4 py-2 text-xs font-semibold text-muted hover:text-white cursor-pointer"
                 >
                   {t('modal_create_list_cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={!newTitle.trim() || selectedGameIds.length === 0}
-                  className="px-5 py-2 text-xs font-bold text-white bg-blue hover:bg-blue disabled:opacity-50 rounded-[2px] transition-colors"
+                  className="bb-btn bb-btn-primary min-h-[36px]"
                 >
-                  {t('modal_create_list_save')}
+                  <Check className="w-4 h-4" />
+                  <span>{editingListId ? t('modal_edit_list_save') : t('modal_create_list_save')}</span>
                 </button>
               </div>
             </form>

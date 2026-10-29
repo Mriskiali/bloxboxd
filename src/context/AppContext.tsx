@@ -127,6 +127,7 @@ interface AppContextType {
   addGamesToCatalog: (newGames: Game[]) => void;
   updateGame: (gameId: string, data: Partial<Game>) => void;
   createList: (list: { title: string; description: string; isRanked: boolean; isPublic: boolean; gameIds: string[] }) => void;
+  updateList: (listId: string, list: { title: string; description: string; isRanked: boolean; isPublic: boolean; gameIds: string[] }) => void;
   deleteList: (listId: string) => void;
   clearAllLists: () => void;
   likeReview: (reviewId: string) => void;
@@ -1058,6 +1059,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     viewList(newList.id);
   };
 
+  const updateList = (listId: string, listData: { title: string; description: string; isRanked: boolean; isPublic: boolean; gameIds: string[] }) => {
+    if (!user) return;
+    const existing = customLists.find(l => l.id === listId);
+    if (!existing) return;
+
+    const updatedList: CustomList = {
+      ...existing,
+      title: listData.title,
+      description: listData.description,
+      isRanked: listData.isRanked,
+      isPublic: listData.isPublic,
+      items: listData.gameIds.map((gId, index) => ({
+        id: `item-${Date.now()}-${index}`,
+        gameId: gId,
+        position: index + 1
+      }))
+    };
+
+    setCustomLists(prev => prev.map(l => l.id === listId ? updatedList : l));
+
+    fetch('/api/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(updatedList)
+    }).catch(e => console.warn('Failed to update list in database:', e));
+
+    showToast(language === 'id' ? 'Daftar game berhasil diperbarui!' : 'List updated successfully!', 'success');
+  };
+
   const deleteList = (listId: string) => {
     setCustomLists(prev => prev.filter(l => l.id !== listId));
     if (selectedListId === listId) {
@@ -1189,6 +1219,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addGamesToCatalog,
         updateGame,
         createList,
+        updateList,
         deleteList,
         clearAllLists,
         likeReview,
