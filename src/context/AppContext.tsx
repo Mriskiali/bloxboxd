@@ -463,24 +463,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Listen for popup OAuth callback messages
+  // Listen for OAuth callback messages across all cross-window channels (postMessage, BroadcastChannel, storage event)
   useEffect(() => {
+    const handleUserData = (u: any) => {
+      if (!u || !u.robloxUserId) return;
+      loginWithRobloxAccount({
+        userId: u.robloxUserId,
+        username: u.robloxUsername || u.username,
+        displayName: u.displayName || u.username,
+        avatarHeadshotUrl: u.avatarUrl,
+        isVerifiedOwner: true,
+        sessionToken: u.sessionToken
+      });
+      setLoginModalOpen(false);
+    };
+
     const handleAuthMessage = (e: MessageEvent) => {
       if (e.data?.type === 'BLOXBOXD_AUTH_SUCCESS' && e.data.user) {
-        const u = e.data.user;
-        loginWithRobloxAccount({
-          userId: u.robloxUserId,
-          username: u.robloxUsername || u.username,
-          displayName: u.displayName || u.username,
-          avatarHeadshotUrl: u.avatarUrl,
-          isVerifiedOwner: true,
-          sessionToken: u.sessionToken
-        });
-        setLoginModalOpen(false);
+        handleUserData(e.data.user);
       }
     };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'bloxboxd_oauth_event' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed?.user) handleUserData(parsed.user);
+        } catch {}
+      }
+    };
+
     window.addEventListener('message', handleAuthMessage);
-    return () => window.removeEventListener('message', handleAuthMessage);
+    window.addEventListener('storage', handleStorage);
+
+    let bc: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        bc = new BroadcastChannel('bloxboxd_auth');
+        bc.onmessage = (e) => {
+          if (e.data?.type === 'BLOXBOXD_AUTH_SUCCESS' && e.data.user) {
+            handleUserData(e.data.user);
+          }
+        };
+      } catch {}
+    }
+
+    return () => {
+      window.removeEventListener('message', handleAuthMessage);
+      window.removeEventListener('storage', handleStorage);
+      if (bc) bc.close();
+    };
   }, []);
 
   // Initial sync on mount and auto-refresh every 90 seconds (interval aman dari rate limit Roblox)

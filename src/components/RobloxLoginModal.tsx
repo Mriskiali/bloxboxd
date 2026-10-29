@@ -1,337 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
-  User, 
-  Check, 
-  AlertCircle, 
-  Loader2, 
-  ExternalLink, 
   ShieldCheck, 
+  LogOut, 
+  Loader2, 
   Lock, 
-  KeyRound, 
-  Copy, 
-  CheckCircle2, 
-  LogOut,
-  RefreshCw,
-  Eye,
-  EyeOff,
-  Sparkles,
-  Shirt,
-  Clock
+  Sparkles, 
+  CheckCircle2 
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { safeAvatarSrc } from '../types';
-
-interface RobloxUserData {
-  userId: number;
-  username: string;
-  displayName: string;
-  hasVerifiedBadge: boolean;
-  description: string;
-  created: string;
-  joinedYear?: number;
-  friendsCount: number;
-  avatarHeadshotUrl: string;
-  avatarBustUrl?: string;
-}
-
-interface AccountStatus {
-  registered: boolean;
-  hasPin: boolean;
-  username?: string;
-  verifiedAt?: string;
-}
-
-interface ActiveChallengeData {
-  challengeId: string;
-  type: 'bio' | 'avatar';
-  phrase?: string;
-  words?: string[];
-  assetId?: number;
-  assetName?: string;
-  catalogUrl?: string;
-  avatarEditorUrl?: string;
-  availableItems?: Array<{ id: number; name: string; catalogUrl: string }>;
-  action?: 'equip' | 'unequip';
-  actionInstruction?: string;
-  expiresInSeconds: number;
-}
 
 export const RobloxLoginModal: React.FC = () => {
   const { 
     loginModalOpen, 
     setLoginModalOpen, 
     user, 
-    loginWithRobloxAccount, 
     logoutRobloxAccount,
-    t
+    language,
+    t 
   } = useApp();
 
-  const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [foundUser, setFoundUser] = useState<RobloxUserData | null>(null);
-  const [accountStatus, setAccountStatus] = useState<AccountStatus | null>(null);
-  const [selectedAvatarType, setSelectedAvatarType] = useState<'headshot' | 'bust'>('headshot');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // Mode for existing registered accounts: 'pin' | 'challenge'
-  const [pinMode, setPinMode] = useState<'pin' | 'challenge'>('pin');
-  const [inputPin, setInputPin] = useState('');
-  const [newPin, setNewPin] = useState('');
+  if (!loginModalOpen) return null;
 
   const handleOAuthLogin = () => {
+    setIsAuthenticating(true);
     const width = 600;
     const height = 720;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
+
     const popup = window.open(
       '/api/auth/roblox/login',
       'roblox_oauth',
       `width=${width},height=${height},left=${left},top=${top},status=no,menubar=no,toolbar=no`
     );
+
     if (!popup) {
       window.location.href = '/api/auth/roblox/login';
+      return;
     }
-  };
-  const [confirmPin, setConfirmPin] = useState('');
-  const [showPin, setShowPin] = useState(false);
 
-  // Challenge System
-  const [challengeType, setChallengeType] = useState<'avatar' | 'bio'>('avatar');
-  const [challengeData, setChallengeData] = useState<ActiveChallengeData | null>(null);
-  const [challengeLoading, setChallengeLoading] = useState(false);
-  const [countdown, setCountdown] = useState<number>(0);
-
-  const [copied, setCopied] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [feedbackMessage, setFeedbackMessage] = useState<{ success: boolean; message: string } | null>(null);
-
-  // Timer countdown effect for active challenge
-  useEffect(() => {
-    if (countdown <= 0) return;
     const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [countdown]);
-
-  if (!loginModalOpen) return null;
-
-  const startVerificationChallenge = async (targetUser: RobloxUserData, type: 'avatar' | 'bio', preferredItemId?: number) => {
-    setChallengeLoading(true);
-    setFeedbackMessage(null);
-    try {
-      const res = await fetch('/api/roblox/account/challenge/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: targetUser.userId,
-          type,
-          preferredItemId
-        })
-      });
-      const data = await res.json().catch(() => null);
-      if (res.ok && data?.success) {
-        setChallengeData(data);
-        setChallengeType(type);
-        setCountdown(data.expiresInSeconds || 240);
-      } else {
-        setFeedbackMessage({
-          success: false,
-          message: data?.error || data?.message || t('login_modal_err_network')
-        });
+      if (popup.closed) {
+        clearInterval(timer);
+        setIsAuthenticating(false);
       }
-    } catch (e) {
-      setFeedbackMessage({
-        success: false,
-        message: t('login_modal_err_network')
-      });
-    } finally {
-      setChallengeLoading(false);
-    }
-  };
-
-  const handleSearch = async (e?: React.FormEvent, customQuery?: string) => {
-    if (e) e.preventDefault();
-    const q = (customQuery !== undefined ? customQuery : query).trim();
-    if (!q) return;
-
-    setLoading(true);
-    setError(null);
-    setFoundUser(null);
-    setAccountStatus(null);
-    setChallengeData(null);
-    setFeedbackMessage(null);
-    setInputPin('');
-    setNewPin('');
-    setConfirmPin('');
-
-    try {
-      // 1. Lookup Roblox User via live Roblox API proxy
-      const userRes = await fetch(`/api/roblox/user/lookup?q=${encodeURIComponent(q)}`);
-      const userData = await userRes.json();
-
-      if (!userRes.ok || !userData.success || !userData.user) {
-        setError(userData.error || t('login_modal_err_not_found'));
-        setLoading(false);
-        return;
-      }
-
-      setFoundUser(userData.user);
-
-      // 2. Check Bloxboxd protection status for this account
-      try {
-        const statusRes = await fetch(`/api/roblox/account/status?userId=${userData.user.userId}`);
-        if (statusRes.ok) {
-          const statusData = await statusRes.json();
-          setAccountStatus(statusData);
-          if (statusData.hasPin) {
-            setPinMode('pin');
-          } else {
-            setPinMode('challenge');
-            // Auto start challenge session
-            startVerificationChallenge(userData.user, 'avatar');
-          }
-        } else {
-          setPinMode('challenge');
-          startVerificationChallenge(userData.user, 'avatar');
-        }
-      } catch (e) {
-        setPinMode('challenge');
-        startVerificationChallenge(userData.user, 'avatar');
-      }
-    } catch (err) {
-      setError(t('login_modal_err_network'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCopyPhrase = () => {
-    if (!challengeData?.phrase) return;
-    navigator.clipboard.writeText(challengeData.phrase);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Login with PIN for already claimed accounts
-  const handlePinLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!foundUser || !inputPin.trim()) return;
-
-    setVerifying(true);
-    setFeedbackMessage(null);
-
-    try {
-      const res = await fetch('/api/roblox/account/login-with-pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: foundUser.userId,
-          pin: inputPin.trim()
-        })
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setFeedbackMessage({ success: true, message: t('login_modal_auth_success') });
-        setTimeout(() => {
-          loginWithRobloxAccount({
-            userId: foundUser.userId,
-            username: foundUser.username,
-            displayName: foundUser.displayName,
-            avatarHeadshotUrl: selectedAvatarType === 'bust' && foundUser.avatarBustUrl ? foundUser.avatarBustUrl : foundUser.avatarHeadshotUrl,
-            avatarBustUrl: foundUser.avatarBustUrl,
-            description: foundUser.description,
-            created: foundUser.created,
-            friendsCount: foundUser.friendsCount,
-            isVerifiedOwner: true,
-            sessionToken: data.sessionToken
-          });
-          setLoginModalOpen(false);
-        }, 600);
-      } else {
-        setFeedbackMessage({
-          success: false,
-          message: data.message || t('login_modal_pin_incorrect')
-        });
-      }
-    } catch (e) {
-      setFeedbackMessage({ success: false, message: t('login_modal_err_network') });
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  // Submit active challenge verification & register account with PIN
-  const handleVerifyChallenge = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!foundUser || !challengeData) return;
-
-    if (!newPin.trim() || newPin.trim().length < 4) {
-      setFeedbackMessage({ success: false, message: t('login_modal_pin_min_err') });
-      return;
-    }
-
-    if (newPin !== confirmPin) {
-      setFeedbackMessage({ success: false, message: t('login_modal_pin_match_err') });
-      return;
-    }
-
-    setVerifying(true);
-    setFeedbackMessage(null);
-
-    try {
-      const res = await fetch('/api/roblox/account/challenge/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          challengeId: challengeData.challengeId,
-          userId: foundUser.userId,
-          username: foundUser.username,
-          pin: newPin.trim()
-        })
-      });
-
-      const data = await res.json().catch(() => null);
-      if (res.ok && data?.success) {
-        setFeedbackMessage({ 
-          success: true, 
-          message: t('login_modal_verify_success') 
-        });
-
-        setTimeout(() => {
-          loginWithRobloxAccount({
-            userId: foundUser.userId,
-            username: foundUser.username,
-            displayName: foundUser.displayName,
-            avatarHeadshotUrl: selectedAvatarType === 'bust' && foundUser.avatarBustUrl ? foundUser.avatarBustUrl : foundUser.avatarHeadshotUrl,
-            avatarBustUrl: foundUser.avatarBustUrl,
-            description: foundUser.description,
-            created: foundUser.created,
-            friendsCount: foundUser.friendsCount,
-            isVerifiedOwner: true,
-            sessionToken: data.sessionToken
-          });
-          setLoginModalOpen(false);
-        }, 1000);
-      } else {
-        setFeedbackMessage({
-          success: false,
-          message: data?.message || data?.error || t('login_modal_verify_pending')
-        });
-      }
-    } catch (e) {
-      setFeedbackMessage({ success: false, message: t('login_modal_err_network_verify') });
-    } finally {
-      setVerifying(false);
-    }
+    }, 800);
   };
 
   const handleLogout = () => {
@@ -339,585 +56,137 @@ export const RobloxLoginModal: React.FC = () => {
     setLoginModalOpen(false);
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
-
-  const isCurrentRobloxUser = Boolean(user?.robloxUserId);
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0a0e12]/85  overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
+      onClick={() => setLoginModalOpen(false)}
+    >
       <div 
         onClick={(e) => e.stopPropagation()} 
-        className="w-full max-w-lg bg-panel border border-line rounded-[3px] shadow-[0_8px_24px_rgba(0,0,0,0.55)] p-5 sm:p-6 my-6 max-h-[92vh] overflow-y-auto space-y-5"
+        className="relative w-full max-w-md rounded-[3px] bg-panel border border-line p-6 shadow-[0_16px_36px_rgba(0,0,0,0.65)] space-y-6 my-8"
+        role="dialog"
+        aria-modal="true"
       >
-        {/* Header */}
+        {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-line pb-4">
           <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-[3px] bg-green/10 border border-green/20 text-green">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
             <div>
-              <h2 className="text-[15px] font-semibold text-white">
+              <h3 className="text-sm font-bold text-white tracking-tight">
                 {t('login_modal_title')}
-              </h2>
-              <p className="mt-0.5 text-[12px] text-muted">
-                {t('login_modal_subtitle')}
+              </h3>
+              <p className="text-[11px] text-muted">
+                {language === 'id' ? 'Otentikasi Resmi Roblox' : 'Official Roblox Authentication'}
               </p>
             </div>
           </div>
           <button 
+            type="button"
             onClick={() => setLoginModalOpen(false)}
-            className="text-muted hover:text-white p-1 rounded-[2px] hover:bg-white/5 transition-colors"
+            className="text-muted hover:text-white p-1 rounded-[2px] hover:bg-white/5 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Currently Connected User Card (if any) */}
-        {user && isCurrentRobloxUser && (
-          <div className="flex items-center justify-between gap-3 border-y border-line py-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <img
-                src={safeAvatarSrc(user.avatarUrl)}
-                alt={user.username}
-                className="w-10 h-10 rounded-[3px] object-cover border border-line"
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-bold text-white truncate">{user.username}</p>
-                  {user.isRobloxVerified && (
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-green">
-                      {t('nav_verified')}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-muted truncate">
-                  {t('login_modal_active_account', { username: user.robloxUsername, id: user.robloxUserId })}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold text-faint transition-colors hover:text-orange"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>{t('login_modal_logout_btn')}</span>
-            </button>
-          </div>
-        )}
-
-        {/* Quick Official Roblox OAuth 2.0 Sign In */}
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={handleOAuthLogin}
-            className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-[3px] bg-[#00A2FF] hover:bg-[#008fe0] text-white font-semibold text-xs tracking-wide transition-all shadow-[0_2px_8px_rgba(0,162,255,0.25)] hover:shadow-[0_4px_12px_rgba(0,162,255,0.35)] cursor-pointer"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>{t('login_modal_oauth_btn')}</span>
-          </button>
-
-          <div className="relative flex items-center justify-center my-1">
-            <div className="w-full border-t border-line" />
-            <span className="absolute px-3 bg-panel text-[11px] text-faint uppercase tracking-wider font-semibold">
-              {t('login_modal_or_manual')}
-            </span>
-          </div>
-        </div>
-
-        {/* Search Input Form */}
-        <form onSubmit={(e) => handleSearch(e)} className="space-y-2">
-          <label className="block text-xs font-bold text-ink">
-            {t('login_modal_search_label')}
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder={t('login_modal_search_ph')}
-              aria-label={t('login_modal_search_ph')}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 bg-bg border border-line focus:border-green rounded-[3px] px-4 py-2.5 text-sm text-white outline-none transition-colors"
-            />
-            <button
-              type="submit"
-              disabled={loading || !query.trim()}
-              className="px-5 py-2.5 bg-green hover:bg-[#00c94b] disabled:opacity-50 text-black font-semibold text-xs rounded-[3px] shadow transition-colors flex items-center gap-2 whitespace-nowrap"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <User className="w-4 h-4" />}
-              <span>{t('login_modal_search_btn')}</span>
-            </button>
-          </div>
-        </form>
-
-        {/* Error alert */}
-        {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-[3px] flex items-start gap-2.5 text-xs text-red-300">
-            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">{error}</div>
-          </div>
-        )}
-
-        {/* Found User Profile Preview & Authentication Form */}
-        {foundUser && (
-          <div className="bg-bg border border-line rounded-[3px] p-4 sm:p-5 space-y-4">
-            {/* User Identity Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="relative">
+        {/* Logged in state */}
+        {user ? (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between gap-3 p-3.5 rounded-[3px] bg-bg border border-line">
+              <div className="flex items-center gap-3 min-w-0">
                 <img
-                  src={safeAvatarSrc(selectedAvatarType === 'bust' && foundUser.avatarBustUrl ? foundUser.avatarBustUrl : foundUser.avatarHeadshotUrl)}
-                  alt={foundUser.username}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-[3px] object-cover bg-black/60 border border-line"
+                  src={safeAvatarSrc(user.avatarUrl)}
+                  alt={user.username}
+                  className="w-12 h-12 rounded-[3px] object-cover border border-line flex-shrink-0"
                 />
-                {foundUser.hasVerifiedBadge && (
-                  <div className="absolute -bottom-1 -right-1 bg-blue text-white p-1 rounded-full shadow" title="Roblox Verified">
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="bb-label truncate">
-                    {foundUser.displayName}
-                  </h3>
-                  <span className="text-xs font-mono text-muted bg-panel px-2 py-0.5 rounded border border-white/5">
-                    @{foundUser.username}
-                  </span>
-                  {accountStatus?.hasPin ? (
-                    <span className="text-[10px] font-bold text-green bg-green/10 px-2 py-0.5 rounded border border-green/30 flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5" />
-                      <span>{t('login_modal_status_locked')}</span>
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/30 flex items-center gap-1">
-                      <ShieldCheck className="w-2.5 h-2.5" />
-                      <span>{t('login_modal_status_unclaimed')}</span>
-                    </span>
-                  )}
-                </div>
-
-                <p className="text-xs text-muted mt-1 flex items-center gap-2 flex-wrap">
-                  <span>ID: <strong className="text-ink">{foundUser.userId}</strong></span>
-                  {foundUser.joinedYear && (
-                    <>
-                      <span>•</span>
-                      <span>{t('profile_joined')} {foundUser.joinedYear}</span>
-                    </>
-                  )}
-                  {foundUser.friendsCount > 0 && (
-                    <>
-                      <span>•</span>
-                      <span>{foundUser.friendsCount} {t('profile_friends')}</span>
-                    </>
-                  )}
-                </p>
-
-                <div className="flex items-center gap-3 mt-2.5">
-                  <a
-                    href={`https://www.roblox.com/users/${foundUser.userId}/profile`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] text-green hover:underline font-semibold"
-                  >
-                    <span>{t('login_modal_open_roblox_profile')}</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-
-                  {foundUser.avatarBustUrl && (
-                    <div className="flex items-center gap-1 text-[11px] bg-panel p-0.5 rounded-[2px] border border-line">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAvatarType('headshot')}
-                        className={`px-2 py-0.5 rounded font-semibold transition-colors ${
-                          selectedAvatarType === 'headshot' ? 'bg-green text-black' : 'text-muted hover:text-white'
-                        }`}
-                      >
-                        {t('login_modal_headshot_tab')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAvatarType('bust')}
-                        className={`px-2 py-0.5 rounded font-semibold transition-colors ${
-                          selectedAvatarType === 'bust' ? 'bg-green text-black' : 'text-muted hover:text-white'
-                        }`}
-                      >
-                        {t('login_modal_avatar3d_tab')}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Feedback alert if any */}
-            {feedbackMessage && (
-              <div className={`p-3 rounded-[3px] border flex items-start gap-2 text-xs ${
-                feedbackMessage.success 
-                  ? 'bg-green/10 border-green/30 text-green' 
-                  : 'bg-red-500/10 border-red-500/30 text-red-300'
-              }`}>
-                {feedbackMessage.success ? (
-                  <CheckCircle2 className="w-4 h-4 text-green flex-shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                )}
-                <span>{feedbackMessage.message}</span>
-              </div>
-            )}
-
-            {/* CASE 1: Account Already Registered & Protected by PIN */}
-            {accountStatus?.hasPin && pinMode === 'pin' && (
-              <form onSubmit={handlePinLogin} className="border-t border-line pt-4 space-y-3.5">
-                <div className="bg-bg p-3 rounded-[3px] border border-line space-y-1">
-                  <div className="flex items-center gap-2 text-xs font-bold text-white">
-                    <Lock className="w-4 h-4 text-green" />
-                    <span>{t('login_modal_pin_protected')}</span>
-                  </div>
-                  <p className="text-[11px] text-muted leading-relaxed">
-                    {t('login_modal_pin_desc')}
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-ink">
-                    {t('login_modal_enter_pin')}
-                  </label>
-                  <div className="relative">
-                    <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                    <input
-                      type={showPin ? 'text' : 'password'}
-                      autoFocus
-                      autoComplete="current-password"
-                      aria-label={t('login_modal_enter_pin')}
-                      value={inputPin}
-                      onChange={(e) => setInputPin(e.target.value)}
-                      className="w-full pl-10 pr-10 py-2.5 bg-panel border border-line focus:border-green rounded-[3px] text-sm text-white outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPin(!showPin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white"
-                    >
-                      {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={verifying || !inputPin.trim()}
-                  className="w-full py-3 bg-green hover:bg-[#00c94b] active:scale-[0.99] disabled:opacity-50 text-black font-semibold text-xs sm:text-sm rounded-[3px] transition-colors flex items-center justify-center gap-2"
-                >
-                  {verifying ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>{t('login_modal_checking_pin')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4" />
-                      <span>{t('login_modal_login_pin_btn')}</span>
-                    </>
-                  )}
-                </button>
-
-                <div className="pt-1 text-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPinMode('challenge');
-                      setFeedbackMessage(null);
-                      startVerificationChallenge(foundUser, 'avatar');
-                    }}
-                    className="text-xs text-muted hover:text-blue underline transition-colors"
-                  >
-                    {t('login_modal_forgot_pin')}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* CASE 2: First-time Registration OR Reset PIN via Active Challenge */}
-            {(!accountStatus?.hasPin || pinMode === 'challenge') && (
-              <div className="border-t border-line pt-4 space-y-4">
-                <div className="bg-bg p-3.5 rounded-[3px] border border-line space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-white">
-                      <ShieldCheck className="w-4 h-4 text-green" />
-                      <span>{t('login_modal_challenge_header')}</span>
-                    </div>
-                    {countdown > 0 && (
-                      <span className="text-[11px] font-mono text-green bg-green/10 border border-green/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                        <Clock className="w-3 h-3" />
-                        <span>{formatTime(countdown)}</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-bold text-white truncate">{user.username}</p>
+                    {user.isRobloxVerified && (
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-green bg-green/10 px-1.5 py-0.5 rounded-[2px] border border-green/20">
+                        {t('nav_verified')}
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-ink leading-relaxed">
-                    {t('login_modal_challenge_desc')}
+                  <p className="text-xs text-muted truncate mt-0.5">
+                    @{user.robloxUsername || user.username} {user.robloxUserId ? `(ID: ${user.robloxUserId})` : ''}
                   </p>
                 </div>
-
-                {/* Method Switcher Tabs */}
-                <div className="grid grid-cols-2 gap-2 p-1 bg-bg rounded-[3px] border border-line">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (challengeType !== 'avatar') {
-                        startVerificationChallenge(foundUser, 'avatar');
-                      }
-                    }}
-                    className={`px-3 py-2.5 rounded-[2px] text-xs font-bold transition-colors flex items-center justify-center gap-2 ${
-                      challengeType === 'avatar'
-                        ? 'bg-green text-black'
-                        : 'text-muted hover:text-white hover:bg-panel'
-                    }`}
-                  >
-                    <Shirt className="w-4 h-4" />
-                    <span>{t('login_modal_tab_avatar')}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (challengeType !== 'bio') {
-                        startVerificationChallenge(foundUser, 'bio');
-                      }
-                    }}
-                    className={`px-3 py-2.5 rounded-[2px] text-xs font-bold transition-colors flex items-center justify-center gap-2 ${
-                      challengeType === 'bio'
-                        ? 'bg-green text-black'
-                        : 'text-muted hover:text-white hover:bg-panel'
-                    }`}
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span>{t('login_modal_tab_bio')}</span>
-                  </button>
-                </div>
-
-                {/* Loading state for challenge */}
-                {challengeLoading && (
-                  <div className="py-6 text-center text-xs text-muted flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-green" />
-                    <span>{t('login_modal_challenge_creating')}</span>
-                  </div>
-                )}
-
-                {/* Challenge Body */}
-                {!challengeLoading && challengeData && (
-                  <div className="space-y-4">
-                    {/* Method 1: Avatar Item Challenge */}
-                    {challengeType === 'avatar' && (
-                      <div className="bg-bg p-4 rounded-[3px] border border-line space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-xs font-bold text-white">
-                            <Shirt className="w-4 h-4 text-green" />
-                            <span>{t('login_modal_avatar_instructions_title')}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => startVerificationChallenge(foundUser, 'avatar')}
-                            className="text-[11px] text-muted hover:text-green flex items-center gap-1"
-                            title={t('login_modal_refresh_session')}
-                          >
-                            <RefreshCw className="w-3 h-3" />
-                            <span>{t('login_modal_refresh_session')}</span>
-                          </button>
-                        </div>
-
-                        <div className="bg-panel p-3.5 rounded-[2px] border border-line space-y-2.5">
-                          <p className="text-xs text-ink leading-relaxed font-medium">
-                            {challengeData.actionInstruction}
-                          </p>
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-[11px] text-muted border-t border-white/5">
-                            <div>
-                              <span>{t('login_modal_official_item')} </span>
-                              <strong className="text-white">{challengeData.assetName}</strong>{' '}
-                              <span className="text-muted font-mono text-[10px]">(ID: {challengeData.assetId})</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <a
-                                href={challengeData.catalogUrl || `https://www.roblox.com/catalog/${challengeData.assetId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue hover:underline flex items-center gap-1 font-semibold"
-                              >
-                                <span>{t('login_modal_view_catalog')}</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                              <a
-                                href="https://www.roblox.com/my/avatar"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-green hover:underline flex items-center gap-1 font-semibold"
-                              >
-                                <span>{t('login_modal_open_avatar_editor')}</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Switch item option if available */}
-                        {challengeData.availableItems && challengeData.availableItems.length > 1 && (
-                          <div className="flex items-center justify-between pt-0.5 text-[11px] text-muted">
-                            <span>{t('login_modal_switch_item')}</span>
-                            <div className="flex gap-1.5">
-                              {challengeData.availableItems.map(item => (
-                                <button
-                                  key={item.id}
-                                  type="button"
-                                  onClick={() => startVerificationChallenge(foundUser, 'avatar', item.id)}
-                                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
-                                    challengeData.assetId === item.id 
-                                      ? 'bg-green text-black' 
-                                      : 'bg-panel hover:bg-panel-2 text-ink'
-                                  }`}
-                                >
-                                  {item.name === "ROBLOX 'R' Baseball Cap" ? "'R' Baseball Cap" : "Roblox Baseball Cap"}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <p className="text-[11px] text-muted leading-relaxed">
-                          {t('login_modal_avatar_tip')}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Method 2: Dynamic Bio Words Challenge */}
-                    {challengeType === 'bio' && (
-                      <div className="bg-bg p-4 rounded-[3px] border border-line space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-xs font-bold text-white">
-                            <Sparkles className="w-4 h-4 text-green" />
-                            <span>{t('login_modal_bio_phrase_title')}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => startVerificationChallenge(foundUser, 'bio')}
-                            className="text-[11px] text-muted hover:text-green flex items-center gap-1"
-                            title={t('login_modal_re_randomize')}
-                          >
-                            <RefreshCw className="w-3 h-3" />
-                            <span>{t('login_modal_re_randomize')}</span>
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2 bg-panel px-3 py-2.5 rounded-[3px] border border-line">
-                          <span className="font-mono text-sm font-semibold text-green tracking-wide truncate select-all">
-                            {challengeData.phrase}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={handleCopyPhrase}
-                            className="flex items-center gap-1 text-xs font-bold text-ink hover:text-white bg-panel-2 hover:bg-panel-2 px-3 py-1.5 rounded-[2px] transition-colors whitespace-nowrap"
-                          >
-                            {copied ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-green" />
-                                <span className="text-green">{t('login_modal_copied')}</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>{t('login_modal_copy_phrase')}</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-
-                        <ol className="text-[11px] text-ink space-y-1 pl-4 list-decimal">
-                          <li>{t('login_modal_bio_step1')}</li>
-                          <li>{t('login_modal_bio_step2')}</li>
-                          <li>{t('login_modal_bio_step3')}</li>
-                        </ol>
-                      </div>
-                    )}
-
-                    {/* PIN Registration Form */}
-                    <form onSubmit={handleVerifyChallenge} className="space-y-4 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-bg p-3 rounded-[3px] border border-line">
-                        <div className="space-y-1">
-                          <label className="block text-[11px] font-bold text-ink">
-                            {t('login_modal_create_pin')}
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showPin ? 'text' : 'password'}
-                              autoComplete="new-password"
-                              aria-label={t('login_modal_create_pin')}
-                              value={newPin}
-                              onChange={(e) => setNewPin(e.target.value)}
-                              className="w-full px-3 py-2 bg-panel border border-line focus:border-green rounded-[2px] text-xs text-white outline-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPin(!showPin)}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-white"
-                            >
-                              {showPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="block text-[11px] font-bold text-ink">
-                            {t('login_modal_confirm_pin')}
-                          </label>
-                          <input
-                            type={showPin ? 'text' : 'password'}
-                            autoComplete="new-password"
-                            aria-label={t('login_modal_confirm_pin')}
-                            value={confirmPin}
-                            onChange={(e) => setConfirmPin(e.target.value)}
-                            className="w-full px-3 py-2 bg-panel border border-line focus:border-green rounded-[2px] text-xs text-white outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Submit Button */}
-                      <button
-                        type="submit"
-                        disabled={verifying || !newPin.trim() || countdown === 0}
-                        className="w-full py-3 bg-green hover:bg-[#00c94b] active:scale-[0.99] disabled:opacity-50 text-black font-semibold text-xs sm:text-sm rounded-[3px] transition-colors flex items-center justify-center gap-2"
-                      >
-                        {verifying ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>{t('login_modal_verifying_with_roblox')}</span>
-                          </>
-                        ) : (
-                          <>
-                            <ShieldCheck className="w-4 h-4" />
-                            <span>{t('login_modal_verify_lock_btn')}</span>
-                          </>
-                        )}
-                      </button>
-
-                      {accountStatus?.hasPin && (
-                        <div className="text-center pt-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPinMode('pin');
-                              setFeedbackMessage(null);
-                            }}
-                            className="text-xs text-muted hover:text-white underline"
-                          >
-                            {t('login_modal_remembered_pin')}
-                          </button>
-                        </div>
-                      )}
-                    </form>
-                  </div>
-                )}
               </div>
-            )}
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/25 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>{t('login_modal_logout_btn')}</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-muted leading-relaxed text-center">
+              {language === 'id' 
+                ? 'Akun kamu terhubung secara aman dengan Roblox OAuth 2.0.' 
+                : 'Your account is securely linked with Roblox OAuth 2.0.'}
+            </p>
+          </div>
+        ) : (
+          /* Logged out state: 1-Click Roblox OAuth */
+          <div className="space-y-5">
+            <div className="text-center space-y-2">
+              <p className="text-xs text-ink leading-relaxed">
+                {language === 'id'
+                  ? 'Masuk menggunakan akun Roblox aslimu dalam 1 klik. Tanpa password, tanpa PIN, dan tanpa perlu verifikasi bio manual.'
+                  : 'Sign in using your real Roblox account in 1 click. Zero passwords, no PINs, and no manual bio verification needed.'}
+              </p>
+            </div>
+
+            {/* Big Action Button */}
+            <button
+              type="button"
+              disabled={isAuthenticating}
+              onClick={handleOAuthLogin}
+              className="w-full flex items-center justify-center gap-2.5 py-3.5 px-5 rounded-[3px] bg-[#00A2FF] hover:bg-[#008fe0] disabled:opacity-70 text-white font-bold text-xs tracking-wide transition-all shadow-[0_4px_16px_rgba(0,162,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,162,255,0.45)] cursor-pointer"
+            >
+              {isAuthenticating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{language === 'id' ? 'Menghubungkan ke Roblox...' : 'Connecting to Roblox...'}</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>{t('login_modal_oauth_btn')}</span>
+                </>
+              )}
+            </button>
+
+            {/* Perks / Security guarantees */}
+            <div className="pt-3 border-t border-line space-y-2.5 text-xs text-muted">
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-green flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-white font-medium">100% Aman & Resmi:</strong>{' '}
+                  {language === 'id' ? 'Otorisasi langsung lewat domain resmi Roblox (apis.roblox.com).' : 'Authorized directly on Roblox domains.'}
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Lock className="w-4 h-4 text-green flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-white font-medium">Zero-Credential:</strong>{' '}
+                  {language === 'id' ? 'Bloxboxd tidak pernah meminta atau menyimpan kredensial Roblox kamu.' : 'Bloxboxd never sees or stores your Roblox credentials.'}
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-green flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-white font-medium">Sinkron Otomatis:</strong>{' '}
+                  {language === 'id' ? 'Avatar 3D, nama pengguna, dan status terverifikasi langsung aktif.' : 'Avatar, username, and badge sync instantly.'}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </div>

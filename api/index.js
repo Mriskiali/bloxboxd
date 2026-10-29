@@ -5628,35 +5628,112 @@ function registerOAuthRoutes(app2) {
         <html>
         <head>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Login Berhasil - Bloxboxd</title>
           <style>
-            body { background: #14181c; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-            .box { text-align: center; }
-            .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color: #00e054; border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+            body { 
+              background: #14181c; 
+              color: #fff; 
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              height: 100vh; 
+              margin: 0; 
+              text-align: center;
+              padding: 20px;
+              box-sizing: border-box;
+            }
+            .card {
+              background: #1c2228;
+              border: 1px solid rgba(255,255,255,0.1);
+              border-radius: 6px;
+              padding: 28px 24px;
+              max-width: 380px;
+              width: 100%;
+              box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+            }
+            .spinner { 
+              border: 3px solid rgba(255,255,255,0.1); 
+              border-top-color: #00e054; 
+              border-radius: 50%; 
+              width: 32px; 
+              height: 32px; 
+              animation: spin 0.8s linear infinite; 
+              margin: 0 auto 16px; 
+            }
             @keyframes spin { to { transform: rotate(360deg); } }
+            h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #fff; }
+            p { margin: 0 0 16px; font-size: 13px; color: #9ab; line-height: 1.4; }
+            button {
+              display: none;
+              background: #00e054;
+              color: #000;
+              border: none;
+              border-radius: 4px;
+              padding: 10px 20px;
+              font-size: 13px;
+              font-weight: 600;
+              cursor: pointer;
+            }
+            button:hover { background: #00c94b; }
           </style>
         </head>
         <body>
-          <div class="box">
-            <div class="spinner"></div>
-            <p>Berhasil masuk! Mengalihkan ke Bloxboxd...</p>
+          <div class="card">
+            <div class="spinner" id="spinner"></div>
+            <h3 id="title">Login Berhasil!</h3>
+            <p id="msg">Menghubungkan akun Roblox kamu ke Bloxboxd...</p>
+            <button id="closeBtn" onclick="window.close(); window.location.href='/';">Tutup Jendela</button>
           </div>
           <script>
+            const user = ${JSON.stringify(clientUserData)};
+            
+            // 1. Sync directly to localStorage
             try {
-              localStorage.setItem('bloxboxd_user', JSON.stringify(${JSON.stringify(clientUserData)}));
+              localStorage.setItem('bloxboxd_user', JSON.stringify(user));
+              localStorage.setItem('bloxboxd_oauth_event', JSON.stringify({ user, t: Date.now() }));
             } catch (e) {
               console.error(e);
             }
-            if (window.opener) {
-              try {
-                window.opener.postMessage({ type: 'BLOXBOXD_AUTH_SUCCESS', user: ${JSON.stringify(clientUserData)} }, '*');
-                window.close();
-              } catch (e) {
-                window.location.href = '/';
+
+            // 2. Broadcast via BroadcastChannel (works across all tabs/windows on domain)
+            try {
+              if (typeof BroadcastChannel !== 'undefined') {
+                const bc = new BroadcastChannel('bloxboxd_auth');
+                bc.postMessage({ type: 'BLOXBOXD_AUTH_SUCCESS', user: user });
+                bc.close();
               }
-            } else {
-              window.location.href = '/';
+            } catch (e) {
+              console.error(e);
             }
+
+            // 3. Post message to window.opener if accessible
+            try {
+              if (window.opener && window.opener !== window) {
+                window.opener.postMessage({ type: 'BLOXBOXD_AUTH_SUCCESS', user: user }, '*');
+              }
+            } catch (e) {
+              console.error(e);
+            }
+
+            // 4. Close popup
+            try {
+              window.close();
+            } catch (e) {}
+
+            // 5. Fallback if browser prevents auto-close
+            setTimeout(function() {
+              if (!window.closed) {
+                if (window.opener || window.outerWidth < 800) {
+                  document.getElementById('spinner').style.display = 'none';
+                  document.getElementById('msg').innerText = 'Autentikasi selesai. Kamu bisa menutup jendela ini.';
+                  document.getElementById('closeBtn').style.display = 'inline-block';
+                } else {
+                  window.location.href = '/';
+                }
+              }
+            }, 350);
           </script>
         </body>
         </html>
