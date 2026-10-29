@@ -120,12 +120,10 @@ export function registerOAuthRoutes(app: Express): void {
     }
 
     try {
-      // 1. Exchange code for access token
+      // 1. Exchange code for access token via HTTP Basic Auth
       const tokenBody = new URLSearchParams({
         grant_type: 'authorization_code',
         code: String(code),
-        client_id: clientId,
-        client_secret: clientSecret,
         code_verifier: storedVerifier,
         redirect_uri: storedRedirectUri || getRedirectUri(req)
       });

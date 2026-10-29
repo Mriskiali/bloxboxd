@@ -5547,8 +5547,6 @@ function registerOAuthRoutes(app2) {
       const tokenBody = new URLSearchParams({
         grant_type: "authorization_code",
         code: String(code),
-        client_id: clientId,
-        client_secret: clientSecret,
         code_verifier: storedVerifier,
         redirect_uri: storedRedirectUri || getRedirectUri(req)
       });
