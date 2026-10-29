@@ -12,6 +12,7 @@ export const LogModal: React.FC = () => {
     getUserLogForGame, 
     saveGameLog, 
     deleteGameLog,
+    showConfirm,
     user,
     language,
     t
@@ -66,11 +67,17 @@ export const LogModal: React.FC = () => {
   };
 
   const handleDelete = () => {
-    // ponytail: window.confirm is native, zero-DOM overhead; upgrade to custom modal if design requires it
-    if (existingLog && window.confirm(t('log_modal_delete_confirm'))) {
-      deleteGameLog(existingLog.id);
-      closeLogModal();
-    }
+    if (!existingLog) return;
+    showConfirm({
+      title: language === 'id' ? 'Hapus Catatan Game' : 'Delete Game Log',
+      message: t('log_modal_delete_confirm'),
+      confirmText: language === 'id' ? 'Ya, Hapus' : 'Yes, Delete',
+      isDestructive: true,
+      onConfirm: () => {
+        deleteGameLog(existingLog.id);
+        closeLogModal();
+      }
+    });
   };
 
   const shelfOptions: { id: ShelfStatus; label: string; desc: string; icon: any }[] = [

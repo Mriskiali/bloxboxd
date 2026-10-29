@@ -39,6 +39,21 @@ export const authHeaders = (): Record<string, string> => {
   }
 };
 
+export interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+export interface ConfirmDialogOptions {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  isDestructive?: boolean;
+  onConfirm: () => void;
+}
+
 interface AppContextType {
   games: Game[];
   user: UserProfile | null;
@@ -118,6 +133,12 @@ interface AppContextType {
   likeList: (listId: string) => void;
   getGameById: (id: string) => Game | undefined;
   getUserLogForGame: (gameId: string) => GameLog | undefined;
+  toasts: Toast[];
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  removeToast: (id: string) => void;
+  confirmDialog: ConfirmDialogOptions | null;
+  showConfirm: (options: ConfirmDialogOptions) => void;
+  closeConfirm: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -254,6 +275,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [editProfileModalOpen, setEditProfileModalOpen] = useState(false);
   const [createListModalOpen, setCreateListModalOpen] = useState(false);
+
+  // Toasts & Custom Confirm Dialog
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogOptions | null>(null);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev: Toast[]) => prev.filter((t: Toast) => t.id !== id));
+  }, []);
+
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    setToasts((prev: Toast[]) => [...prev.slice(-3), { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev: Toast[]) => prev.filter((t: Toast) => t.id !== id));
+    }, 3800);
+  }, []);
+
+  const showConfirm = useCallback((options: ConfirmDialogOptions) => {
+    setConfirmDialog(options);
+  }, []);
+
+  const closeConfirm = useCallback(() => {
+    setConfirmDialog(null);
+  }, []);
 
   const resetAllFilters = useCallback(() => {
     setSearchQuery('');
@@ -641,6 +686,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         body: JSON.stringify({ ...user, favoriteGameIds: updatedFavs })
       }).catch(e => console.warn('Failed to sync favorites to database:', e));
     }
+
+    showToast(language === 'id' ? 'Catatan game berhasil disimpan!' : 'Game log saved successfully!', 'success');
   };
 
   const deleteGameLog = (logId: string) => {
@@ -663,6 +710,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         method: 'DELETE',
         headers: { ...authHeaders() }
       }).catch(e => console.warn('Failed to delete log in database:', e));
+
+      showToast(language === 'id' ? 'Catatan game telah dihapus.' : 'Game log deleted.', 'info');
     }
   };
 
@@ -757,6 +806,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(updatedUser)
     }).catch(e => console.warn('Failed to update profile in database:', e));
+    showToast(language === 'id' ? 'Profil berhasil diperbarui!' : 'Profile updated successfully!', 'success');
   };
 
   const loginWithRobloxAccount = (robloxData: {
@@ -831,6 +881,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       })
       .catch(() => {});
+
+    showToast(language === 'id' ? `Berhasil masuk sebagai @${robloxData.username}!` : `Signed in as @${robloxData.username}!`, 'success');
   };
 
   const logoutRobloxAccount = () => {
@@ -843,6 +895,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUserLogs([]);
     localStorage.removeItem('bloxboxd_user');
     localStorage.removeItem('bloxboxd_logs');
+    showToast(language === 'id' ? 'Berhasil keluar.' : 'Signed out.', 'info');
   };
 
   const importGame = (newGame: Game) => {
@@ -969,6 +1022,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       body: JSON.stringify(newList)
     }).catch(e => console.warn('Failed to save list to database:', e));
 
+    showToast(language === 'id' ? 'Daftar game berhasil dibuat!' : 'List created successfully!', 'success');
     viewList(newList.id);
   };
 
@@ -984,6 +1038,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         headers: { ...authHeaders() }
       }).catch(e => console.warn('Failed to delete list from database:', e));
     }
+    showToast(language === 'id' ? 'Daftar game telah dihapus.' : 'List deleted.', 'info');
   };
 
   const clearAllLists = () => {
@@ -991,6 +1046,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('bloxboxd_lists');
     setSelectedListId(null);
     setActiveTab('lists');
+    showToast(language === 'id' ? 'Semua daftar lokal dibersihkan.' : 'All local lists cleared.', 'info');
   };
 
   const likeReview = (reviewId: string) => {
@@ -1106,7 +1162,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         likeReview,
         likeList,
         getGameById,
-        getUserLogForGame
+        getUserLogForGame,
+        toasts,
+        showToast,
+        removeToast,
+        confirmDialog,
+        showConfirm,
+        closeConfirm
       }}
     >
       {children}

@@ -11,6 +11,8 @@ import { GameCard } from './components/GameCard';
 import { GameGridSkeleton } from './components/GameCardSkeleton';
 import { ScrollToTop } from './components/ScrollToTop';
 import { BloxboxdLogo } from './components/BloxboxdLogo';
+import { ConfirmModal } from './components/ConfirmModal';
+import { ToastContainer } from './components/ToastContainer';
 
 // Code-Splitting (Pilar 1): Lazy-load non-critical views and modals to reduce initial JS bundle size
 const GameDetailView = lazy(() => import('./components/GameDetailView').then(m => ({ default: m.GameDetailView })));
@@ -731,6 +733,10 @@ const MainAppContent: React.FC = () => {
 
       {/* Floating Scroll To Top Button */}
       <ScrollToTop />
+
+      {/* Global Confirmation Dialog & Toast Notifications */}
+      <ConfirmModal />
+      <ToastContainer />
     </div>
   );
 };

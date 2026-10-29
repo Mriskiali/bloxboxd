@@ -5552,10 +5552,12 @@ function registerOAuthRoutes(app2) {
         code_verifier: storedVerifier,
         redirect_uri: storedRedirectUri || getRedirectUri(req)
       });
+      const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
       const tokenRes = await fetch("https://apis.roblox.com/oauth/v1/token", {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Basic ${basicAuth}`
         },
         body: tokenBody.toString()
       });
