@@ -78,6 +78,21 @@ export const RobloxLoginModal: React.FC = () => {
   const [pinMode, setPinMode] = useState<'pin' | 'challenge'>('pin');
   const [inputPin, setInputPin] = useState('');
   const [newPin, setNewPin] = useState('');
+
+  const handleOAuthLogin = () => {
+    const width = 600;
+    const height = 720;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const popup = window.open(
+      '/api/auth/roblox/login',
+      'roblox_oauth',
+      `width=${width},height=${height},left=${left},top=${top},status=no,menubar=no,toolbar=no`
+    );
+    if (!popup) {
+      window.location.href = '/api/auth/roblox/login';
+    }
+  };
   const [confirmPin, setConfirmPin] = useState('');
   const [showPin, setShowPin] = useState(false);
 
@@ -391,6 +406,25 @@ export const RobloxLoginModal: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* Quick Official Roblox OAuth 2.0 Sign In */}
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={handleOAuthLogin}
+            className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-[3px] bg-[#00A2FF] hover:bg-[#008fe0] text-white font-semibold text-xs tracking-wide transition-all shadow-[0_2px_8px_rgba(0,162,255,0.25)] hover:shadow-[0_4px_12px_rgba(0,162,255,0.35)] cursor-pointer"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>{t('login_modal_oauth_btn')}</span>
+          </button>
+
+          <div className="relative flex items-center justify-center my-1">
+            <div className="w-full border-t border-line" />
+            <span className="absolute px-3 bg-panel text-[11px] text-faint uppercase tracking-wider font-semibold">
+              {t('login_modal_or_manual')}
+            </span>
+          </div>
+        </div>
 
         {/* Search Input Form */}
         <form onSubmit={(e) => handleSearch(e)} className="space-y-2">

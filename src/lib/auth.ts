@@ -12,7 +12,7 @@ import { isValidSession } from '../db/index';
 export const SESSION_COOKIE = 'bb_session';
 const SESSION_MAX_AGE_S = 30 * 24 * 60 * 60; // 30 days
 
-function parseCookies(header: string | undefined): Record<string, string> {
+export function parseCookies(header: string | undefined): Record<string, string> {
   const out: Record<string, string> = {};
   if (!header) return out;
   for (const part of header.split(';')) {

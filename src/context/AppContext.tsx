@@ -418,6 +418,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
+  // Listen for popup OAuth callback messages
+  useEffect(() => {
+    const handleAuthMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'BLOXBOXD_AUTH_SUCCESS' && e.data.user) {
+        const u = e.data.user;
+        loginWithRobloxAccount({
+          userId: u.robloxUserId,
+          username: u.robloxUsername || u.username,
+          displayName: u.displayName || u.username,
+          avatarHeadshotUrl: u.avatarUrl,
+          isVerifiedOwner: true,
+          sessionToken: u.sessionToken
+        });
+        setLoginModalOpen(false);
+      }
+    };
+    window.addEventListener('message', handleAuthMessage);
+    return () => window.removeEventListener('message', handleAuthMessage);
+  }, []);
+
   // Initial sync on mount and auto-refresh every 90 seconds (interval aman dari rate limit Roblox)
   useEffect(() => {
     refreshRealtimeStats();

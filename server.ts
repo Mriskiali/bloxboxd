@@ -5,6 +5,7 @@ import { initDatabase } from './src/db/index';
 import { installRobloxFetchFailover } from './src/lib/roblox';
 import { registerRobloxRoutes } from './src/routes/roblox';
 import { registerAccountRoutes } from './src/routes/account';
+import { registerOAuthRoutes } from './src/routes/oauth';
 import { registerCatalogRoutes } from './src/routes/catalog';
 import { registerUserRoutes } from './src/routes/user';
 import { registerSocialRoutes } from './src/routes/social';
@@ -90,6 +91,7 @@ app.get('/api/health', (req, res) => {
 });
 
 registerRobloxRoutes(app);
+registerOAuthRoutes(app);
 registerAccountRoutes(app);
 registerCatalogRoutes(app);
 registerUserRoutes(app);

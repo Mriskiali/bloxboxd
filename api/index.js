@@ -2833,11 +2833,11 @@ async function saveAccount(data) {
       VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(user_id) DO UPDATE SET
         username = excluded.username,
-        pin_hash = excluded.pin_hash,
-        salt = excluded.salt,
+        pin_hash = COALESCE(NULLIF(excluded.pin_hash, 'oauth'), accounts.pin_hash),
+        salt = COALESCE(NULLIF(excluded.salt, 'oauth'), accounts.salt),
         verified_at = excluded.verified_at
     `,
-    args: [data.userId, data.username, data.pinHash, data.salt, data.verifiedAt]
+    args: [data.userId, data.username, data.pinHash || "oauth", data.salt || "oauth", data.verifiedAt]
   });
 }
 var SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1e3;
@@ -5451,6 +5451,223 @@ function registerAccountRoutes(app2) {
   });
 }
 
+// src/routes/oauth.ts
+import crypto5 from "crypto";
+var OAUTH_COOKIE = "roblox_oauth_state";
+function getRedirectUri(req) {
+  if (process.env.ROBLOX_REDIRECT_URI) {
+    return process.env.ROBLOX_REDIRECT_URI;
+  }
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:3000";
+  const proto = req.headers["x-forwarded-proto"] || (host.toString().includes("localhost") ? "http" : "https");
+  return `${proto}://${host}/api/auth/roblox/callback`;
+}
+function registerOAuthRoutes(app2) {
+  app2.get("/api/auth/roblox/status", (req, res) => {
+    const configured = Boolean(process.env.ROBLOX_CLIENT_ID && process.env.ROBLOX_CLIENT_SECRET);
+    res.json({ configured });
+  });
+  app2.get("/api/auth/roblox/login", (req, res) => {
+    const clientId = process.env.ROBLOX_CLIENT_ID;
+    if (!clientId) {
+      return res.status(500).send(`
+        <html>
+          <body style="background:#14181c;color:#fff;font-family:sans-serif;padding:40px;text-align:center;">
+            <h2>Roblox OAuth 2.0 Belum Dikonfigurasi</h2>
+            <p style="color:#9ab;">Harap tambahkan environment variable <code>ROBLOX_CLIENT_ID</code> dan <code>ROBLOX_CLIENT_SECRET</code> di .env atau dashboard hosting.</p>
+            <p><a href="/" style="color:#00e054;">Kembali ke Bloxboxd</a></p>
+          </body>
+        </html>
+      `);
+    }
+    const state = crypto5.randomBytes(16).toString("hex");
+    const verifier = crypto5.randomBytes(32).toString("base64url");
+    const challenge = crypto5.createHash("sha256").update(verifier).digest("base64url");
+    const redirectUri = getRedirectUri(req);
+    const cookiePayload = JSON.stringify({ state, verifier, redirectUri });
+    res.cookie(OAUTH_COOKIE, Buffer.from(cookiePayload).toString("base64"), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL),
+      sameSite: "lax",
+      path: "/",
+      maxAge: 10 * 60 * 1e3
+    });
+    const params = new URLSearchParams({
+      client_id: clientId,
+      response_type: "code",
+      redirect_uri: redirectUri,
+      scope: "openid profile",
+      state,
+      code_challenge: challenge,
+      code_challenge_method: "S256"
+    });
+    res.redirect(`https://apis.roblox.com/oauth/v1/authorize?${params.toString()}`);
+  });
+  app2.get("/api/auth/roblox/callback", async (req, res) => {
+    const { code, state, error, error_description } = req.query;
+    if (error) {
+      return res.status(400).send(`
+        <html>
+          <body style="background:#14181c;color:#fff;font-family:sans-serif;padding:40px;text-align:center;">
+            <h2>Login Roblox Dibatalkan atau Gagal</h2>
+            <p style="color:#ff6b6b;">${String(error_description || error)}</p>
+            <p><a href="/" style="color:#00e054;">Kembali ke Beranda</a></p>
+          </body>
+        </html>
+      `);
+    }
+    if (!code || !state) {
+      return res.status(400).send("Parameter code atau state tidak ditemukan.");
+    }
+    const cookies = parseCookies(req.headers.cookie);
+    const rawStateCookie = cookies[OAUTH_COOKIE];
+    if (!rawStateCookie) {
+      return res.status(400).send("Sesi otentikasi telah kedaluwarsa. Silakan coba login kembali.");
+    }
+    let storedState;
+    let storedVerifier;
+    let storedRedirectUri;
+    try {
+      const parsed = JSON.parse(Buffer.from(rawStateCookie, "base64").toString("utf-8"));
+      storedState = parsed.state;
+      storedVerifier = parsed.verifier;
+      storedRedirectUri = parsed.redirectUri;
+    } catch {
+      return res.status(400).send("Format sesi OAuth tidak valid.");
+    }
+    if (storedState !== state) {
+      return res.status(403).send("Validasi anti-CSRF state gagal.");
+    }
+    const clientId = process.env.ROBLOX_CLIENT_ID;
+    const clientSecret = process.env.ROBLOX_CLIENT_SECRET;
+    if (!clientId || !clientSecret) {
+      return res.status(500).send("Server OAuth credentials missing.");
+    }
+    try {
+      const tokenBody = new URLSearchParams({
+        grant_type: "authorization_code",
+        code: String(code),
+        client_id: clientId,
+        client_secret: clientSecret,
+        code_verifier: storedVerifier,
+        redirect_uri: storedRedirectUri || getRedirectUri(req)
+      });
+      const tokenRes = await fetch("https://apis.roblox.com/oauth/v1/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: tokenBody.toString()
+      });
+      if (!tokenRes.ok) {
+        const errText = await tokenRes.text();
+        console.error("[OAuth] Token exchange failed:", errText);
+        return res.status(502).send("Gagal menukarkan token dengan server Roblox: " + errText);
+      }
+      const tokenData = await tokenRes.json();
+      const accessToken = tokenData.access_token;
+      const userInfoRes = await fetch("https://apis.roblox.com/oauth/v1/userinfo", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      if (!userInfoRes.ok) {
+        return res.status(502).send("Gagal memuat profil user dari Roblox API.");
+      }
+      const userInfo = await userInfoRes.json();
+      const userId = Number(userInfo.sub);
+      const username = userInfo.preferred_username || userInfo.name || `User_${userId}`;
+      const displayName = userInfo.nickname || userInfo.name || username;
+      const avatarUrl = userInfo.picture || "";
+      await saveAccount({
+        userId,
+        username,
+        verifiedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      const profileId = `user-roblox-${userId}`;
+      const existingProfile = await getUserProfile(profileId);
+      if (!existingProfile) {
+        await upsertUserProfile({
+          id: profileId,
+          robloxUserId: userId,
+          username,
+          handle: `@${username}`,
+          displayName,
+          avatarUrl,
+          joinedDate: (/* @__PURE__ */ new Date()).toISOString()
+        });
+      } else if (avatarUrl && !existingProfile.avatarUrl) {
+        await upsertUserProfile({
+          ...existingProfile,
+          avatarUrl,
+          displayName: displayName || existingProfile.displayName
+        });
+      }
+      const sessionToken = await createSession(userId);
+      setSessionCookie(res, sessionToken);
+      res.clearCookie(OAUTH_COOKIE, { path: "/" });
+      void recordLoginEvent({
+        userId,
+        event: "roblox_oauth_success",
+        ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+        userAgent: req.headers["user-agent"]
+      });
+      const clientUserData = {
+        id: profileId,
+        robloxUserId: userId,
+        robloxUsername: username,
+        username,
+        displayName,
+        handle: `@${username}`,
+        avatarUrl,
+        isRobloxVerified: true,
+        sessionToken
+      };
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Login Berhasil - Bloxboxd</title>
+          <style>
+            body { background: #14181c; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+            .box { text-align: center; }
+            .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color: #00e054; border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+            @keyframes spin { to { transform: rotate(360deg); } }
+          </style>
+        </head>
+        <body>
+          <div class="box">
+            <div class="spinner"></div>
+            <p>Berhasil masuk! Mengalihkan ke Bloxboxd...</p>
+          </div>
+          <script>
+            try {
+              localStorage.setItem('bloxboxd_user', JSON.stringify(${JSON.stringify(clientUserData)}));
+            } catch (e) {
+              console.error(e);
+            }
+            if (window.opener) {
+              try {
+                window.opener.postMessage({ type: 'BLOXBOXD_AUTH_SUCCESS', user: ${JSON.stringify(clientUserData)} }, '*');
+                window.close();
+              } catch (e) {
+                window.location.href = '/';
+              }
+            } else {
+              window.location.href = '/';
+            }
+          </script>
+        </body>
+        </html>
+      `);
+    } catch (err) {
+      console.error("[OAuth Callback Error]:", err);
+      return res.status(500).send("Terjadi kesalahan internal saat memproses autentikasi.");
+    }
+  });
+}
+
 // src/routes/catalog.ts
 function registerCatalogRoutes(app2) {
   app2.get("/api/games", async (req, res) => {
@@ -5820,6 +6037,7 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", service: "Bloxboxd API" });
 });
 registerRobloxRoutes(app);
+registerOAuthRoutes(app);
 registerAccountRoutes(app);
 registerCatalogRoutes(app);
 registerUserRoutes(app);

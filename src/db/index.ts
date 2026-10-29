@@ -330,8 +330,8 @@ export async function getAccountByUserId(userId: number): Promise<any | null> {
 export async function saveAccount(data: {
   userId: number;
   username: string;
-  pinHash: string;
-  salt: string;
+  pinHash?: string;
+  salt?: string;
   verifiedAt: string;
 }): Promise<void> {
   await db.execute({
@@ -340,11 +340,11 @@ export async function saveAccount(data: {
       VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(user_id) DO UPDATE SET
         username = excluded.username,
-        pin_hash = excluded.pin_hash,
-        salt = excluded.salt,
+        pin_hash = COALESCE(NULLIF(excluded.pin_hash, 'oauth'), accounts.pin_hash),
+        salt = COALESCE(NULLIF(excluded.salt, 'oauth'), accounts.salt),
         verified_at = excluded.verified_at
     `,
-    args: [data.userId, data.username, data.pinHash, data.salt, data.verifiedAt]
+    args: [data.userId, data.username, data.pinHash || 'oauth', data.salt || 'oauth', data.verifiedAt]
   });
 }
 
