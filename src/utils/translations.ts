@@ -365,7 +365,24 @@ export const translations = {
     login_modal_verify_lock_btn: 'Verifikasi Kepemilikan & Kunci Akun Saya',
     login_modal_verify_success: 'Verifikasi kepemilikan berhasil! Akun kamu kini resmi terdaftar dan terkunci aman dengan PIN.',
     login_modal_verify_pending: 'Verifikasi belum terpenuhi. Pastikan instruksi tantangan sudah diterapkan pada akun Roblox kamu.',
-    login_modal_remembered_pin: 'Sudah ingat PIN? Masuk dengan PIN saja'
+    login_modal_remembered_pin: 'Sudah ingat PIN? Masuk dengan PIN saja',
+    // Footer, search errors, rating labels, misc (added for full ID/EN parity)
+    footer_tagline: '— katalog sosial untuk pemain Roblox',
+    footer_disclaimer: 'Terinspirasi Letterboxd & Backloggd. Tidak berafiliasi dengan Roblox Corporation.',
+    search_no_results: 'Tidak menemukan game untuk "{query}". Coba nama lain atau masukkan link / Place ID.',
+    search_server_error: 'Gagal menghubungi server Roblox. Coba lagi sebentar.',
+    profile_not_registered: 'Pengguna tidak ditemukan atau belum terdaftar di Bloxboxd.',
+    profile_load_failed: 'Gagal memuat profil pengguna.',
+    rating_none: 'Belum dinilai',
+    rating_bad: 'Buruk',
+    rating_weak: 'Biasa',
+    rating_decent: 'Lumayan',
+    rating_good: 'Bagus',
+    rating_great: 'Sangat bagus',
+    rating_masterpiece: 'Masterpiece',
+    url_invalid: 'Gagal mengenali link atau Place ID Roblox. Pastikan link atau ID valid.',
+    url_no_description: 'Tidak ada deskripsi dari pembuat.',
+    scroll_top: 'Kembali ke atas'
   },
   en: {
     // Navbar
@@ -731,7 +748,24 @@ export const translations = {
     login_modal_verify_lock_btn: 'Verify Ownership & Lock My Account',
     login_modal_verify_success: 'Ownership verified! Your account is now officially registered and securely locked with PIN.',
     login_modal_verify_pending: 'Verification requirements not yet met. Ensure challenge instructions have been applied on Roblox.',
-    login_modal_remembered_pin: 'Remembered your PIN? Sign in with PIN instead'
+    login_modal_remembered_pin: 'Remembered your PIN? Sign in with PIN instead',
+    // Footer, search errors, rating labels, misc (added for full ID/EN parity)
+    footer_tagline: '— a social catalog for Roblox players',
+    footer_disclaimer: 'Inspired by Letterboxd & Backloggd. Not affiliated with Roblox Corporation.',
+    search_no_results: 'No games found for "{query}". Try another name or paste a link / Place ID.',
+    search_server_error: 'Could not reach the Roblox server. Try again in a moment.',
+    profile_not_registered: 'User not found or not registered on Bloxboxd.',
+    profile_load_failed: 'Failed to load this profile.',
+    rating_none: 'Not rated',
+    rating_bad: 'Bad',
+    rating_weak: 'Weak',
+    rating_decent: 'Decent',
+    rating_good: 'Good',
+    rating_great: 'Great',
+    rating_masterpiece: 'Masterpiece',
+    url_invalid: 'Could not recognise the Roblox link or Place ID. Check that it is valid.',
+    url_no_description: 'No description from the creator.',
+    scroll_top: 'Back to top'
   }
 };
 

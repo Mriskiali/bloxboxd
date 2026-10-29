@@ -88,7 +88,7 @@ export const ProfileView: React.FC = () => {
           setTargetLogs(userData.logs || []);
           setTargetReviews(userData.reviews || []);
         } else {
-          setTargetError('Pengguna tidak ditemukan atau belum terdaftar di Bloxboxd.');
+          setTargetError(t('profile_not_registered'));
         }
 
         if (followData) {
@@ -101,7 +101,7 @@ export const ProfileView: React.FC = () => {
       })
       .catch(err => {
         console.error('Error fetching target profile:', err);
-        setTargetError('Gagal memuat profil pengguna.');
+        setTargetError(t('profile_load_failed'));
       })
       .finally(() => {
         setIsLoadingTarget(false);

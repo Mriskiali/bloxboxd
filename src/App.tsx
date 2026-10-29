@@ -153,10 +153,10 @@ const MainAppContent: React.FC = () => {
           addGamesToCatalog(data.results);
           setVisibleCount(prev => Math.max(prev, data.results.length));
         } else {
-          setOnlineSearchError(`Tidak menemukan game untuk "${q}". Coba nama lain atau masukkan link / Place ID.`);
+          setOnlineSearchError(t('search_no_results', { query: q }));
         }
       } else {
-        setOnlineSearchError('Gagal menghubungi server Roblox. Coba lagi sebentar.');
+        setOnlineSearchError(t('search_server_error'));
       }
     } catch (err) {
       setOnlineSearchError('Terjadi gangguan jaringan saat mencari.');
@@ -712,11 +712,11 @@ const MainAppContent: React.FC = () => {
           <div className="flex items-center gap-2">
             <BloxboxdLogo size="sm" />
             <span className="font-serif text-[17px] font-semibold tracking-[-0.02em] text-white">bloxboxd</span>
-            <span className="text-[12px] text-faint">— katalog sosial untuk pemain Roblox</span>
+            <span className="text-[12px] text-faint">{t('footer_tagline')}</span>
           </div>
 
           <div className="max-w-md text-[11px] leading-relaxed text-faint sm:text-right">
-            <p>Terinspirasi Letterboxd & Backloggd. Tidak berafiliasi dengan Roblox Corporation.</p>
+            <p>{t('footer_disclaimer')}</p>
           </div>
         </div>
       </footer>

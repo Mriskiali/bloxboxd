@@ -1,7 +1,9 @@
+import { useApp } from '../context/AppContext';
 import React, { useState, useEffect } from 'react';
 import { ArrowUp } from 'lucide-react';
 
 export const ScrollToTop: React.FC = () => {
+  const { t } = useApp();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export const ScrollToTop: React.FC = () => {
       type="button"
       onClick={scrollToTop}
       aria-label="Scroll to top"
-      title="Kembali ke atas"
+      title={t('scroll_top')}
       className={`fixed bottom-6 right-6 z-40 p-3 rounded-full bg-panel/95 text-ink hover:text-black hover:bg-green border border-line hover:border-green shadow-[0_8px_24px_rgba(0,0,0,0.6)]  transition-colors duration-300 transform cursor-pointer group flex items-center justify-center ${
         isVisible 
           ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto hover:scale-110 active:scale-95' 

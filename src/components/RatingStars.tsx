@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Star } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 interface RatingStarsProps {
   value?: number; // 0.5 to 5.0
@@ -16,6 +17,7 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
   readonly = false,
   showText = false
 }) => {
+  const { t } = useApp();
   const [hoverVal, setHoverVal] = useState<number | null>(null);
 
   const displayVal = hoverVal !== null ? hoverVal : value;
@@ -27,13 +29,13 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
   };
 
   const getRatingLabel = (val: number) => {
-    if (val <= 0) return 'Belum dinilai';
-    if (val <= 1.0) return 'Buruk';
-    if (val <= 2.0) return 'Biasa';
-    if (val <= 3.0) return 'Lumayan';
-    if (val <= 4.0) return 'Bagus';
-    if (val < 5.0) return 'Sangat bagus';
-    return 'Masterpiece';
+    if (val <= 0) return t('rating_none');
+    if (val <= 1.0) return t('rating_bad');
+    if (val <= 2.0) return t('rating_weak');
+    if (val <= 3.0) return t('rating_decent');
+    if (val <= 4.0) return t('rating_good');
+    if (val < 5.0) return t('rating_great');
+    return t('rating_masterpiece');
   };
 
   return (

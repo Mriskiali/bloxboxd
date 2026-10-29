@@ -70,7 +70,7 @@ export const RobloxUrlModal: React.FC = () => {
             tags: ['roblox', 'user-added']
           });
         } else {
-          setError(data.error || 'Gagal mengenali link atau Place ID Roblox. Pastikan link atau ID valid.');
+          setError(data.error || t('url_invalid'));
         }
       } else {
         setResolvedData(data);
@@ -125,7 +125,7 @@ export const RobloxUrlModal: React.FC = () => {
       universeId: resolvedData.universeId,
       rootPlaceId: resolvedData.rootPlaceId || 0,
       name: resolvedData.name,
-      description: resolvedData.description || 'Tidak ada deskripsi dari pembuat.',
+      description: resolvedData.description || t('url_no_description'),
       creatorName: resolvedData.creatorName || 'Roblox Creator',
       creatorType: resolvedData.creatorType || 'Group',
       iconUrl: resolvedData.iconUrl || 'https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter',
