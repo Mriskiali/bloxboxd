@@ -56,6 +56,33 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
+  // 1c. Verification challenges (DB-backed: serverless instances don't share memory)
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS challenges (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      username TEXT NOT NULL,
+      phrase TEXT,
+      words TEXT,
+      asset_id INTEGER,
+      asset_name TEXT,
+      expected_wearing INTEGER,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    )
+  `);
+
+  // 1d. Login attempt tracker (DB-backed brute-force protection)
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      key TEXT PRIMARY KEY,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      first_attempt_at INTEGER NOT NULL,
+      locked_until INTEGER
+    )
+  `);
+
   // 2. User Profiles table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS user_profiles (
@@ -217,6 +244,28 @@ export async function initDatabase(): Promise<void> {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_review_comments_review_created ON review_comments(review_id, created_at ASC)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_user_profiles_username ON user_profiles(username)`);
 
+  // Normalise legacy userId shapes ("123" -> "user-roblox-123") once. Reads keep
+  // accepting both shapes via userIdVariants(), so rows that collide stay put.
+  try {
+    const targets: Array<[string, string]> = [
+      ['game_logs', 'user_id'],
+      ['reviews', 'user_id'],
+      ['custom_lists', 'user_id'],
+      ['review_comments', 'user_id'],
+      ['review_likes', 'user_id'],
+      ['list_likes', 'user_id'],
+      ['follows', 'follower_id'],
+      ['follows', 'following_id']
+    ];
+    for (const [table, col] of targets) {
+      await db.execute(
+        `UPDATE OR IGNORE ${table} SET ${col} = 'user-roblox-' || ${col} WHERE ${col} NOT LIKE 'user-roblox-%' AND ${col} GLOB '[0-9]*'`
+      );
+    }
+  } catch (err) {
+    console.warn('[Database] userId normalisation skipped:', err);
+  }
+
   // Auto-seed initial catalog into database if table is empty
   try {
     const gameCountRes = await db.execute('SELECT COUNT(*) as count FROM games');
@@ -322,6 +371,172 @@ export async function deleteSession(token: string): Promise<void> {
   await db.execute({ sql: `DELETE FROM sessions WHERE token = ?`, args: [token] });
 }
 
+// ---------------------------------------------------------------------------
+// Verification challenges: DB-backed so a challenge created by one serverless
+// instance can be verified by any other. Rows self-expire on read.
+// ---------------------------------------------------------------------------
+export interface StoredChallenge {
+  id: string;
+  userId: number;
+  type: 'bio' | 'avatar';
+  username: string;
+  phrase?: string;
+  words?: string[];
+  assetId?: number;
+  assetName?: string;
+  expectedWearing?: boolean;
+  createdAt: number;
+  expiresAt: number;
+}
+
+export async function saveChallenge(c: StoredChallenge): Promise<void> {
+  await db.execute({
+    sql: `
+      INSERT OR REPLACE INTO challenges
+        (id, user_id, type, username, phrase, words, asset_id, asset_name, expected_wearing, created_at, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    args: [
+      c.id,
+      String(c.userId),
+      c.type,
+      c.username,
+      c.phrase ?? null,
+      c.words ? JSON.stringify(c.words) : null,
+      c.assetId ?? null,
+      c.assetName ?? null,
+      c.expectedWearing === undefined ? null : (c.expectedWearing ? 1 : 0),
+      new Date(c.createdAt).toISOString(),
+      new Date(c.expiresAt).toISOString()
+    ]
+  });
+}
+
+/** Returns the challenge, or null when missing/expired (expired rows are purged). */
+export async function getChallenge(id: string): Promise<StoredChallenge | null> {
+  const result = await db.execute({
+    sql: `SELECT * FROM challenges WHERE id = ?`,
+    args: [id]
+  });
+  const row: any = result.rows[0];
+  if (!row) return null;
+
+  if (new Date(row.expires_at).getTime() < Date.now()) {
+    await db.execute({ sql: `DELETE FROM challenges WHERE id = ?`, args: [id] });
+    return null;
+  }
+
+  return {
+    id: row.id,
+    userId: Number(row.user_id),
+    type: row.type,
+    username: row.username,
+    phrase: row.phrase ?? undefined,
+    words: row.words ? JSON.parse(row.words) : undefined,
+    assetId: row.asset_id ?? undefined,
+    assetName: row.asset_name ?? undefined,
+    expectedWearing: row.expected_wearing === null ? undefined : Boolean(row.expected_wearing),
+    createdAt: new Date(row.created_at).getTime(),
+    expiresAt: new Date(row.expires_at).getTime()
+  };
+}
+
+export async function deleteChallenge(id: string): Promise<void> {
+  await db.execute({ sql: `DELETE FROM challenges WHERE id = ?`, args: [id] });
+}
+
+/** Housekeeping for abandoned challenges (called opportunistically). */
+export async function purgeExpiredChallenges(): Promise<void> {
+  await db.execute({
+    sql: `DELETE FROM challenges WHERE expires_at < ?`,
+    args: [new Date().toISOString()]
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Login attempt tracking (brute-force protection that survives serverless
+// instance recycling). Policy values live here so every caller shares them.
+// ---------------------------------------------------------------------------
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
+
+export async function checkLoginRateLimit(key: string): Promise<{ allowed: boolean; waitMinutes?: number; remainingAttempts?: number }> {
+  const result = await db.execute({
+    sql: `SELECT attempts, first_attempt_at, locked_until FROM login_attempts WHERE key = ?`,
+    args: [key]
+  });
+  const row: any = result.rows[0];
+  const now = Date.now();
+
+  if (!row) return { allowed: true, remainingAttempts: MAX_LOGIN_ATTEMPTS };
+
+  if (row.locked_until && now < Number(row.locked_until)) {
+    return { allowed: false, waitMinutes: Math.max(1, Math.ceil((Number(row.locked_until) - now) / 60000)) };
+  }
+
+  if (now - Number(row.first_attempt_at) > LOGIN_WINDOW_MS) {
+    await db.execute({ sql: `DELETE FROM login_attempts WHERE key = ?`, args: [key] });
+    return { allowed: true, remainingAttempts: MAX_LOGIN_ATTEMPTS };
+  }
+
+  if (Number(row.attempts) >= MAX_LOGIN_ATTEMPTS) {
+    const lockedUntil = row.locked_until ? Number(row.locked_until) : now + LOGIN_LOCKOUT_MS;
+    if (!row.locked_until) {
+      await db.execute({
+        sql: `UPDATE login_attempts SET locked_until = ? WHERE key = ?`,
+        args: [lockedUntil, key]
+      });
+    }
+    return { allowed: false, waitMinutes: Math.max(1, Math.ceil((lockedUntil - now) / 60000)) };
+  }
+
+  return { allowed: true, remainingAttempts: MAX_LOGIN_ATTEMPTS - Number(row.attempts) };
+}
+
+export async function recordFailedLogin(key: string): Promise<number> {
+  const now = Date.now();
+  const result = await db.execute({
+    sql: `SELECT attempts, first_attempt_at FROM login_attempts WHERE key = ?`,
+    args: [key]
+  });
+  const row: any = result.rows[0];
+
+  if (!row || now - Number(row.first_attempt_at) > LOGIN_WINDOW_MS) {
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO login_attempts (key, attempts, first_attempt_at, locked_until) VALUES (?, 1, ?, NULL)`,
+      args: [key, now]
+    });
+    return MAX_LOGIN_ATTEMPTS - 1;
+  }
+
+  const attempts = Number(row.attempts) + 1;
+  const lockedUntil = attempts >= MAX_LOGIN_ATTEMPTS ? now + LOGIN_LOCKOUT_MS : null;
+  await db.execute({
+    sql: `UPDATE login_attempts SET attempts = ?, locked_until = ? WHERE key = ?`,
+    args: [attempts, lockedUntil, key]
+  });
+  return Math.max(0, MAX_LOGIN_ATTEMPTS - attempts);
+}
+
+export async function resetLoginAttempts(key: string): Promise<void> {
+  await db.execute({ sql: `DELETE FROM login_attempts WHERE key = ?`, args: [key] });
+}
+
+// ---------------------------------------------------------------------------
+// userId shape helper: rows written before canonicalisation may hold "123",
+// "user-roblox-123", or the numeric form. Every lookup that must stay
+// backward-compatible uses these variants instead of hand-written OR clauses.
+// ---------------------------------------------------------------------------
+export function userIdVariants(id: string | number): string[] {
+  const raw = String(id).trim();
+  const num = raw.replace(/^user-roblox-/, '');
+  const canonical = `user-roblox-${num}`;
+  const variants = new Set<string>([canonical, num]);
+  if (raw) variants.add(raw);
+  return [...variants];
+}
+
 export async function getUserProfile(userId: string): Promise<any | null> {
   const result = await db.execute({
     sql: `SELECT * FROM user_profiles WHERE id = ? OR roblox_user_id = ?`,
@@ -380,30 +595,8 @@ export async function upsertUserProfile(profile: any): Promise<void> {
     ]
   });
 
-  // Cascade latest username and avatar to reviews, custom lists, and comments
-  const effectiveUsername = profile.robloxDisplayName || profile.displayName || profile.username;
-  const effectiveAvatar = profile.avatarUrl || '';
-  const rawRobloxId = profile.robloxUserId ? String(profile.robloxUserId) : '';
-  const prefixedId = profile.id.startsWith('user-roblox-') ? profile.id : `user-roblox-${profile.id}`;
-
-  try {
-    if (effectiveAvatar) {
-      await db.execute({
-        sql: `UPDATE reviews SET username = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
-        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
-      });
-      await db.execute({
-        sql: `UPDATE custom_lists SET user_name = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
-        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
-      });
-      await db.execute({
-        sql: `UPDATE review_comments SET username = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
-        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
-      });
-    }
-  } catch (e) {
-    console.warn('[Database] Failed to cascade profile updates to reviews/lists:', e);
-  }
+  // Reads resolve display name/avatar live from user_profiles via COALESCE,
+  // so no denormalised cascade is needed here (it only burned write quota).
 }
 
 export async function searchUserProfiles(query: string, limit: number = 8): Promise<any[]> {
@@ -439,13 +632,12 @@ export async function searchUserProfiles(query: string, limit: number = 8): Prom
 // ---------------------------------------------------------------------------
 
 export async function getUserGameLogs(userId: string): Promise<any[]> {
-  const cleanId = (userId || '').trim();
-  const rawNumId = cleanId.replace('user-roblox-', '');
-  const prefixedId = cleanId.startsWith('user-roblox-') ? cleanId : `user-roblox-${cleanId}`;
+  const variants = userIdVariants(userId);
+  const where = variants.map(() => 'user_id = ?').join(' OR ');
 
   const result = await db.execute({
-    sql: `SELECT * FROM game_logs WHERE user_id = ? OR user_id = ? OR user_id = ? ORDER BY logged_date DESC, updated_at DESC`,
-    args: [cleanId, rawNumId, prefixedId]
+    sql: `SELECT * FROM game_logs WHERE ${where} ORDER BY logged_date DESC, updated_at DESC`,
+    args: variants
   });
   return result.rows.map((row: any) => ({
     id: row.id,
@@ -483,7 +675,7 @@ export async function upsertGameLog(log: any): Promise<void> {
     `,
     args: [
       log.id || `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      log.userId,
+      canonicalUserId(log.userId),
       log.gameId,
       log.status,
       log.rating ?? null,
@@ -499,13 +691,12 @@ export async function upsertGameLog(log: any): Promise<void> {
 }
 
 export async function deleteGameLog(userId: string, logId: string): Promise<boolean> {
-  const cleanId = (userId || '').trim();
-  const rawNumId = cleanId.replace('user-roblox-', '');
-  const prefixedId = cleanId.startsWith('user-roblox-') ? cleanId : `user-roblox-${cleanId}`;
+  const variants = userIdVariants(userId);
+  const where = variants.map(() => 'user_id = ?').join(' OR ');
 
   const result = await db.execute({
-    sql: `DELETE FROM game_logs WHERE id = ? AND (user_id = ? OR user_id = ? OR user_id = ?)`,
-    args: [logId, cleanId, rawNumId, prefixedId]
+    sql: `DELETE FROM game_logs WHERE id = ? AND (${where})`,
+    args: [logId, ...variants]
   });
   return result.rowsAffected > 0;
 }
@@ -611,7 +802,7 @@ export async function upsertReview(rev: any): Promise<void> {
       rev.gameId,
       rev.gameTitle || '',
       rev.gameIcon || '',
-      rev.userId,
+      canonicalUserId(rev.userId),
       rev.username,
       rev.userAvatar || '',
       rev.rating ?? null,
@@ -707,7 +898,7 @@ export async function upsertCustomList(list: any): Promise<void> {
     `,
     args: [
       list.id || `list-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      list.userId,
+      canonicalUserId(list.userId),
       list.userName,
       list.userAvatar || '',
       list.title,
@@ -730,6 +921,7 @@ export async function deleteCustomList(userId: string, listId: string): Promise<
 }
 
 export async function toggleListLike(userId: string, listId: string): Promise<{ liked: boolean; likesCount: number }> {
+  userId = canonicalUserId(userId);
   const existing = await db.execute({
     sql: `SELECT 1 FROM list_likes WHERE user_id = ? AND list_id = ?`,
     args: [userId, listId]
@@ -765,6 +957,8 @@ export async function toggleListLike(userId: string, listId: string): Promise<{ 
 // ---------------------------------------------------------------------------
 
 export async function toggleFollowUser(followerId: string, followingId: string): Promise<{ isFollowing: boolean; followersCount: number; followingCount: number }> {
+  followerId = canonicalUserId(followerId);
+  followingId = canonicalUserId(followingId);
   const existing = await db.execute({
     sql: `SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?`,
     args: [followerId, followingId]
@@ -962,7 +1156,7 @@ export async function addReviewComment(comment: {
       INSERT INTO review_comments (id, review_id, user_id, username, user_avatar, comment_text, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    args: [id, comment.reviewId, comment.userId, comment.username, comment.userAvatar || '', comment.commentText, now]
+    args: [id, comment.reviewId, canonicalUserId(comment.userId), comment.username, comment.userAvatar || '', comment.commentText, now]
   });
   return {
     id,
