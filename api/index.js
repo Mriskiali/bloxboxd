@@ -5710,3 +5710,7 @@ async function startServer() {
 if (!process.env.VERCEL) {
   startServer();
 }
+var server_default = app;
+export {
+  server_default as default
+};
