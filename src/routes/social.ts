@@ -12,7 +12,8 @@ import {
   getCommunityFeed,
   getTrendingReviewsAndLeaderboard,
   getReviewComments,
-  addReviewComment
+  addReviewComment,
+  deleteReviewComment
 } from '../db/index';
 import { requireAuth } from '../lib/auth';
 import { sanitizeText } from '../lib/security';
@@ -238,6 +239,26 @@ app.post('/api/reviews/:id/comments', async (req, res) => {
   } catch (err) {
     console.error('Error adding review comment:', err);
     return res.status(500).json({ error: 'Failed to add review comment' });
+  }
+});
+
+// Delete comment from a review
+app.delete('/api/reviews/comments/:id', async (req, res) => {
+  try {
+    const commentId = req.params.id;
+    const userId = (req.query.userId as string)?.trim();
+    if (!commentId || !userId) {
+      return res.status(400).json({ error: 'commentId and userId query are required' });
+    }
+    if (!await requireAuth(req, res, userId)) return;
+    const deleted = await deleteReviewComment(userId, commentId);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Comment not found or unauthorized' });
+    }
+    return res.json({ success: true, message: 'Comment deleted' });
+  } catch (err) {
+    console.error('Error deleting review comment:', err);
+    return res.status(500).json({ error: 'Failed to delete review comment' });
   }
 });
 

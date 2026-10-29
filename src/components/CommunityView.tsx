@@ -11,14 +11,15 @@ import {
   ExternalLink,
   ChevronRight,
   Sparkles,
-  Loader2
+  Loader2,
+  Pencil
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { safeImgSrc, safeAvatarSrc, Review } from '../types';
 import { ReviewCommentsModal } from './ReviewCommentsModal';
 
 export const CommunityView: React.FC = () => {
-  const { user, viewGame, viewList, likeReview, viewUserProfile, language, t } = useApp();
+  const { user, viewGame, viewList, likeReview, viewUserProfile, openLogModal, getGameById, language, t } = useApp();
   const [activeTab, setActiveTab] = useState<'feed' | 'trending'>('feed');
   const [feedItems, setFeedItems] = useState<any[]>([]);
   const [trendingReviews, setTrendingReviews] = useState<any[]>([]);
@@ -354,6 +355,20 @@ export const CommunityView: React.FC = () => {
                             <MessageSquare className="w-3.5 h-3.5 text-blue" />
                             <span>{t('community_comment')}</span>
                           </button>
+                          {user && (rev.userId === user.id || rev.userId === `user-roblox-${user.robloxUserId}`) && (
+                            <button
+                              onClick={() => {
+                                const g = getGameById(rev.gameId);
+                                if (g) openLogModal(g);
+                                else viewGame(rev.gameId);
+                              }}
+                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] bg-panel-2 text-ink hover:text-white transition-colors cursor-pointer"
+                              title={language === 'id' ? 'Edit ulasan kamu' : 'Edit your review'}
+                            >
+                              <Pencil className="w-3 h-3 text-blue" />
+                              <span>Edit</span>
+                            </button>
+                          )}
                         </div>
 
                         <button

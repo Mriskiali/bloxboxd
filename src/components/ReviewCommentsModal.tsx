@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, MessageSquare, Loader2, User } from 'lucide-react';
+import { X, Send, MessageSquare, Loader2, User, Trash2 } from 'lucide-react';
 import { Review, safeAvatarSrc } from '../types';
 import { useApp, authHeaders } from '../context/AppContext';
 
@@ -20,11 +20,35 @@ interface ReviewCommentsModalProps {
 }
 
 export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review, isOpen, onClose }) => {
-  const { user, setLoginModalOpen, incrementReviewCommentsCount, viewUserProfile, language, t } = useApp();
+  const { user, setLoginModalOpen, incrementReviewCommentsCount, viewUserProfile, language, t, showConfirm, showToast } = useApp();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleDeleteComment = (commentId: string) => {
+    if (!user) return;
+    showConfirm({
+      title: language === 'id' ? 'Hapus Komentar' : 'Delete Comment',
+      message: language === 'id' ? 'Yakin ingin menghapus komentar ini?' : 'Are you sure you want to delete this comment?',
+      confirmText: language === 'id' ? 'Ya, Hapus' : 'Yes, Delete',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/reviews/comments/${encodeURIComponent(commentId)}?userId=${encodeURIComponent(user.id)}`, {
+            method: 'DELETE',
+            headers: { ...authHeaders() }
+          });
+          if (res.ok) {
+            setComments((prev: CommentItem[]) => prev.filter((c: CommentItem) => c.id !== commentId));
+            showToast(language === 'id' ? 'Komentar telah dihapus.' : 'Comment deleted.', 'info');
+          }
+        } catch {
+          showToast(language === 'id' ? 'Gagal menghapus komentar.' : 'Failed to delete comment.', 'error');
+        }
+      }
+    });
+  };
 
   useEffect(() => {
     if (!isOpen || !review) return;
@@ -180,9 +204,21 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
                     >
                       {c.username}
                     </span>
-                    <span className="text-[10px] text-faint">
-                      {new Date(c.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-faint">
+                        {new Date(c.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {user && (c.userId === user.id || c.userId === `user-roblox-${user.robloxUserId}`) && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteComment(c.id)}
+                          className="text-faint hover:text-red-400 p-0.5 transition-colors cursor-pointer"
+                          title={language === 'id' ? 'Hapus komentar' : 'Delete comment'}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-ink leading-relaxed break-words bg-bg p-2.5 rounded-[3px] border border-line">
                     {c.commentText}

@@ -1043,6 +1043,14 @@ export async function addReviewComment(comment: {
   };
 }
 
+export async function deleteReviewComment(userId: string, commentId: string): Promise<boolean> {
+  const result = await db.execute({
+    sql: `DELETE FROM review_comments WHERE id = ? AND user_id = ?`,
+    args: [commentId, canonicalUserId(userId)]
+  });
+  return result.rowsAffected > 0;
+}
+
 // ---------------------------------------------------------------------------
 // Game Catalog Helper Functions (Persistent Centralized Store)
 // ---------------------------------------------------------------------------

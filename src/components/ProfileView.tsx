@@ -18,7 +18,8 @@ import {
   ArrowLeft,
   UserPlus,
   Check,
-  Loader2
+  Loader2,
+  Pencil
 } from 'lucide-react';
 import { useApp, authHeaders } from '../context/AppContext';
 import { GameCard } from './GameCard';
@@ -891,12 +892,29 @@ export const ProfileView: React.FC = () => {
                           </div>
                         </div>
 
-                        {rev.rating && (
-                          <div className="flex items-center gap-1 text-green font-bold text-sm bg-black/40 px-3 py-1 rounded-[2px] border border-white/10">
-                            <Star className="w-4 h-4 fill-green" />
-                            <span>{rev.rating.toFixed(1)}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {rev.rating && (
+                            <div className="flex items-center gap-1 text-green font-bold text-sm bg-black/40 px-3 py-1 rounded-[2px] border border-white/10">
+                              <Star className="w-4 h-4 fill-green" />
+                              <span>{rev.rating.toFixed(1)}</span>
+                            </div>
+                          )}
+
+                          {isOwnProfile && (
+                            <button
+                              onClick={() => {
+                                const g = getGameById(rev.gameId);
+                                if (g) openLogModal(g);
+                                else viewGame(rev.gameId);
+                              }}
+                              className="text-xs font-semibold text-muted hover:text-white px-2.5 py-1 rounded bg-panel hover:bg-panel-2 border border-line transition-colors cursor-pointer flex items-center gap-1"
+                              title={language === 'id' ? 'Edit ulasan' : 'Edit review'}
+                            >
+                              <Pencil className="w-3 h-3 text-blue" />
+                              <span>Edit</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <p className="text-xs text-ink leading-relaxed whitespace-pre-wrap pl-1">

@@ -3436,6 +3436,13 @@ async function addReviewComment(comment) {
     createdAt: now
   };
 }
+async function deleteReviewComment(userId, commentId) {
+  const result = await db.execute({
+    sql: `DELETE FROM review_comments WHERE id = ? AND user_id = ?`,
+    args: [commentId, canonicalUserId(userId)]
+  });
+  return result.rowsAffected > 0;
+}
 function mapRowToGame(row) {
   let ratingHistogram = {};
   if (row.rating_histogram) {
@@ -5330,6 +5337,24 @@ function registerSocialRoutes(app2) {
     } catch (err) {
       console.error("Error adding review comment:", err);
       return res.status(500).json({ error: "Failed to add review comment" });
+    }
+  });
+  app2.delete("/api/reviews/comments/:id", async (req, res) => {
+    try {
+      const commentId = req.params.id;
+      const userId = req.query.userId?.trim();
+      if (!commentId || !userId) {
+        return res.status(400).json({ error: "commentId and userId query are required" });
+      }
+      if (!await requireAuth(req, res, userId)) return;
+      const deleted = await deleteReviewComment(userId, commentId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Comment not found or unauthorized" });
+      }
+      return res.json({ success: true, message: "Comment deleted" });
+    } catch (err) {
+      console.error("Error deleting review comment:", err);
+      return res.status(500).json({ error: "Failed to delete review comment" });
     }
   });
 }

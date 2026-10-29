@@ -18,6 +18,7 @@ import {
   Calendar,
   ThumbsUp,
   Play,
+  Pencil,
   ChevronDown
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -529,6 +530,17 @@ export const GameDetailView: React.FC = () => {
 
                           {/* Like & Comments buttons */}
                           <div className="flex items-center gap-2">
+                            {user && (rev.userId === user.id || rev.userId === `user-roblox-${user.robloxUserId}`) && (
+                              <button
+                                onClick={() => openLogModal(game)}
+                                className="flex items-center gap-1 px-2 py-1 rounded-[2px] text-xs font-medium bg-panel text-muted hover:text-white hover:bg-panel-2 transition-colors cursor-pointer"
+                                title={language === 'id' ? 'Edit Ulasan Kamu' : 'Edit Your Review'}
+                              >
+                                <Pencil className="w-3 h-3 text-blue" />
+                                <span>Edit</span>
+                              </button>
+                            )}
+
                             <button
                               onClick={() => likeReview(rev.id)}
                               className={`flex items-center gap-1 px-2 py-1 rounded-[2px] text-xs font-medium transition-colors ${
