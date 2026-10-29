@@ -13,9 +13,13 @@ import {
   recordFailedLogin,
   resetLoginAttempts,
   createSession,
+  deleteSession,
+  deleteAllSessions,
+  recordLoginEvent,
   type StoredChallenge
 } from '../db/index';
 import { hashPin, verifyPin, needsPinRehash } from '../lib/security';
+import { setSessionCookie, clearSessionCookie, extractSessionToken, requireAuth } from '../lib/auth';
 
 /** Roblox account ownership verification, PIN login and PIN reset. */
 export function registerAccountRoutes(app: Express): void {
@@ -322,6 +326,13 @@ app.post('/api/roblox/account/challenge/verify', async (req, res) => {
     const salt = crypto.randomBytes(16).toString('hex');
     const pinHash = hashPin(pin.toString().trim(), salt);
     const sessionToken = await createSession(userId);
+    setSessionCookie(res, sessionToken);
+    void recordLoginEvent({
+      userId,
+      event: 'challenge_verify_success',
+      ip: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
     const finalUsername = challenge.username || 'RobloxPlayer';
 
     await saveAccount({
@@ -369,6 +380,12 @@ app.post('/api/roblox/account/login-with-pin', async (req, res) => {
     const rateLimitKey = `pin_${userId}`;
     const rateStatus = await checkLoginRateLimit(rateLimitKey);
     if (!rateStatus.allowed) {
+      void recordLoginEvent({
+        userId,
+        event: 'pin_login_locked',
+        ip: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress,
+        userAgent: req.headers['user-agent']
+      });
       return res.status(429).json({
         success: false,
         error: `Terlalu banyak percobaan PIN salah. Akun dikunci sementara selama ${rateStatus.waitMinutes} menit demi keamanan.`,
@@ -388,6 +405,12 @@ app.post('/api/roblox/account/login-with-pin', async (req, res) => {
 
     if (!verifyPin(pin.toString().trim(), account.pinHash, account.salt)) {
       const remaining = await recordFailedLogin(rateLimitKey);
+      void recordLoginEvent({
+        userId,
+        event: 'pin_login_failed',
+        ip: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress,
+        userAgent: req.headers['user-agent']
+      });
       if (remaining === 0) {
         return res.status(429).json({
           success: false,
@@ -423,6 +446,13 @@ app.post('/api/roblox/account/login-with-pin', async (req, res) => {
     }
 
     const sessionToken = await createSession(userId);
+    setSessionCookie(res, sessionToken);
+    void recordLoginEvent({
+      userId,
+      event: 'pin_login_success',
+      ip: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
     return res.json({
       success: true,
       sessionToken,
@@ -507,6 +537,13 @@ app.post('/api/roblox/account/reset-pin', async (req, res) => {
     const salt = crypto.randomBytes(16).toString('hex');
     const pinHash = hashPin(newPin.toString().trim(), salt);
     const sessionToken = await createSession(userId);
+    setSessionCookie(res, sessionToken);
+    void recordLoginEvent({
+      userId,
+      event: 'pin_reset_success',
+      ip: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
 
     await saveAccount({
       userId: Number(userId),
@@ -524,6 +561,47 @@ app.post('/api/roblox/account/reset-pin', async (req, res) => {
   } catch (err) {
     console.error('Reset PIN error:', err);
     return res.status(500).json({ error: 'Gagal mengatur ulang PIN' });
+  }
+});
+
+// Logout: revoke current session and clear cookie
+app.post('/api/roblox/account/logout', async (req, res) => {
+  try {
+    const token = extractSessionToken(req);
+    if (token) {
+      await deleteSession(token);
+    }
+    clearSessionCookie(res);
+    return res.json({ success: true, message: 'Logged out successfully' });
+  } catch (err) {
+    console.error('Logout error:', err);
+    clearSessionCookie(res);
+    return res.json({ success: true });
+  }
+});
+
+// Logout all sessions (revoke everywhere)
+app.post('/api/roblox/account/logout-all', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    const authed = await requireAuth(req, res, userId);
+    if (!authed) return;
+
+    await deleteAllSessions(userId);
+    clearSessionCookie(res);
+    void recordLoginEvent({
+      userId,
+      event: 'logout_all_sessions',
+      ip: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+    return res.json({ success: true, message: 'Semua sesi berhasil dikeluarkan.' });
+  } catch (err) {
+    console.error('Logout all error:', err);
+    return res.status(500).json({ error: 'Gagal keluar dari semua sesi' });
   }
 });
 

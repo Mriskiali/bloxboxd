@@ -83,6 +83,18 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
+  // 1e. Login audit trail (for the owner: who signed in, from where)
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS login_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT,
+      event TEXT NOT NULL,
+      ip TEXT,
+      user_agent TEXT,
+      created_at TEXT NOT NULL
+    )
+  `);
+
   // 2. User Profiles table
   await db.execute(`
     CREATE TABLE IF NOT EXISTS user_profiles (
@@ -369,6 +381,47 @@ export async function isValidSession(token: string | undefined, userId: string |
 
 export async function deleteSession(token: string): Promise<void> {
   await db.execute({ sql: `DELETE FROM sessions WHERE token = ?`, args: [token] });
+}
+
+/** Revoke every session for a user (sign out everywhere). Returns rows removed. */
+export async function deleteAllSessions(userId: string | number): Promise<number> {
+  const result = await db.execute({
+    sql: `DELETE FROM sessions WHERE user_id = ?`,
+    args: [canonicalUserId(userId)]
+  });
+  return result.rowsAffected;
+}
+
+/**
+ * Login audit trail. Kept append-only and pruned opportunistically so the
+ * owner can answer "who signed in, when, from where" without a log service.
+ */
+export async function recordLoginEvent(ev: {
+  userId?: string | number | null;
+  event: string;
+  ip?: string | null;
+  userAgent?: string | null;
+}): Promise<void> {
+  try {
+    await db.execute({
+      sql: `INSERT INTO login_events (user_id, event, ip, user_agent, created_at) VALUES (?, ?, ?, ?, ?)`,
+      args: [
+        ev.userId ? canonicalUserId(ev.userId) : null,
+        ev.event,
+        ev.ip ? String(ev.ip).slice(0, 64) : null,
+        ev.userAgent ? String(ev.userAgent).slice(0, 240) : null,
+        new Date().toISOString()
+      ]
+    });
+  } catch (err) {
+    console.warn('[Database] login event not recorded:', err);
+  }
+}
+
+/** Keep the audit trail bounded (90 days). */
+export async function purgeOldLoginEvents(days = 90): Promise<void> {
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  await db.execute({ sql: `DELETE FROM login_events WHERE created_at < ?`, args: [cutoff] });
 }
 
 // ---------------------------------------------------------------------------

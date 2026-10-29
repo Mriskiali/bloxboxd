@@ -66,7 +66,8 @@ export const LogModal: React.FC = () => {
   };
 
   const handleDelete = () => {
-    if (existingLog) {
+    // ponytail: window.confirm is native, zero-DOM overhead; upgrade to custom modal if design requires it
+    if (existingLog && window.confirm(t('log_modal_delete_confirm'))) {
       deleteGameLog(existingLog.id);
       closeLogModal();
     }

@@ -814,6 +814,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logoutRobloxAccount = () => {
+    fetch('/api/roblox/account/logout', {
+      method: 'POST',
+      headers: { ...authHeaders() },
+      credentials: 'same-origin'
+    }).catch(() => {});
     setUser(null);
     setUserLogs([]);
     localStorage.removeItem('bloxboxd_user');

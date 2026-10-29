@@ -117,7 +117,9 @@ export const ListsView: React.FC = () => {
 
               <button
                 onClick={() => {
-                  deleteList(currentList.id);
+                  if (window.confirm(t('lists_delete_confirm'))) {
+                    deleteList(currentList.id);
+                  }
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-semibold transition-colors cursor-pointer"
                 title={t('lists_delete_btn')}
@@ -239,7 +241,11 @@ export const ListsView: React.FC = () => {
 
           {customLists.length > 0 && (
             <button
-              onClick={() => clearAllLists()}
+              onClick={() => {
+                if (window.confirm(t('lists_clear_confirm'))) {
+                  clearAllLists();
+                }
+              }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-[3px] bg-panel hover:bg-red-500/20 border border-line hover:border-red-500/40 text-xs font-semibold text-ink hover:text-red-400 transition-colors cursor-pointer"
               title={language === 'id' ? 'Hapus semua list' : 'Clear all lists'}
             >
@@ -362,7 +368,9 @@ export const ListsView: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteList(list.id);
+                        if (window.confirm(t('lists_delete_confirm'))) {
+                          deleteList(list.id);
+                        }
                       }}
                       className="p-1 rounded-[2px] text-faint hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                       title={t('lists_delete_btn')}

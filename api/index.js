@@ -2617,6 +2617,16 @@ async function initDatabase() {
     )
   `);
   await db.execute(`
+    CREATE TABLE IF NOT EXISTS login_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT,
+      event TEXT NOT NULL,
+      ip TEXT,
+      user_agent TEXT,
+      created_at TEXT NOT NULL
+    )
+  `);
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS user_profiles (
       id TEXT PRIMARY KEY,
       roblox_user_id INTEGER UNIQUE,
@@ -2852,6 +2862,32 @@ async function isValidSession(token, userId) {
     args: [token, canonicalUserId(userId), (/* @__PURE__ */ new Date()).toISOString()]
   });
   return result.rows.length > 0;
+}
+async function deleteSession(token) {
+  await db.execute({ sql: `DELETE FROM sessions WHERE token = ?`, args: [token] });
+}
+async function deleteAllSessions(userId) {
+  const result = await db.execute({
+    sql: `DELETE FROM sessions WHERE user_id = ?`,
+    args: [canonicalUserId(userId)]
+  });
+  return result.rowsAffected;
+}
+async function recordLoginEvent(ev) {
+  try {
+    await db.execute({
+      sql: `INSERT INTO login_events (user_id, event, ip, user_agent, created_at) VALUES (?, ?, ?, ?, ?)`,
+      args: [
+        ev.userId ? canonicalUserId(ev.userId) : null,
+        ev.event,
+        ev.ip ? String(ev.ip).slice(0, 64) : null,
+        ev.userAgent ? String(ev.userAgent).slice(0, 240) : null,
+        (/* @__PURE__ */ new Date()).toISOString()
+      ]
+    });
+  } catch (err) {
+    console.warn("[Database] login event not recorded:", err);
+  }
 }
 async function saveChallenge(c) {
   await db.execute({
@@ -4719,6 +4755,72 @@ function sanitizeText(input, maxLength = 2e3) {
   return input.trim().replace(/[<>]/g, "").slice(0, maxLength);
 }
 
+// src/lib/auth.ts
+var SESSION_COOKIE = "bb_session";
+var SESSION_MAX_AGE_S = 30 * 24 * 60 * 60;
+function parseCookies(header) {
+  const out = {};
+  if (!header) return out;
+  for (const part of header.split(";")) {
+    const i = part.indexOf("=");
+    if (i < 0) continue;
+    const k = part.slice(0, i).trim();
+    const v = part.slice(i + 1).trim();
+    if (k) out[k] = decodeURIComponent(v);
+  }
+  return out;
+}
+function setSessionCookie(res, token) {
+  res.cookie(SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL),
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_S * 1e3
+  });
+}
+function clearSessionCookie(res) {
+  res.clearCookie(SESSION_COOKIE, { path: "/" });
+}
+function extractSessionToken(req) {
+  const fromCookie = parseCookies(req.headers.cookie)[SESSION_COOKIE];
+  if (fromCookie) return fromCookie;
+  const header = req.headers["authorization"] || "";
+  if (typeof header === "string" && header.startsWith("Bearer ")) {
+    return header.slice(7).trim();
+  }
+  const alt = req.headers["x-session-token"];
+  return typeof alt === "string" && alt.trim() ? alt.trim() : void 0;
+}
+function isSameOrigin(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  try {
+    const o = new URL(origin);
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    return Boolean(host) && o.host === String(host);
+  } catch {
+    return false;
+  }
+}
+async function requireAuth(req, res, userId) {
+  if (!userId) {
+    res.status(400).json({ error: "userId is required" });
+    return false;
+  }
+  if (!isSameOrigin(req)) {
+    res.status(403).json({ error: "Cross-origin request rejected.", code: "BAD_ORIGIN" });
+    return false;
+  }
+  const token = extractSessionToken(req);
+  const ok = await isValidSession(token, String(userId));
+  if (!ok) {
+    res.status(401).json({ error: "Authentication required. Please log in again.", code: "SESSION_INVALID" });
+    return false;
+  }
+  return true;
+}
+
 // src/routes/account.ts
 function registerAccountRoutes(app2) {
   const ROBLOX_FILTER_SAFE_WORDS = [
@@ -5104,6 +5206,13 @@ function registerAccountRoutes(app2) {
       const salt = crypto4.randomBytes(16).toString("hex");
       const pinHash = hashPin(pin.toString().trim(), salt);
       const sessionToken = await createSession(userId);
+      setSessionCookie(res, sessionToken);
+      void recordLoginEvent({
+        userId,
+        event: "challenge_verify_success",
+        ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+        userAgent: req.headers["user-agent"]
+      });
       const finalUsername = challenge.username || "RobloxPlayer";
       await saveAccount({
         userId: Number(userId),
@@ -5142,6 +5251,12 @@ function registerAccountRoutes(app2) {
       const rateLimitKey = `pin_${userId}`;
       const rateStatus = await checkLoginRateLimit(rateLimitKey);
       if (!rateStatus.allowed) {
+        void recordLoginEvent({
+          userId,
+          event: "pin_login_locked",
+          ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+          userAgent: req.headers["user-agent"]
+        });
         return res.status(429).json({
           success: false,
           error: `Terlalu banyak percobaan PIN salah. Akun dikunci sementara selama ${rateStatus.waitMinutes} menit demi keamanan.`,
@@ -5158,6 +5273,12 @@ function registerAccountRoutes(app2) {
       }
       if (!verifyPin(pin.toString().trim(), account.pinHash, account.salt)) {
         const remaining = await recordFailedLogin(rateLimitKey);
+        void recordLoginEvent({
+          userId,
+          event: "pin_login_failed",
+          ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+          userAgent: req.headers["user-agent"]
+        });
         if (remaining === 0) {
           return res.status(429).json({
             success: false,
@@ -5188,6 +5309,13 @@ function registerAccountRoutes(app2) {
         }
       }
       const sessionToken = await createSession(userId);
+      setSessionCookie(res, sessionToken);
+      void recordLoginEvent({
+        userId,
+        event: "pin_login_success",
+        ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+        userAgent: req.headers["user-agent"]
+      });
       return res.json({
         success: true,
         sessionToken,
@@ -5261,6 +5389,13 @@ function registerAccountRoutes(app2) {
       const salt = crypto4.randomBytes(16).toString("hex");
       const pinHash = hashPin(newPin.toString().trim(), salt);
       const sessionToken = await createSession(userId);
+      setSessionCookie(res, sessionToken);
+      void recordLoginEvent({
+        userId,
+        event: "pin_reset_success",
+        ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+        userAgent: req.headers["user-agent"]
+      });
       await saveAccount({
         userId: Number(userId),
         username: challenge.username || "RobloxPlayer",
@@ -5278,29 +5413,42 @@ function registerAccountRoutes(app2) {
       return res.status(500).json({ error: "Gagal mengatur ulang PIN" });
     }
   });
-}
-
-// src/lib/auth.ts
-function extractSessionToken(req) {
-  const header = req.headers["authorization"] || "";
-  if (typeof header === "string" && header.startsWith("Bearer ")) {
-    return header.slice(7).trim();
-  }
-  const alt = req.headers["x-session-token"];
-  return typeof alt === "string" && alt.trim() ? alt.trim() : void 0;
-}
-async function requireAuth(req, res, userId) {
-  if (!userId) {
-    res.status(400).json({ error: "userId is required" });
-    return false;
-  }
-  const token = extractSessionToken(req);
-  const ok = await isValidSession(token, String(userId));
-  if (!ok) {
-    res.status(401).json({ error: "Authentication required. Please log in again.", code: "SESSION_INVALID" });
-    return false;
-  }
-  return true;
+  app2.post("/api/roblox/account/logout", async (req, res) => {
+    try {
+      const token = extractSessionToken(req);
+      if (token) {
+        await deleteSession(token);
+      }
+      clearSessionCookie(res);
+      return res.json({ success: true, message: "Logged out successfully" });
+    } catch (err) {
+      console.error("Logout error:", err);
+      clearSessionCookie(res);
+      return res.json({ success: true });
+    }
+  });
+  app2.post("/api/roblox/account/logout-all", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      const authed = await requireAuth(req, res, userId);
+      if (!authed) return;
+      await deleteAllSessions(userId);
+      clearSessionCookie(res);
+      void recordLoginEvent({
+        userId,
+        event: "logout_all_sessions",
+        ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+        userAgent: req.headers["user-agent"]
+      });
+      return res.json({ success: true, message: "Semua sesi berhasil dikeluarkan." });
+    } catch (err) {
+      console.error("Logout all error:", err);
+      return res.status(500).json({ error: "Gagal keluar dari semua sesi" });
+    }
+  });
 }
 
 // src/routes/catalog.ts

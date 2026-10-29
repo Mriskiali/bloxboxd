@@ -206,6 +206,7 @@ export const translations = {
     lists_like: 'Suka',
     lists_delete_btn: 'Hapus List',
     lists_delete_confirm: 'Yakin ingin menghapus list ini?',
+    lists_clear_confirm: 'Yakin ingin menghapus semua list kamu?',
     lists_empty_title: 'Belum ada daftar game publik',
     lists_empty_desc: 'Jadilah yang pertama membuat dan membagikan daftar game Roblox pilihanmu!',
     modal_create_list_title: 'Buat Daftar Game Baru',
@@ -261,6 +262,7 @@ export const translations = {
     log_modal_date: 'Tanggal Dimainkan',
     log_modal_save: 'Simpan ke Bloxboxd',
     log_modal_delete: 'Hapus Log',
+    log_modal_delete_confirm: 'Yakin ingin menghapus catatan game ini?',
 
     comments_modal_title: 'Komentar Ulasan',
     comments_modal_ph: 'Tulis komentar kamu...',
@@ -589,6 +591,7 @@ export const translations = {
     lists_like: 'Like',
     lists_delete_btn: 'Delete List',
     lists_delete_confirm: 'Are you sure you want to delete this list?',
+    lists_clear_confirm: 'Are you sure you want to clear all your lists?',
     lists_empty_title: 'No public lists yet',
     lists_empty_desc: 'Be the first to create and share a curated list of Roblox games!',
     modal_create_list_title: 'Create New List',
@@ -644,6 +647,7 @@ export const translations = {
     log_modal_date: 'Date Played',
     log_modal_save: 'Save to Bloxboxd',
     log_modal_delete: 'Delete Log',
+    log_modal_delete_confirm: 'Are you sure you want to delete this game log?',
 
     comments_modal_title: 'Review Comments',
     comments_modal_ph: 'Write your comment...',
