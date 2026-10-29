@@ -63,40 +63,37 @@ export const CommunityView: React.FC = () => {
     <div className="min-h-screen pb-20 pt-6 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header with Sub-Tabs */}
-        <div className="bg-[#182028] border border-[#273341] rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-              <Users className="w-6 h-6 text-[#00E59B]" />
-              <span>{t('community_title')}</span>
-            </h1>
-            <p className="text-xs text-gray-400">
-              {t('community_desc')}
-            </p>
+        <div className="flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="bb-label">{t('community_desc')}</p>
+            <h1 className="bb-display mt-1 text-[26px] sm:text-[30px]">{t('community_title')}</h1>
           </div>
 
           {/* Sub Tab Switcher */}
-          <div className="flex items-center bg-[#131920] border border-[#263341] rounded-xl p-1 w-full sm:w-auto overflow-x-auto no-scrollbar">
+          <div className="flex w-full items-center gap-4 overflow-x-auto no-scrollbar sm:w-auto">
             <button
               onClick={() => setActiveTab('feed')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              className={`relative flex flex-1 items-center justify-center gap-1.5 py-2 text-[13px] font-medium transition-colors whitespace-nowrap sm:flex-initial ${
                 activeTab === 'feed'
-                  ? 'bg-[#00E59B] text-black shadow-md'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'text-white'
+                  : 'text-muted hover:text-ink'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
               <span>{t('community_tab_feed')}</span>
+              {activeTab === 'feed' && <span className="absolute inset-x-0 -bottom-[1px] h-[2px] bg-green" />}
             </button>
             <button
               onClick={() => setActiveTab('trending')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              className={`relative flex flex-1 items-center justify-center gap-1.5 py-2 text-[13px] font-medium transition-colors whitespace-nowrap sm:flex-initial ${
                 activeTab === 'trending'
-                  ? 'bg-[#00E59B] text-black shadow-md'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'text-white'
+                  : 'text-muted hover:text-ink'
               }`}
             >
               <Trophy className="w-3.5 h-3.5" />
               <span>{t('community_tab_trending')}</span>
+              {activeTab === 'trending' && <span className="absolute inset-x-0 -bottom-[1px] h-[2px] bg-green" />}
             </button>
           </div>
         </div>
@@ -105,8 +102,8 @@ export const CommunityView: React.FC = () => {
         {activeTab === 'feed' && (
           <div className="space-y-4">
             {isLoadingFeed ? (
-              <div className="py-20 flex flex-col items-center justify-center gap-3 text-gray-400 text-xs bg-[#151c23] rounded-2xl border border-[#232f3c]">
-                <Loader2 className="w-6 h-6 animate-spin text-[#00E59B]" />
+              <div className="py-20 flex flex-col items-center justify-center gap-3 text-muted text-xs bg-panel rounded-[3px] border border-line">
+                <Loader2 className="w-6 h-6 animate-spin text-green" />
                 <span>{t('community_loading_feed')}</span>
               </div>
             ) : feedItems.length > 0 ? (
@@ -116,7 +113,7 @@ export const CommunityView: React.FC = () => {
                     return (
                       <div 
                         key={act.id} 
-                        className="bg-[#182028] border border-[#253240] rounded-2xl p-4 sm:p-5 hover:border-[#2f3f50] transition-all shadow-md space-y-3"
+                        className="bg-panel border border-line rounded-[3px] p-4 sm:p-5 hover:border-line transition-colors space-y-3"
                       >
                         {/* Author info & Game Header */}
                         <div className="flex items-start justify-between gap-3">
@@ -125,47 +122,47 @@ export const CommunityView: React.FC = () => {
                               src={safeAvatarSrc(act.userAvatar)} 
                               alt={act.username}
                               onClick={() => act.userId && viewUserProfile(act.userId)}
-                              className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 cursor-pointer hover:ring-2 hover:ring-[#00E59B] transition-all" 
+                              className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 cursor-pointer hover:ring-green transition-colors" 
                             />
                             <div>
                               <div className="flex items-center gap-2 flex-wrap text-xs">
                                 <strong 
                                   onClick={() => act.userId && viewUserProfile(act.userId)}
-                                  className="text-white font-bold cursor-pointer hover:text-[#00E59B] transition-colors"
+                                  className="text-white font-bold cursor-pointer hover:text-green transition-colors"
                                 >
                                   {act.username}
                                 </strong>
-                                <span className="text-gray-400">{t('community_reviewed')}</span>
+                                <span className="text-muted">{t('community_reviewed')}</span>
                                 <span 
                                   onClick={() => viewGame(act.gameId)}
-                                  className="text-[#00E59B] font-bold hover:underline cursor-pointer"
+                                  className="text-green font-bold hover:underline cursor-pointer"
                                 >
                                   {act.gameTitle}
                                 </span>
                               </div>
-                              <span className="text-[10px] text-gray-500">
+                              <span className="text-[10px] text-faint">
                                 {new Date(act.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                               </span>
                             </div>
                           </div>
 
                           {act.rating && (
-                            <div className="flex items-center gap-1 bg-[#12171e] px-2.5 py-1 rounded-xl border border-white/5 text-[#00E59B] text-xs font-bold">
-                              <Star className="w-3.5 h-3.5 fill-[#00E59B]" />
+                            <div className="flex items-center gap-1 bg-bg px-2.5 py-1 rounded-[3px] border border-white/5 text-green text-xs font-bold">
+                              <Star className="w-3.5 h-3.5 fill-green" />
                               <span>{act.rating.toFixed(1)}</span>
                             </div>
                           )}
                         </div>
 
                         {/* Review Content */}
-                        <div className="flex items-start gap-3 bg-[#131920] p-3.5 rounded-xl border border-[#232c37]">
+                        <div className="flex items-start gap-3 bg-bg p-3.5 rounded-[3px] border border-line">
                           <img 
                             src={safeImgSrc(act.gameIcon)} 
                             alt={act.gameTitle}
                             onClick={() => viewGame(act.gameId)}
-                            className="w-12 h-12 rounded-lg object-cover bg-black/40 flex-shrink-0 cursor-pointer hover:scale-105 transition-transform" 
+                            className="w-12 h-12 rounded-[2px] object-cover bg-black/40 flex-shrink-0 cursor-pointer  transition-transform" 
                           />
-                          <p className="text-xs text-gray-200 leading-relaxed italic flex-1">
+                          <p className="text-xs text-ink leading-relaxed italic flex-1">
                             "{act.text}"
                           </p>
                         </div>
@@ -175,9 +172,9 @@ export const CommunityView: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => likeReview(act.id.replace('act-rev-', ''))}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#202934] hover:bg-[#283442] text-gray-300 hover:text-white transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-panel-2 hover:bg-panel-2 text-ink hover:text-white transition-colors"
                             >
-                              <ThumbsUp className="w-3.5 h-3.5 text-[#00E59B]" />
+                              <ThumbsUp className="w-3.5 h-3.5 text-green" />
                               <span>{act.likesCount || 0} {t('community_like')}</span>
                             </button>
                             <button
@@ -197,16 +194,16 @@ export const CommunityView: React.FC = () => {
                                 loggedDate: act.createdAt,
                                 createdAt: act.createdAt
                               })}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#202934] hover:bg-[#283442] text-gray-300 hover:text-white transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-panel-2 hover:bg-panel-2 text-ink hover:text-white transition-colors"
                             >
-                              <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
+                              <MessageSquare className="w-3.5 h-3.5 text-blue" />
                               <span>{t('community_comment')}</span>
                             </button>
                           </div>
 
                           <button
                             onClick={() => viewGame(act.gameId)}
-                            className="text-[#00E59B] text-xs font-bold hover:underline flex items-center gap-1"
+                            className="text-green text-xs font-bold hover:underline flex items-center gap-1"
                           >
                             <span>{t('community_view_game')}</span>
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -220,51 +217,51 @@ export const CommunityView: React.FC = () => {
                   return (
                     <div 
                       key={act.id} 
-                      className="bg-[#182028] border border-[#253240] rounded-2xl p-4 sm:p-5 hover:border-[#2f3f50] transition-all shadow-md space-y-3"
+                      className="bg-panel border border-line rounded-[3px] p-4 sm:p-5 hover:border-line transition-colors space-y-3"
                     >
                       <div className="flex items-center gap-3">
                         <img 
                           src={safeAvatarSrc(act.userAvatar)} 
                           alt={act.username}
                           onClick={() => act.userId && viewUserProfile(act.userId)}
-                          className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 cursor-pointer hover:ring-2 hover:ring-[#00E59B] transition-all" 
+                          className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 cursor-pointer hover:ring-green transition-colors" 
                         />
                         <div>
                           <div className="flex items-center gap-2 flex-wrap text-xs">
                             <strong 
                               onClick={() => act.userId && viewUserProfile(act.userId)}
-                              className="text-white font-bold cursor-pointer hover:text-[#00E59B] transition-colors"
+                              className="text-white font-bold cursor-pointer hover:text-green transition-colors"
                             >
                               {act.username}
                             </strong>
-                            <span className="text-gray-400">{t('community_created_list')}</span>
+                            <span className="text-muted">{t('community_created_list')}</span>
                             <span 
                               onClick={() => viewList(act.listId)}
-                              className="text-[#00A2FF] font-bold hover:underline cursor-pointer"
+                              className="text-blue font-bold hover:underline cursor-pointer"
                             >
                               {act.title}
                             </span>
                           </div>
-                          <span className="text-[10px] text-gray-500">
+                          <span className="text-[10px] text-faint">
                             {new Date(act.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
                         </div>
                       </div>
 
                       {act.description && (
-                        <p className="text-xs text-gray-300 bg-[#131920] p-3 rounded-xl border border-[#232c37]">
+                        <p className="text-xs text-ink bg-bg p-3 rounded-[3px] border border-line">
                           {act.description}
                         </p>
                       )}
 
                       <div className="flex items-center justify-between pt-1 text-xs">
-                        <span className="text-gray-400 text-xs flex items-center gap-1">
-                          <ListOrdered className="w-3.5 h-3.5 text-[#00A2FF]" />
+                        <span className="text-muted text-xs flex items-center gap-1">
+                          <ListOrdered className="w-3.5 h-3.5 text-blue" />
                           <span>{t('community_items_in_list', { count: act.itemCount })}</span>
                         </span>
                         <button
                           onClick={() => viewList(act.listId)}
-                          className="px-3 py-1.5 rounded-lg bg-[#00A2FF]/10 text-[#00A2FF] hover:bg-[#00A2FF]/20 font-bold text-xs transition-colors flex items-center gap-1"
+                          className="px-3 py-1.5 rounded-[2px] bg-blue/10 text-blue hover:bg-blue/20 font-bold text-xs transition-colors flex items-center gap-1"
                         >
                           <span>{t('community_open_list')}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -275,9 +272,9 @@ export const CommunityView: React.FC = () => {
                 })}
               </div>
             ) : (
-              <div className="py-20 text-center bg-[#182028] rounded-2xl border border-[#253240] p-8 space-y-2">
+              <div className="py-20 text-center bg-panel rounded-[3px] border border-line p-8 space-y-2">
                 <p className="text-sm font-bold text-white">{t('community_empty_feed')}</p>
-                <p className="text-xs text-gray-400">{t('community_empty_feed_prompt')}</p>
+                <p className="text-xs text-muted">{t('community_empty_feed_prompt')}</p>
               </div>
             )}
           </div>
@@ -288,16 +285,16 @@ export const CommunityView: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Column: Trending Reviews This Week */}
             <div className="lg:col-span-7 space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-[#253240]">
-                <Flame className="w-5 h-5 text-rose-400" />
-                <h2 className="text-base font-extrabold text-white">
+              <div className="flex items-center gap-2 pb-2 border-b border-line">
+                <Flame className="w-5 h-5 text-orange" />
+                <h2 className="bb-label">
                   {t('community_trending_reviews')}
                 </h2>
               </div>
 
               {isLoadingTrending ? (
-                <div className="py-20 flex flex-col items-center justify-center gap-2 text-gray-400 text-xs">
-                  <Loader2 className="w-5 h-5 animate-spin text-[#00E59B]" />
+                <div className="py-20 flex flex-col items-center justify-center gap-2 text-muted text-xs">
+                  <Loader2 className="w-5 h-5 animate-spin text-green" />
                   <span>{t('community_loading_trending')}</span>
                 </div>
               ) : trendingReviews.length > 0 ? (
@@ -305,7 +302,7 @@ export const CommunityView: React.FC = () => {
                   {trendingReviews.map((rev) => (
                     <div 
                       key={rev.id} 
-                      className="bg-[#182028] border border-[#253240] rounded-2xl p-4 space-y-3 hover:border-[#2e3b4a] transition-all"
+                      className="bg-panel border border-line rounded-[3px] p-4 space-y-3 hover:border-line transition-colors"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
@@ -313,31 +310,31 @@ export const CommunityView: React.FC = () => {
                             src={safeAvatarSrc(rev.userAvatar)} 
                             alt={rev.username}
                             onClick={() => rev.userId && viewUserProfile(rev.userId)}
-                            className="w-9 h-9 rounded-full object-cover bg-black/40 border border-white/10 cursor-pointer hover:ring-2 hover:ring-[#00E59B] transition-all" 
+                            className="w-9 h-9 rounded-full object-cover bg-black/40 border border-white/10 cursor-pointer hover:ring-green transition-colors" 
                           />
                           <div>
                             <p 
                               onClick={() => rev.userId && viewUserProfile(rev.userId)}
-                              className="text-xs font-bold text-white cursor-pointer hover:text-[#00E59B] transition-colors"
+                              className="text-xs font-bold text-white cursor-pointer hover:text-green transition-colors"
                             >
                               {rev.username}
                             </p>
                             <p 
                               onClick={() => viewGame(rev.gameId)}
-                              className="text-xs text-[#00E59B] hover:underline cursor-pointer font-semibold truncate max-w-xs"
+                              className="text-xs text-green hover:underline cursor-pointer font-semibold truncate max-w-xs"
                             >
                               {rev.gameTitle}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1 text-[#00E59B] font-bold text-xs bg-[#12171e] px-2 py-0.5 rounded-lg">
-                          <Star className="w-3.5 h-3.5 fill-[#00E59B]" />
+                        <div className="flex items-center gap-1 text-green font-bold text-xs bg-bg px-2 py-0.5 rounded-[2px]">
+                          <Star className="w-3.5 h-3.5 fill-green" />
                           <span>{rev.rating?.toFixed(1) || '5.0'}</span>
                         </div>
                       </div>
 
-                      <p className="text-xs text-gray-200 italic bg-[#131920] p-3 rounded-xl border border-[#232c37]">
+                      <p className="text-xs text-ink italic bg-bg p-3 rounded-[3px] border border-line">
                         "{rev.reviewText}"
                       </p>
 
@@ -345,23 +342,23 @@ export const CommunityView: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => likeReview(rev.id)}
-                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#202934] text-gray-300 hover:text-white"
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] bg-panel-2 text-ink hover:text-white"
                           >
-                            <ThumbsUp className="w-3.5 h-3.5 text-rose-400" />
+                            <ThumbsUp className="w-3.5 h-3.5 text-orange" />
                             <span>{rev.likesCount || 0} {t('community_like')}</span>
                           </button>
                           <button
                             onClick={() => setSelectedReviewForComments(rev)}
-                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#202934] text-gray-300 hover:text-white"
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] bg-panel-2 text-ink hover:text-white"
                           >
-                            <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
+                            <MessageSquare className="w-3.5 h-3.5 text-blue" />
                             <span>{t('community_comment')}</span>
                           </button>
                         </div>
 
                         <button
                           onClick={() => viewGame(rev.gameId)}
-                          className="text-xs font-bold text-[#00E59B] hover:underline"
+                          className="text-xs font-bold text-green hover:underline"
                         >
                           {t('community_view_game')} ➔
                         </button>
@@ -370,7 +367,7 @@ export const CommunityView: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400 py-10 text-center bg-[#182028] rounded-2xl border border-[#253240]">
+                <p className="text-xs text-muted py-10 text-center bg-panel rounded-[3px] border border-line">
                   {t('community_empty_trending')}
                 </p>
               )}
@@ -378,32 +375,32 @@ export const CommunityView: React.FC = () => {
 
             {/* Right Column: Leaderboard */}
             <div className="lg:col-span-5 space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-[#253240]">
-                <Trophy className="w-5 h-5 text-amber-400" />
-                <h2 className="text-base font-extrabold text-white">
+              <div className="flex items-center gap-2 pb-2 border-b border-line">
+                <Trophy className="w-5 h-5 text-blue" />
+                <h2 className="bb-label">
                   {t('community_leaderboard')}
                 </h2>
               </div>
 
               {isLoadingTrending ? (
-                <div className="py-20 flex flex-col items-center justify-center gap-2 text-gray-400 text-xs">
-                  <Loader2 className="w-5 h-5 animate-spin text-[#00E59B]" />
+                <div className="py-20 flex flex-col items-center justify-center gap-2 text-muted text-xs">
+                  <Loader2 className="w-5 h-5 animate-spin text-green" />
                   <span>{t('community_loading_leaderboard')}</span>
                 </div>
               ) : leaderboard.length > 0 ? (
-                <div className="bg-[#182028] border border-[#253240] rounded-2xl divide-y divide-[#232c37] overflow-hidden shadow-md">
+                <div className="bg-panel border border-line rounded-[3px] divide-y divide-line overflow-hidden">
                   {leaderboard.map((player) => (
                     <div 
                       key={player.id} 
                       onClick={() => player.id && viewUserProfile(player.id)}
-                      className="p-3.5 flex items-center gap-3 hover:bg-[#1f2833] transition-colors cursor-pointer group"
+                      className="p-3.5 flex items-center gap-3 hover:bg-panel-2 transition-colors cursor-pointer group"
                     >
                       {/* Rank Badge */}
-                      <div className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs flex-shrink-0 ${
-                        player.rank === 1 ? 'bg-amber-400 text-black shadow-[0_0_10px_rgba(251,191,36,0.4)]' :
+                      <div className={`w-7 h-7 rounded-[3px] flex items-center justify-center font-semibold text-xs flex-shrink-0 ${
+                        player.rank === 1 ? 'bg-blue text-black shadow-[0_0_10px_rgba(251,191,36,0.4)]' :
                         player.rank === 2 ? 'bg-slate-300 text-black' :
-                        player.rank === 3 ? 'bg-amber-700 text-white' :
-                        'bg-[#242f3c] text-gray-300'
+                        player.rank === 3 ? 'bg-blue text-white' :
+                        'bg-panel-2 text-ink'
                       }`}>
                         {player.rank}
                       </div>
@@ -412,15 +409,15 @@ export const CommunityView: React.FC = () => {
                       <img 
                         src={safeAvatarSrc(player.avatarUrl)} 
                         alt={player.username}
-                        className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 flex-shrink-0 group-hover:ring-2 group-hover:ring-[#00E59B] transition-all" 
+                        className="w-10 h-10 rounded-full object-cover bg-black/40 border border-white/10 flex-shrink-0 group- group-hover:ring-green transition-colors" 
                       />
 
                       {/* User Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-white group-hover:text-[#00E59B] transition-colors truncate">
+                        <p className="text-xs font-bold text-white group-hover:text-green transition-colors truncate">
                           {player.username}
                         </p>
-                        <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                        <div className="flex items-center gap-2 text-[10px] text-muted">
                           <span>{player.logsCount} {t('community_logs')}</span>
                           <span>•</span>
                           <span>{player.reviewsCount} {t('community_reviews')}</span>
@@ -429,7 +426,7 @@ export const CommunityView: React.FC = () => {
 
                       {/* Score Badge */}
                       <div className="text-right">
-                        <span className="px-2 py-0.5 rounded bg-[#00E59B]/10 border border-[#00E59B]/20 text-[#00E59B] text-[10px] font-black">
+                        <span className="px-2 py-0.5 rounded bg-green/10 border border-green/20 text-green text-[10px] font-semibold">
                           {player.score} {t('community_points')}
                         </span>
                       </div>
@@ -437,7 +434,7 @@ export const CommunityView: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400 py-10 text-center bg-[#182028] rounded-2xl border border-[#253240]">
+                <p className="text-xs text-muted py-10 text-center bg-panel rounded-[3px] border border-line">
                   {t('community_empty_leaderboard')}
                 </p>
               )}

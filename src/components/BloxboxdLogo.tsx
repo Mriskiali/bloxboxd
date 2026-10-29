@@ -17,7 +17,7 @@ export const BloxboxdLogo: React.FC<BloxboxdLogoProps> = ({
         viewBox="0 0 64 64" 
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full h-full drop-shadow-[0_0_10px_rgba(0,229,155,0.4)] group-hover:scale-105 transition-transform duration-300"
+        className="w-full h-full drop-shadow-[0_0_10px_rgba(0,229,155,0.4)] group- transition-transform duration-300"
       >
         {/* Ambient Glow */}
         <circle cx="32" cy="30" r="18" fill="#00E59B" fillOpacity="0.2" />

@@ -333,32 +333,32 @@ export const RobloxLoginModal: React.FC = () => {
   const isCurrentRobloxUser = Boolean(user?.robloxUserId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0a0e12]/85  overflow-y-auto">
       <div 
         onClick={(e) => e.stopPropagation()} 
-        className="w-full max-w-lg bg-[#181e24] border border-[#2c3746] rounded-2xl shadow-2xl p-5 sm:p-6 my-6 max-h-[92vh] overflow-y-auto space-y-5"
+        className="w-full max-w-lg bg-panel border border-line rounded-[3px] shadow-[0_8px_24px_rgba(0,0,0,0.55)] p-5 sm:p-6 my-6 max-h-[92vh] overflow-y-auto space-y-5"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#242d38] pb-4">
+        <div className="flex items-center justify-between border-b border-line pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#00E59B]/10 border border-[#00E59B]/30 flex items-center justify-center">
-              <span className="w-3.5 h-3.5 bg-[#00E59B] transform -rotate-12 rounded-[2px]" />
+            <div className="w-8 h-8 rounded-[2px] bg-green/10 border border-green/30 flex items-center justify-center">
+              <span className="w-3.5 h-3.5 bg-green transform -rotate-12 rounded-[2px]" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-1.5">
+              <h2 className="text-base sm:text-lg font-semibold text-white flex items-center gap-1.5">
                 <span>{t('login_modal_title')}</span>
-                <span className="text-[10px] bg-[#00E59B] text-black font-extrabold px-1.5 py-0.2 rounded">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-green">
                   {t('login_modal_badge_safe')}
                 </span>
               </h2>
-              <p className="text-[11px] text-gray-400">
+              <p className="text-[11px] text-muted">
                 {t('login_modal_subtitle')}
               </p>
             </div>
           </div>
           <button 
             onClick={() => setLoginModalOpen(false)}
-            className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
+            className="text-muted hover:text-white p-1 rounded-[2px] hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -366,23 +366,23 @@ export const RobloxLoginModal: React.FC = () => {
 
         {/* Currently Connected User Card (if any) */}
         {user && isCurrentRobloxUser && (
-          <div className="bg-[#12161b] border border-[#242e3a] rounded-xl p-3.5 flex items-center justify-between gap-3">
+          <div className="bg-bg border border-line rounded-[3px] p-3.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <img
                 src={safeAvatarSrc(user.avatarUrl)}
                 alt={user.username}
-                className="w-10 h-10 rounded-xl object-cover ring-2 ring-[#00E59B]"
+                className="w-10 h-10 rounded-[3px] object-cover border border-line"
               />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <p className="text-xs font-bold text-white truncate">{user.username}</p>
                   {user.isRobloxVerified && (
-                    <span className="text-[9px] bg-[#00E59B]/20 text-[#00E59B] px-1.5 py-0.2 rounded font-bold">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-green">
                       {t('nav_verified')}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-400 truncate">
+                <p className="text-[11px] text-muted truncate">
                   {t('login_modal_active_account', { username: user.robloxUsername, id: user.robloxUserId })}
                 </p>
               </div>
@@ -390,7 +390,7 @@ export const RobloxLoginModal: React.FC = () => {
 
             <button
               onClick={handleLogout}
-              className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
+              className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold rounded-[2px] transition-colors flex items-center gap-1 whitespace-nowrap"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>{t('login_modal_logout_btn')}</span>
@@ -400,7 +400,7 @@ export const RobloxLoginModal: React.FC = () => {
 
         {/* Search Input Form */}
         <form onSubmit={(e) => handleSearch(e)} className="space-y-2">
-          <label className="block text-xs font-bold text-gray-300">
+          <label className="block text-xs font-bold text-ink">
             {t('login_modal_search_label')}
           </label>
           <div className="flex gap-2">
@@ -410,12 +410,12 @@ export const RobloxLoginModal: React.FC = () => {
               aria-label={t('login_modal_search_ph')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 bg-[#14181c] border border-[#2c3746] focus:border-[#00E59B] rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all shadow-inner"
+              className="flex-1 bg-bg border border-line focus:border-green rounded-[3px] px-4 py-2.5 text-sm text-white outline-none transition-colors"
             />
             <button
               type="submit"
               disabled={loading || !query.trim()}
-              className="px-5 py-2.5 bg-[#00E59B] hover:bg-[#00c988] disabled:opacity-50 text-black font-extrabold text-xs rounded-xl shadow transition-all flex items-center gap-2 whitespace-nowrap"
+              className="px-5 py-2.5 bg-green hover:bg-[#00c94b] disabled:opacity-50 text-black font-semibold text-xs rounded-[3px] shadow transition-colors flex items-center gap-2 whitespace-nowrap"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <User className="w-4 h-4" />}
               <span>{t('login_modal_search_btn')}</span>
@@ -425,7 +425,7 @@ export const RobloxLoginModal: React.FC = () => {
 
         {/* Error alert */}
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-2.5 text-xs text-red-300">
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-[3px] flex items-start gap-2.5 text-xs text-red-300">
             <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">{error}</div>
           </div>
@@ -433,17 +433,17 @@ export const RobloxLoginModal: React.FC = () => {
 
         {/* Found User Profile Preview & Authentication Form */}
         {foundUser && (
-          <div className="bg-[#14181c] border border-[#2b3746] rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
+          <div className="bg-bg border border-line rounded-[3px] p-4 sm:p-5 space-y-4">
             {/* User Identity Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="relative">
                 <img
                   src={safeAvatarSrc(selectedAvatarType === 'bust' && foundUser.avatarBustUrl ? foundUser.avatarBustUrl : foundUser.avatarHeadshotUrl)}
                   alt={foundUser.username}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover bg-black/60 border-2 border-[#00E59B] shadow-lg"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-[3px] object-cover bg-black/60 border border-line"
                 />
                 {foundUser.hasVerifiedBadge && (
-                  <div className="absolute -bottom-1 -right-1 bg-[#00A2FF] text-white p-1 rounded-full shadow" title="Roblox Verified">
+                  <div className="absolute -bottom-1 -right-1 bg-blue text-white p-1 rounded-full shadow" title="Roblox Verified">
                     <Check className="w-3 h-3 stroke-[3]" />
                   </div>
                 )}
@@ -451,14 +451,14 @@ export const RobloxLoginModal: React.FC = () => {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-base font-extrabold text-white truncate">
+                  <h3 className="bb-label truncate">
                     {foundUser.displayName}
                   </h3>
-                  <span className="text-xs font-mono text-gray-400 bg-[#1e252e] px-2 py-0.5 rounded border border-white/5">
+                  <span className="text-xs font-mono text-muted bg-panel px-2 py-0.5 rounded border border-white/5">
                     @{foundUser.username}
                   </span>
                   {accountStatus?.hasPin ? (
-                    <span className="text-[10px] font-bold text-[#00E59B] bg-[#00E59B]/10 px-2 py-0.5 rounded border border-[#00E59B]/30 flex items-center gap-1">
+                    <span className="text-[10px] font-bold text-green bg-green/10 px-2 py-0.5 rounded border border-green/30 flex items-center gap-1">
                       <Lock className="w-2.5 h-2.5" />
                       <span>{t('login_modal_status_locked')}</span>
                     </span>
@@ -470,8 +470,8 @@ export const RobloxLoginModal: React.FC = () => {
                   )}
                 </div>
 
-                <p className="text-xs text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
-                  <span>ID: <strong className="text-gray-200">{foundUser.userId}</strong></span>
+                <p className="text-xs text-muted mt-1 flex items-center gap-2 flex-wrap">
+                  <span>ID: <strong className="text-ink">{foundUser.userId}</strong></span>
                   {foundUser.joinedYear && (
                     <>
                       <span>•</span>
@@ -491,19 +491,19 @@ export const RobloxLoginModal: React.FC = () => {
                     href={`https://www.roblox.com/users/${foundUser.userId}/profile`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] text-[#00E59B] hover:underline font-semibold"
+                    className="inline-flex items-center gap-1 text-[11px] text-green hover:underline font-semibold"
                   >
                     <span>{t('login_modal_open_roblox_profile')}</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
 
                   {foundUser.avatarBustUrl && (
-                    <div className="flex items-center gap-1 text-[11px] bg-[#1e252f] p-0.5 rounded-lg border border-[#2b3745]">
+                    <div className="flex items-center gap-1 text-[11px] bg-panel p-0.5 rounded-[2px] border border-line">
                       <button
                         type="button"
                         onClick={() => setSelectedAvatarType('headshot')}
                         className={`px-2 py-0.5 rounded font-semibold transition-colors ${
-                          selectedAvatarType === 'headshot' ? 'bg-[#00E59B] text-black' : 'text-gray-400 hover:text-white'
+                          selectedAvatarType === 'headshot' ? 'bg-green text-black' : 'text-muted hover:text-white'
                         }`}
                       >
                         {t('login_modal_headshot_tab')}
@@ -512,7 +512,7 @@ export const RobloxLoginModal: React.FC = () => {
                         type="button"
                         onClick={() => setSelectedAvatarType('bust')}
                         className={`px-2 py-0.5 rounded font-semibold transition-colors ${
-                          selectedAvatarType === 'bust' ? 'bg-[#00E59B] text-black' : 'text-gray-400 hover:text-white'
+                          selectedAvatarType === 'bust' ? 'bg-green text-black' : 'text-muted hover:text-white'
                         }`}
                       >
                         {t('login_modal_avatar3d_tab')}
@@ -525,13 +525,13 @@ export const RobloxLoginModal: React.FC = () => {
 
             {/* Feedback alert if any */}
             {feedbackMessage && (
-              <div className={`p-3 rounded-xl border flex items-start gap-2 text-xs ${
+              <div className={`p-3 rounded-[3px] border flex items-start gap-2 text-xs ${
                 feedbackMessage.success 
-                  ? 'bg-[#00E59B]/10 border-[#00E59B]/30 text-[#00E59B]' 
+                  ? 'bg-green/10 border-green/30 text-green' 
                   : 'bg-red-500/10 border-red-500/30 text-red-300'
               }`}>
                 {feedbackMessage.success ? (
-                  <CheckCircle2 className="w-4 h-4 text-[#00E59B] flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-green flex-shrink-0 mt-0.5" />
                 ) : (
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 )}
@@ -541,23 +541,23 @@ export const RobloxLoginModal: React.FC = () => {
 
             {/* CASE 1: Account Already Registered & Protected by PIN */}
             {accountStatus?.hasPin && pinMode === 'pin' && (
-              <form onSubmit={handlePinLogin} className="border-t border-[#232b36] pt-4 space-y-3.5">
-                <div className="bg-[#11151a] p-3 rounded-xl border border-[#26313f] space-y-1">
+              <form onSubmit={handlePinLogin} className="border-t border-line pt-4 space-y-3.5">
+                <div className="bg-bg p-3 rounded-[3px] border border-line space-y-1">
                   <div className="flex items-center gap-2 text-xs font-bold text-white">
-                    <Lock className="w-4 h-4 text-[#00E59B]" />
+                    <Lock className="w-4 h-4 text-green" />
                     <span>{t('login_modal_pin_protected')}</span>
                   </div>
-                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                  <p className="text-[11px] text-muted leading-relaxed">
                     {t('login_modal_pin_desc')}
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-gray-300">
+                  <label className="block text-xs font-bold text-ink">
                     {t('login_modal_enter_pin')}
                   </label>
                   <div className="relative">
-                    <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                     <input
                       type={showPin ? 'text' : 'password'}
                       autoFocus
@@ -565,12 +565,12 @@ export const RobloxLoginModal: React.FC = () => {
                       aria-label={t('login_modal_enter_pin')}
                       value={inputPin}
                       onChange={(e) => setInputPin(e.target.value)}
-                      className="w-full pl-10 pr-10 py-2.5 bg-[#1b222a] border border-[#2c3746] focus:border-[#00E59B] rounded-xl text-sm text-white outline-none"
+                      className="w-full pl-10 pr-10 py-2.5 bg-panel border border-line focus:border-green rounded-[3px] text-sm text-white outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPin(!showPin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white"
                     >
                       {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -580,7 +580,7 @@ export const RobloxLoginModal: React.FC = () => {
                 <button
                   type="submit"
                   disabled={verifying || !inputPin.trim()}
-                  className="w-full py-3 bg-[#00E59B] hover:bg-[#00c988] active:scale-[0.99] disabled:opacity-50 text-black font-black text-xs sm:text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-green hover:bg-[#00c94b] active:scale-[0.99] disabled:opacity-50 text-black font-semibold text-xs sm:text-sm rounded-[3px] transition-colors flex items-center justify-center gap-2"
                 >
                   {verifying ? (
                     <>
@@ -603,7 +603,7 @@ export const RobloxLoginModal: React.FC = () => {
                       setFeedbackMessage(null);
                       startVerificationChallenge(foundUser, 'avatar');
                     }}
-                    className="text-xs text-gray-400 hover:text-[#00A2FF] underline transition-colors"
+                    className="text-xs text-muted hover:text-blue underline transition-colors"
                   >
                     {t('login_modal_forgot_pin')}
                   </button>
@@ -613,27 +613,27 @@ export const RobloxLoginModal: React.FC = () => {
 
             {/* CASE 2: First-time Registration OR Reset PIN via Active Challenge */}
             {(!accountStatus?.hasPin || pinMode === 'challenge') && (
-              <div className="border-t border-[#232b36] pt-4 space-y-4">
-                <div className="bg-[#101419] p-3.5 rounded-xl border border-[#26313f] space-y-2">
+              <div className="border-t border-line pt-4 space-y-4">
+                <div className="bg-bg p-3.5 rounded-[3px] border border-line space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-white">
-                      <ShieldCheck className="w-4 h-4 text-[#00E59B]" />
+                      <ShieldCheck className="w-4 h-4 text-green" />
                       <span>{t('login_modal_challenge_header')}</span>
                     </div>
                     {countdown > 0 && (
-                      <span className="text-[11px] font-mono text-[#00E59B] bg-[#00E59B]/10 border border-[#00E59B]/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                      <span className="text-[11px] font-mono text-green bg-green/10 border border-green/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
                         <Clock className="w-3 h-3" />
                         <span>{formatTime(countdown)}</span>
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-gray-300 leading-relaxed">
+                  <p className="text-[11px] text-ink leading-relaxed">
                     {t('login_modal_challenge_desc')}
                   </p>
                 </div>
 
                 {/* Method Switcher Tabs */}
-                <div className="grid grid-cols-2 gap-2 p-1 bg-[#101419] rounded-xl border border-[#252f3d]">
+                <div className="grid grid-cols-2 gap-2 p-1 bg-bg rounded-[3px] border border-line">
                   <button
                     type="button"
                     onClick={() => {
@@ -641,10 +641,10 @@ export const RobloxLoginModal: React.FC = () => {
                         startVerificationChallenge(foundUser, 'avatar');
                       }
                     }}
-                    className={`px-3 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`px-3 py-2.5 rounded-[2px] text-xs font-bold transition-colors flex items-center justify-center gap-2 ${
                       challengeType === 'avatar'
-                        ? 'bg-[#00E59B] text-black shadow-md'
-                        : 'text-gray-400 hover:text-white hover:bg-[#18202a]'
+                        ? 'bg-green text-black'
+                        : 'text-muted hover:text-white hover:bg-panel'
                     }`}
                   >
                     <Shirt className="w-4 h-4" />
@@ -658,10 +658,10 @@ export const RobloxLoginModal: React.FC = () => {
                         startVerificationChallenge(foundUser, 'bio');
                       }
                     }}
-                    className={`px-3 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`px-3 py-2.5 rounded-[2px] text-xs font-bold transition-colors flex items-center justify-center gap-2 ${
                       challengeType === 'bio'
-                        ? 'bg-[#00E59B] text-black shadow-md'
-                        : 'text-gray-400 hover:text-white hover:bg-[#18202a]'
+                        ? 'bg-green text-black'
+                        : 'text-muted hover:text-white hover:bg-panel'
                     }`}
                   >
                     <Sparkles className="w-4 h-4" />
@@ -671,8 +671,8 @@ export const RobloxLoginModal: React.FC = () => {
 
                 {/* Loading state for challenge */}
                 {challengeLoading && (
-                  <div className="py-6 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-[#00E59B]" />
+                  <div className="py-6 text-center text-xs text-muted flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-green" />
                     <span>{t('login_modal_challenge_creating')}</span>
                   </div>
                 )}
@@ -682,16 +682,16 @@ export const RobloxLoginModal: React.FC = () => {
                   <div className="space-y-4">
                     {/* Method 1: Avatar Item Challenge */}
                     {challengeType === 'avatar' && (
-                      <div className="bg-[#12171e] p-4 rounded-xl border border-[#273240] space-y-3">
+                      <div className="bg-bg p-4 rounded-[3px] border border-line space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-xs font-bold text-white">
-                            <Shirt className="w-4 h-4 text-[#00E59B]" />
+                            <Shirt className="w-4 h-4 text-green" />
                             <span>{t('login_modal_avatar_instructions_title')}</span>
                           </div>
                           <button
                             type="button"
                             onClick={() => startVerificationChallenge(foundUser, 'avatar')}
-                            className="text-[11px] text-gray-400 hover:text-[#00E59B] flex items-center gap-1"
+                            className="text-[11px] text-muted hover:text-green flex items-center gap-1"
                             title={t('login_modal_refresh_session')}
                           >
                             <RefreshCw className="w-3 h-3" />
@@ -699,22 +699,22 @@ export const RobloxLoginModal: React.FC = () => {
                           </button>
                         </div>
 
-                        <div className="bg-[#19212b] p-3.5 rounded-lg border border-[#2f3d4e] space-y-2.5">
-                          <p className="text-xs text-gray-200 leading-relaxed font-medium">
+                        <div className="bg-panel p-3.5 rounded-[2px] border border-line space-y-2.5">
+                          <p className="text-xs text-ink leading-relaxed font-medium">
                             {challengeData.actionInstruction}
                           </p>
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-[11px] text-gray-400 border-t border-white/5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 text-[11px] text-muted border-t border-white/5">
                             <div>
                               <span>{t('login_modal_official_item')} </span>
                               <strong className="text-white">{challengeData.assetName}</strong>{' '}
-                              <span className="text-gray-400 font-mono text-[10px]">(ID: {challengeData.assetId})</span>
+                              <span className="text-muted font-mono text-[10px]">(ID: {challengeData.assetId})</span>
                             </div>
                             <div className="flex items-center gap-3">
                               <a
                                 href={challengeData.catalogUrl || `https://www.roblox.com/catalog/${challengeData.assetId}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[#00A2FF] hover:underline flex items-center gap-1 font-semibold"
+                                className="text-blue hover:underline flex items-center gap-1 font-semibold"
                               >
                                 <span>{t('login_modal_view_catalog')}</span>
                                 <ExternalLink className="w-3 h-3" />
@@ -723,7 +723,7 @@ export const RobloxLoginModal: React.FC = () => {
                                 href="https://www.roblox.com/my/avatar"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[#00E59B] hover:underline flex items-center gap-1 font-semibold"
+                                className="text-green hover:underline flex items-center gap-1 font-semibold"
                               >
                                 <span>{t('login_modal_open_avatar_editor')}</span>
                                 <ExternalLink className="w-3 h-3" />
@@ -734,7 +734,7 @@ export const RobloxLoginModal: React.FC = () => {
 
                         {/* Switch item option if available */}
                         {challengeData.availableItems && challengeData.availableItems.length > 1 && (
-                          <div className="flex items-center justify-between pt-0.5 text-[11px] text-gray-400">
+                          <div className="flex items-center justify-between pt-0.5 text-[11px] text-muted">
                             <span>{t('login_modal_switch_item')}</span>
                             <div className="flex gap-1.5">
                               {challengeData.availableItems.map(item => (
@@ -744,8 +744,8 @@ export const RobloxLoginModal: React.FC = () => {
                                   onClick={() => startVerificationChallenge(foundUser, 'avatar', item.id)}
                                   className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
                                     challengeData.assetId === item.id 
-                                      ? 'bg-[#00E59B] text-black' 
-                                      : 'bg-[#1a222c] hover:bg-[#25303e] text-gray-300'
+                                      ? 'bg-green text-black' 
+                                      : 'bg-panel hover:bg-panel-2 text-ink'
                                   }`}
                                 >
                                   {item.name === "ROBLOX 'R' Baseball Cap" ? "'R' Baseball Cap" : "Roblox Baseball Cap"}
@@ -755,7 +755,7 @@ export const RobloxLoginModal: React.FC = () => {
                           </div>
                         )}
 
-                        <p className="text-[11px] text-gray-400 leading-relaxed">
+                        <p className="text-[11px] text-muted leading-relaxed">
                           {t('login_modal_avatar_tip')}
                         </p>
                       </div>
@@ -763,16 +763,16 @@ export const RobloxLoginModal: React.FC = () => {
 
                     {/* Method 2: Dynamic Bio Words Challenge */}
                     {challengeType === 'bio' && (
-                      <div className="bg-[#12171e] p-4 rounded-xl border border-[#273240] space-y-3">
+                      <div className="bg-bg p-4 rounded-[3px] border border-line space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-xs font-bold text-white">
-                            <Sparkles className="w-4 h-4 text-[#00E59B]" />
+                            <Sparkles className="w-4 h-4 text-green" />
                             <span>{t('login_modal_bio_phrase_title')}</span>
                           </div>
                           <button
                             type="button"
                             onClick={() => startVerificationChallenge(foundUser, 'bio')}
-                            className="text-[11px] text-gray-400 hover:text-[#00E59B] flex items-center gap-1"
+                            className="text-[11px] text-muted hover:text-green flex items-center gap-1"
                             title={t('login_modal_re_randomize')}
                           >
                             <RefreshCw className="w-3 h-3" />
@@ -780,19 +780,19 @@ export const RobloxLoginModal: React.FC = () => {
                           </button>
                         </div>
 
-                        <div className="flex items-center justify-between gap-2 bg-[#182029] px-3 py-2.5 rounded-xl border border-[#303e50]">
-                          <span className="font-mono text-sm font-black text-[#00E59B] tracking-wide truncate select-all">
+                        <div className="flex items-center justify-between gap-2 bg-panel px-3 py-2.5 rounded-[3px] border border-line">
+                          <span className="font-mono text-sm font-semibold text-green tracking-wide truncate select-all">
                             {challengeData.phrase}
                           </span>
                           <button
                             type="button"
                             onClick={handleCopyPhrase}
-                            className="flex items-center gap-1 text-xs font-bold text-gray-200 hover:text-white bg-[#263342] hover:bg-[#324255] px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                            className="flex items-center gap-1 text-xs font-bold text-ink hover:text-white bg-panel-2 hover:bg-panel-2 px-3 py-1.5 rounded-[2px] transition-colors whitespace-nowrap"
                           >
                             {copied ? (
                               <>
-                                <Check className="w-3.5 h-3.5 text-[#00E59B]" />
-                                <span className="text-[#00E59B]">{t('login_modal_copied')}</span>
+                                <Check className="w-3.5 h-3.5 text-green" />
+                                <span className="text-green">{t('login_modal_copied')}</span>
                               </>
                             ) : (
                               <>
@@ -803,7 +803,7 @@ export const RobloxLoginModal: React.FC = () => {
                           </button>
                         </div>
 
-                        <ol className="text-[11px] text-gray-300 space-y-1 pl-4 list-decimal">
+                        <ol className="text-[11px] text-ink space-y-1 pl-4 list-decimal">
                           <li>{t('login_modal_bio_step1')}</li>
                           <li>{t('login_modal_bio_step2')}</li>
                           <li>{t('login_modal_bio_step3')}</li>
@@ -813,9 +813,9 @@ export const RobloxLoginModal: React.FC = () => {
 
                     {/* PIN Registration Form */}
                     <form onSubmit={handleVerifyChallenge} className="space-y-4 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#11161d] p-3 rounded-xl border border-[#242d38]">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-bg p-3 rounded-[3px] border border-line">
                         <div className="space-y-1">
-                          <label className="block text-[11px] font-bold text-gray-300">
+                          <label className="block text-[11px] font-bold text-ink">
                             {t('login_modal_create_pin')}
                           </label>
                           <div className="relative">
@@ -825,12 +825,12 @@ export const RobloxLoginModal: React.FC = () => {
                               aria-label={t('login_modal_create_pin')}
                               value={newPin}
                               onChange={(e) => setNewPin(e.target.value)}
-                              className="w-full px-3 py-2 bg-[#1b222a] border border-[#2c3746] focus:border-[#00E59B] rounded-lg text-xs text-white outline-none"
+                              className="w-full px-3 py-2 bg-panel border border-line focus:border-green rounded-[2px] text-xs text-white outline-none"
                             />
                             <button
                               type="button"
                               onClick={() => setShowPin(!showPin)}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-white"
                             >
                               {showPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                             </button>
@@ -838,7 +838,7 @@ export const RobloxLoginModal: React.FC = () => {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="block text-[11px] font-bold text-gray-300">
+                          <label className="block text-[11px] font-bold text-ink">
                             {t('login_modal_confirm_pin')}
                           </label>
                           <input
@@ -847,7 +847,7 @@ export const RobloxLoginModal: React.FC = () => {
                             aria-label={t('login_modal_confirm_pin')}
                             value={confirmPin}
                             onChange={(e) => setConfirmPin(e.target.value)}
-                            className="w-full px-3 py-2 bg-[#1b222a] border border-[#2c3746] focus:border-[#00E59B] rounded-lg text-xs text-white outline-none"
+                            className="w-full px-3 py-2 bg-panel border border-line focus:border-green rounded-[2px] text-xs text-white outline-none"
                           />
                         </div>
                       </div>
@@ -856,7 +856,7 @@ export const RobloxLoginModal: React.FC = () => {
                       <button
                         type="submit"
                         disabled={verifying || !newPin.trim() || countdown === 0}
-                        className="w-full py-3 bg-[#00E59B] hover:bg-[#00c988] active:scale-[0.99] disabled:opacity-50 text-black font-black text-xs sm:text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-green hover:bg-[#00c94b] active:scale-[0.99] disabled:opacity-50 text-black font-semibold text-xs sm:text-sm rounded-[3px] transition-colors flex items-center justify-center gap-2"
                       >
                         {verifying ? (
                           <>
@@ -879,7 +879,7 @@ export const RobloxLoginModal: React.FC = () => {
                               setPinMode('pin');
                               setFeedbackMessage(null);
                             }}
-                            className="text-xs text-gray-400 hover:text-white underline"
+                            className="text-xs text-muted hover:text-white underline"
                           >
                             {t('login_modal_remembered_pin')}
                           </button>

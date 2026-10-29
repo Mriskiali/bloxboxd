@@ -80,32 +80,32 @@ export const LogModal: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75  overflow-y-auto">
       <div 
         onClick={(e) => e.stopPropagation()} 
-        className="relative w-full max-w-lg rounded-2xl bg-[#181e24] border border-[#2b3542] shadow-2xl overflow-hidden my-8"
+        className="relative w-full max-w-lg rounded-[3px] bg-panel border border-line shadow-[0_8px_24px_rgba(0,0,0,0.55)] overflow-hidden my-8"
       >
         {/* Header with Game Banner */}
-        <div className="relative p-5 pb-4 bg-[#14181c] border-b border-[#242d38] flex items-start gap-3.5">
+        <div className="relative p-5 pb-4 bg-bg border-b border-line flex items-start gap-3.5">
           <img 
             src={safeImgSrc(logModalGame.iconUrl)} 
             alt={logModalGame.name}
-            className="w-16 h-16 rounded-xl object-cover bg-black flex-shrink-0 shadow-md border border-white/10"
+            className="w-16 h-16 rounded-[3px] object-cover bg-black flex-shrink-0 border border-white/10"
           />
           <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#00E59B]">
+            <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-green">
               {t('log_modal_title')}
             </span>
-            <h3 className="text-lg font-bold text-white truncate">
+            <h3 className="bb-label truncate">
               {logModalGame.name}
             </h3>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted">
               {logModalGame.creatorName} • {logModalGame.releaseYear || 'Roblox'}
             </p>
           </div>
           <button
             onClick={closeLogModal}
-            className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-[#222a33] transition-colors"
+            className="text-muted hover:text-white p-1.5 rounded-[2px] hover:bg-panel transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -115,7 +115,7 @@ export const LogModal: React.FC = () => {
         <form onSubmit={handleSave} className="p-5 space-y-5">
           {/* Tracking Shelf Status */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">
+            <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-2">
               {t('log_modal_shelf')}
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -127,10 +127,10 @@ export const LogModal: React.FC = () => {
                     key={opt.id}
                     type="button"
                     onClick={() => setStatus(opt.id)}
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                    className={`flex flex-col items-center justify-center p-2.5 rounded-[3px] border text-xs font-semibold transition-colors ${
                       isSelected
-                        ? 'border-[#00E59B] bg-[#00E59B]/15 text-[#00E59B] shadow-[0_0_12px_rgba(0,229,155,0.2)]'
-                        : 'border-[#29333f] bg-[#1d242c] text-gray-400 hover:text-white hover:bg-[#232c35]'
+                        ? 'border-green bg-green/15 text-green shadow-[0_0_12px_rgba(0,229,155,0.2)]'
+                        : 'border-line bg-panel text-muted hover:text-white hover:bg-panel-2'
                     }`}
                   >
                     <Icon className="w-4 h-4 mb-1" />
@@ -142,32 +142,32 @@ export const LogModal: React.FC = () => {
           </div>
 
           {/* Date & Rating Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center pt-1 border-t border-[#232b35]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center pt-1 border-t border-line">
             {/* Played Date Picker */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-gray-400" />
+              <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1.5 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-muted" />
                 <span>{t('log_modal_date')}</span>
               </label>
               <input
                 type="date"
                 value={loggedDate}
                 onChange={(e) => setLoggedDate(e.target.value)}
-                className="w-full bg-[#1b222a] border border-[#2b3542] rounded-lg px-3 py-2 text-xs text-white focus:border-[#00E59B] outline-none"
+                className="w-full bg-panel border border-line rounded-[2px] px-3 py-2 text-xs text-white focus:border-green outline-none"
               />
             </div>
 
             {/* Star Rating & Like */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-gray-300">
+                <label className="text-xs font-bold uppercase tracking-[0.08em] text-ink">
                   {t('log_modal_rating')}
                 </label>
                 {rating > 0 && (
                   <button
                     type="button"
                     onClick={() => setRating(0)}
-                    className="text-[10px] text-gray-400 hover:text-rose-400 transition-colors"
+                    className="text-[10px] text-muted hover:text-orange transition-colors"
                   >
                     {language === 'id' ? 'Hapus' : 'Clear'}
                   </button>
@@ -183,26 +183,26 @@ export const LogModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsLiked(!isLiked)}
-                  className={`p-1.5 rounded-lg border transition-all ${
+                  className={`p-1.5 rounded-[2px] border transition-colors ${
                     isLiked 
-                      ? 'bg-rose-500/20 border-rose-500 text-rose-500' 
-                      : 'border-[#29333f] bg-[#1d242c] text-gray-400 hover:text-rose-400'
+                      ? 'bg-orange/20 border-orange text-orange' 
+                      : 'border-line bg-panel text-muted hover:text-orange'
                   }`}
                   title={t('log_modal_like')}
                 >
-                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-rose-500' : ''}`} />
+                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-orange' : ''}`} />
                 </button>
               </div>
             </div>
           </div>
 
           {/* Review Text */}
-          <div className="pt-1 border-t border-[#232b35]">
+          <div className="pt-1 border-t border-line">
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-gray-300">
+              <label className="text-xs font-bold uppercase tracking-[0.08em] text-ink">
                 {language === 'id' ? 'Ulasan & Catatan (Mendukung Markdown)' : 'Review & Thoughts (Markdown supported)'}
               </label>
-              <span className="text-[11px] text-gray-400">
+              <span className="text-[11px] text-muted">
                 {language === 'id' ? 'Opsional' : 'Optional'}
               </span>
             </div>
@@ -211,22 +211,22 @@ export const LogModal: React.FC = () => {
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
               placeholder={t('log_modal_review_ph')}
-              className="w-full bg-[#1b222a] border border-[#2b3542] rounded-xl p-3 text-xs text-white focus:border-[#00E59B] outline-none resize-y leading-relaxed"
+              className="w-full bg-panel border border-line rounded-[3px] p-3 text-xs text-white focus:border-green outline-none resize-y leading-relaxed"
             />
           </div>
 
           {/* Toggles: Contains Spoilers & Top 4 Favorite */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-[#151a20] p-3 rounded-xl border border-[#222b36]">
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-panel p-3 rounded-[3px] border border-line">
             {/* Contains Spoilers */}
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={hasSpoilers}
                 onChange={(e) => setHasSpoilers(e.target.checked)}
-                className="w-4 h-4 rounded text-[#00E59B] accent-[#00E59B] bg-[#1d242c] border-[#2c3744]"
+                className="w-4 h-4 rounded text-green accent-[#00E59B] bg-panel border-line"
               />
-              <span className="text-xs text-gray-300 font-medium flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-xs text-ink font-medium flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 text-blue" />
                 {t('log_modal_spoilers')}
               </span>
             </label>
@@ -237,21 +237,21 @@ export const LogModal: React.FC = () => {
                 type="checkbox"
                 checked={isFavorite}
                 onChange={(e) => setIsFavorite(e.target.checked)}
-                className="w-4 h-4 rounded text-[#00E59B] accent-[#00E59B] bg-[#1d242c] border-[#2c3744]"
+                className="w-4 h-4 rounded text-green accent-[#00E59B] bg-panel border-line"
               />
-              <span className="text-xs text-[#00E59B] font-semibold">
+              <span className="text-xs text-green font-semibold">
                 {t('log_modal_fav')}
               </span>
             </label>
           </div>
 
           {/* Actions: Save, Cancel, Delete */}
-          <div className="flex items-center justify-between pt-3 border-t border-[#232b35]">
+          <div className="flex items-center justify-between pt-3 border-t border-line">
             {existingLog ? (
               <button
                 type="button"
                 onClick={handleDelete}
-                className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 px-3 py-2 rounded-lg hover:bg-rose-500/10 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-orange hover:text-orange px-3 py-2 rounded-[2px] hover:bg-orange/10 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{t('log_modal_delete')}</span>
@@ -262,13 +262,13 @@ export const LogModal: React.FC = () => {
               <button
                 type="button"
                 onClick={closeLogModal}
-                className="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white rounded-lg hover:bg-[#202731] transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-muted hover:text-white rounded-[2px] hover:bg-panel-2 transition-colors"
               >
                 {language === 'id' ? 'Batal' : 'Cancel'}
               </button>
               <button
                 type="submit"
-                className="flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-black bg-[#00E59B] hover:bg-[#00c988] rounded-lg transition-all shadow-[0_0_16px_rgba(0,229,155,0.4)]"
+                className="flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-black bg-green hover:bg-[#00c94b] rounded-[2px] transition-colors shadow-[0_0_16px_rgba(0,229,155,0.4)]"
               >
                 <Check className="w-4 h-4" />
                 <span>{t('log_modal_save')}</span>

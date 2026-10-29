@@ -1,51 +1,184 @@
 @import "tailwindcss";
+@import "@fontsource-variable/newsreader";
+@import "@fontsource-variable/hanken-grotesk";
+
+/* ---------------------------------------------------------------------------
+   Bloxboxd design tokens. See DESIGN.md for the reasoning behind each value.
+   --------------------------------------------------------------------------- */
+@theme {
+  --color-bg: #14181c;
+  --color-panel: #1b2228;
+  --color-panel-2: #232c34;
+  --color-line: #2c3440;
+  --color-line-soft: #20282f;
+  --color-ink: #dbe4ee;
+  --color-muted: #9ab0c0;
+  --color-faint: #7a8b98;
+  --color-line-strong: #3d4d5c;
+  --color-green: #00e054;
+  --color-orange: #ff8000;
+  --color-blue: #40bcf4;
+
+  --font-sans: "Hanken Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Newsreader Variable", Georgia, serif;
+
+  --radius-card: 3px;
+  --radius-btn: 2px;
+}
 
 @layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #14181c;
-    color: #e0e6ed;
+    font-family: var(--font-sans);
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-size: 15px;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: #00e05433;
+    color: #fff;
+  }
+
+  /* Letterboxd-style hairline links: underline on hover, never a colour shift */
+  a {
+    color: inherit;
+  }
+
+  /* Focus: a visible border, not a glow ring */
+  :focus-visible {
+    outline: 1px solid var(--color-green);
+    outline-offset: 2px;
   }
 }
 
-/* Shimmering skeleton animation */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+@layer components {
+  /* Micro-label: the uppercase 11px metadata line used across the UI */
+  .bb-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-faint);
   }
-  100% {
-    background-position: 200% 0;
+
+  /* Serif editorial heading */
+  .bb-display {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.02;
+    color: #fff;
+  }
+
+  /* Section header: label + hairline rule, left aligned */
+  .bb-section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 1px solid var(--color-line);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+  }
+
+  /* Primary action: the only green surface on a page */
+  .bb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: var(--radius-btn);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+    cursor: pointer;
+  }
+  .bb-btn-primary {
+    background: var(--color-green);
+    color: #0b1216;
+  }
+  .bb-btn-primary:hover {
+    background: #00c94b;
+  }
+  .bb-btn-secondary {
+    background: transparent;
+    border-color: var(--color-line-strong);
+    color: var(--color-ink);
+  }
+  .bb-btn-secondary:hover {
+    border-color: #43525f;
+    background: var(--color-panel);
+  }
+  .bb-btn-ghost {
+    background: transparent;
+    color: var(--color-muted);
+  }
+  .bb-btn-ghost:hover {
+    color: #fff;
+  }
+
+  /* Input: bordered field, never a pill */
+  .bb-input {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px;
+    background: var(--color-panel-2);
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-card);
+    color: var(--color-ink);
+    font-size: 14px;
+  }
+  .bb-input::placeholder {
+    color: var(--color-faint);
+  }
+  .bb-input:focus {
+    outline: none;
+    border-color: var(--color-green);
+  }
+
+  /* Poster frame: 2:3, hairline border, no shadow */
+  .bb-poster {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    background: var(--color-panel);
+  }
+  .bb-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: filter 160ms ease;
   }
 }
 
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    #181e25 0%,
-    #25303c 50%,
-    #181e25 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.8s ease-in-out infinite;
-}
-
-/* Custom smooth dark scrollbars */
+/* Scrollbars: thin, flat, no rounded thumb candy */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #14181c;
+  background: var(--color-bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2b343d;
-  border-radius: 4px;
+  background: #2c3440;
+  border: 2px solid var(--color-bg);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3e4a57;
+  background: #43525f;
 }
 
-/* Hide scrollbar utility for clean horizontal chips */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -54,21 +187,16 @@
   scrollbar-width: none;
 }
 
-/* Smooth touch scrolling for iOS & mobile */
 .smooth-touch-scroll {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Spotlight hero auto-play progress bar animation */
-@keyframes spotlightProgress {
-  0% {
-    width: 0%;
-  }
-  100% {
-    width: 100%;
-  }
+/* Skeleton: flat surface, no brand-coloured shimmer */
+@keyframes bb-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
 }
-
-.animate-spotlight-progress {
-  animation: spotlightProgress 6s linear forwards;
+.bb-skeleton {
+  background: var(--color-panel);
+  animation: bb-pulse 1.6s ease-in-out infinite;
 }

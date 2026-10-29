@@ -89,10 +89,10 @@ export const GameDetailView: React.FC = () => {
   if (!game) {
     return (
       <div className="max-w-4xl mx-auto py-20 px-4 text-center">
-        <p className="text-gray-400 mb-4">{language === 'id' ? 'Tidak ada pengalaman yang dipilih.' : 'No experience selected.'}</p>
+        <p className="text-muted mb-4">{language === 'id' ? 'Tidak ada pengalaman yang dipilih.' : 'No experience selected.'}</p>
         <button
           onClick={backToCatalog}
-          className="px-4 py-2 bg-[#00E59B] hover:bg-[#00c988] text-black font-bold text-xs rounded-lg cursor-pointer transition-all shadow-md"
+          className="px-4 py-2 bg-green hover:bg-[#00c94b] text-black font-bold text-xs rounded-[2px] cursor-pointer transition-colors"
         >
           {t('detail_back_catalog')}
         </button>
@@ -136,16 +136,16 @@ export const GameDetailView: React.FC = () => {
   return (
     <div className="min-h-screen pb-20">
       {/* Top sticky navigation bar so Back to Catalog is always accessible even when scrolled */}
-      <div className="sticky top-16 z-30 w-full bg-[#14181c]/95 backdrop-blur-md border-b border-[#232b35] py-2 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="sticky top-12 z-30 w-full border-b border-line bg-bg/95 py-2 px-4 sm:px-6">
+        <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-4">
           <button
             onClick={backToCatalog}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#1b222a] hover:bg-[#232c37] border border-[#2d3744] hover:border-[#00E59B] text-xs font-bold text-white transition-all cursor-pointer shadow-sm group"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-[2px] bg-panel hover:bg-panel-2 border border-line hover:border-green text-xs font-bold text-white transition-colors cursor-pointer shadow-sm group"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-[#00E59B] group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft className="w-3.5 h-3.5 text-green group-hover:-translate-x-0.5 transition-transform" />
             <span>{t('detail_back_catalog')}</span>
           </button>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400 truncate">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-muted truncate">
             <span 
               onClick={backToCatalog} 
               className="hover:text-white cursor-pointer hover:underline"
@@ -159,7 +159,7 @@ export const GameDetailView: React.FC = () => {
       </div>
 
       {/* Top Backdrop / Hero Banner */}
-      <div className="relative h-64 sm:h-80 w-full overflow-hidden bg-[#111519]">
+      <div className="relative h-64 sm:h-80 w-full overflow-hidden bg-bg">
         <img
           src={safeImgSrc(game.bannerUrl || game.iconUrl)}
           alt={game.name}
@@ -168,20 +168,20 @@ export const GameDetailView: React.FC = () => {
               e.currentTarget.src = DEFAULT_ICON_URL;
             }
           }}
-          className="w-full h-full object-cover object-center opacity-30 filter blur-sm scale-105"
+          className="h-full w-full object-cover object-center opacity-20"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#14181c] via-[#14181c]/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/80 to-bg/40" />
 
 
       </div>
 
       {/* Main Content Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-36 sm:-mt-44 relative z-10">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 -mt-36 sm:-mt-44 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* LEFT COLUMN: Poster & Quick Action Buttons (PRD Section 6.2 #1) */}
           <div className="lg:col-span-4 flex flex-col items-center lg:items-start gap-4">
             {/* High-res Poster / Icon */}
-            <div className="relative aspect-square w-52 sm:w-64 lg:w-72 rounded-2xl overflow-hidden bg-[#181e24] border-2 border-[#2b3542] shadow-[0_12px_36px_rgba(0,0,0,0.6)]">
+            <div className="relative aspect-square w-52 overflow-hidden rounded-[3px] border border-line bg-panel sm:w-64 lg:w-72">
               <img
                 src={safeImgSrc(game.iconUrl)}
                 alt={game.name}
@@ -192,18 +192,18 @@ export const GameDetailView: React.FC = () => {
                 }}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-md bg-black/80 backdrop-blur-md text-[11px] font-bold text-[#00E59B] border border-white/10 flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 fill-[#00E59B]" />
+              <div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-[2px] bg-black/80  text-[11px] font-bold text-green border border-white/10 flex items-center gap-1">
+                <Star className="w-3.5 h-3.5 fill-green" />
                 <span>{game.ratingAverage.toFixed(1)}</span>
               </div>
             </div>
 
             {/* Quick Action Panel ala Letterboxd */}
-            <div className="w-full max-w-xs sm:max-w-sm lg:max-w-72 bg-[#181e24] border border-[#28323e] rounded-xl p-4 space-y-3.5 shadow-lg">
+            <div className="w-full max-w-xs sm:max-w-sm lg:max-w-72 bg-panel border border-line rounded-[3px] p-4 space-y-3.5">
               {/* Primary "Log / Review" Action Button */}
               <button
                 onClick={() => openLogModal(game)}
-                className="w-full py-2.5 px-4 rounded-lg bg-[#00E59B] hover:bg-[#00c988] text-black font-extrabold text-xs tracking-wide flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(0,229,155,0.35)]"
+                className="bb-btn bb-btn-primary w-full"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
                 <span>{userLog ? (language === 'id' ? 'Edit Catatan atau Review' : 'Edit Log or Review') : t('detail_log_review')}</span>
@@ -214,10 +214,10 @@ export const GameDetailView: React.FC = () => {
                 {/* Played Toggle */}
                 <button
                   onClick={() => toggleGameStatus(game.id, 'played')}
-                  className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs font-semibold transition-all ${
+                  className={`flex flex-col items-center justify-center p-2 rounded-[2px] border text-xs font-semibold transition-colors ${
                     isPlayed
-                      ? 'border-[#00E59B] bg-[#00E59B]/15 text-[#00E59B]'
-                      : 'border-[#27323e] bg-[#1c232b] text-gray-400 hover:text-white hover:bg-[#242d38]'
+                      ? 'border-green bg-green/15 text-green'
+                      : 'border-line bg-panel text-muted hover:text-white hover:bg-panel-2'
                   }`}
                   title={isPlayed ? t('card_marked_played') : t('card_mark_played')}
                 >
@@ -228,10 +228,10 @@ export const GameDetailView: React.FC = () => {
                 {/* Backlog / Want to Play Toggle */}
                 <button
                   onClick={() => toggleGameStatus(game.id, 'backlog')}
-                  className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs font-semibold transition-all ${
+                  className={`flex flex-col items-center justify-center p-2 rounded-[2px] border text-xs font-semibold transition-colors ${
                     isBacklog
-                      ? 'border-amber-400 bg-amber-400/15 text-amber-400'
-                      : 'border-[#27323e] bg-[#1c232b] text-gray-400 hover:text-white hover:bg-[#242d38]'
+                      ? 'border-blue bg-blue/15 text-blue'
+                      : 'border-line bg-panel text-muted hover:text-white hover:bg-panel-2'
                   }`}
                   title={isBacklog ? t('card_in_backlog') : t('card_add_backlog')}
                 >
@@ -242,14 +242,14 @@ export const GameDetailView: React.FC = () => {
                 {/* Like Toggle */}
                 <button
                   onClick={() => toggleLike(game.id)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs font-semibold transition-all ${
+                  className={`flex flex-col items-center justify-center p-2 rounded-[2px] border text-xs font-semibold transition-colors ${
                     isLiked
-                      ? 'border-rose-500 bg-rose-500/15 text-rose-400'
-                      : 'border-[#27323e] bg-[#1c232b] text-gray-400 hover:text-rose-400 hover:bg-[#242d38]'
+                      ? 'border-orange bg-orange/15 text-orange'
+                      : 'border-line bg-panel text-muted hover:text-orange hover:bg-panel-2'
                   }`}
                   title={isLiked ? t('card_liked') : t('card_like')}
                 >
-                  <Heart className={`w-4 h-4 mb-1 ${isLiked ? 'fill-rose-500' : ''}`} />
+                  <Heart className={`w-4 h-4 mb-1 ${isLiked ? 'fill-orange' : ''}`} />
                   <span>{t('card_like')}</span>
                 </button>
               </div>
@@ -257,28 +257,28 @@ export const GameDetailView: React.FC = () => {
               {/* Pin as Favorite Button */}
               <button
                 onClick={() => toggleFavorite(game.id)}
-                className={`w-full py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                className={`w-full py-2 px-3 rounded-[2px] border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
                   isFavorite
-                    ? 'border-[#00E59B] bg-[#00E59B]/10 text-[#00E59B]'
-                    : 'border-[#27323e] bg-[#1c232b] text-gray-400 hover:text-white hover:bg-[#242d38]'
+                    ? 'border-green bg-green/10 text-green'
+                    : 'border-line bg-panel text-muted hover:text-white hover:bg-panel-2'
                 }`}
               >
-                <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-[#00E59B]' : ''}`} />
+                <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-green' : ''}`} />
                 <span>{isFavorite ? (language === 'id' ? 'Tersemat di 4 Game Favorit' : 'Pinned in Top 4 Favorites') : (language === 'id' ? 'Sematkan ke 4 Favorit' : 'Pin to Top 4 Favorites')}</span>
               </button>
 
               {/* Direct Roblox Play CTA (PRD Section 3.3) */}
-              <div className="pt-2 border-t border-[#252f3b]">
+              <div className="pt-2 border-t border-line">
                 <a
                   href={robloxWebLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 px-3 rounded-lg bg-[#00A2FF] hover:bg-[#0090e3] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-[0_0_16px_rgba(0,162,255,0.3)]"
+                  className="bb-btn bb-btn-secondary w-full"
                 >
                   <span>{t('detail_play_roblox')}</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
-                <p className="text-[10px] text-gray-400 text-center mt-1.5">
+                <p className="text-[10px] text-muted text-center mt-1.5">
                   {language === 'id' ? 'Membuka Roblox Client atau halaman resmi pengalaman' : 'Launches Roblox Client or opens official experience page'}
                 </p>
               </div>
@@ -286,7 +286,7 @@ export const GameDetailView: React.FC = () => {
               {/* Share Button */}
               <button
                 onClick={handleShare}
-                className="w-full py-1.5 text-xs text-gray-400 hover:text-white flex items-center justify-center gap-1.5 transition-colors"
+                className="w-full py-1.5 text-xs text-muted hover:text-white flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Share2 className="w-3.5 h-3.5" />
                 <span>{copiedLink ? t('detail_link_copied') : (language === 'id' ? 'Bagikan Game' : 'Share Experience')}</span>
@@ -294,34 +294,34 @@ export const GameDetailView: React.FC = () => {
             </div>
 
             {/* Technical Roblox Metadata Box */}
-            <div className="w-full max-w-xs sm:max-w-sm lg:max-w-72 bg-[#161b21] border border-[#242d38] rounded-xl p-4 text-xs space-y-2.5 text-gray-400">
-              <div className="flex justify-between border-b border-[#212933] pb-1.5">
+            <div className="w-full max-w-xs sm:max-w-sm lg:max-w-72 bg-panel border border-line rounded-[3px] p-4 text-xs space-y-2.5 text-muted">
+              <div className="flex justify-between border-b border-line pb-1.5">
                 <span>Root Place ID:</span>
-                <span className="font-mono text-gray-300 select-all">{game.rootPlaceId}</span>
+                <span className="font-mono text-ink select-all">{game.rootPlaceId}</span>
               </div>
-              <div className="flex justify-between border-b border-[#212933] pb-1.5">
+              <div className="flex justify-between border-b border-line pb-1.5">
                 <span>{t('detail_universe_id')}</span>
-                <span className="font-mono text-gray-300 select-all">{game.universeId}</span>
+                <span className="font-mono text-ink select-all">{game.universeId}</span>
               </div>
-              <div className="flex justify-between border-b border-[#212933] pb-1.5">
+              <div className="flex justify-between border-b border-line pb-1.5">
                 <span>{t('detail_genre')}</span>
-                <span className="font-medium text-gray-200">{game.genre}</span>
+                <span className="font-medium text-ink">{game.genre}</span>
               </div>
               {game.subgenre && game.subgenre !== game.genre && (
-                <div className="flex justify-between border-b border-[#212933] pb-1.5">
+                <div className="flex justify-between border-b border-line pb-1.5">
                   <span>{t('detail_subgenre')}</span>
-                  <span className="font-medium text-gray-200">{game.subgenre}</span>
+                  <span className="font-medium text-ink">{game.subgenre}</span>
                 </div>
               )}
-              <div className="flex justify-between border-b border-[#212933] pb-1.5">
+              <div className="flex justify-between border-b border-line pb-1.5">
                 <span>{t('detail_active_players')}</span>
-                <span className="font-medium text-[#00E59B]">
+                <span className="font-medium text-green">
                   {game.playerCount ? game.playerCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US') : t('card_active')}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>{t('detail_total_visits')}</span>
-                <span className="font-medium text-gray-200">{game.totalVisits}</span>
+                <span className="font-medium text-ink">{game.totalVisits}</span>
               </div>
             </div>
           </div>
@@ -330,39 +330,39 @@ export const GameDetailView: React.FC = () => {
           <div className="lg:col-span-8 space-y-7">
             {/* Title & Creator Header */}
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#00E59B] mb-1">
+              <div className="flex items-center gap-2 text-xs font-semibold text-green mb-1">
                 <span>{game.genre}</span>
                 {game.subgenre && game.subgenre !== game.genre && (
-                  <span className="text-gray-400 font-normal">/ {game.subgenre}</span>
+                  <span className="text-muted font-normal">/ {game.subgenre}</span>
                 )}
                 {game.releaseYear && <span>• {game.releaseYear}</span>}
               </div>
-              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+              <h1 className="bb-display text-[30px] sm:text-[36px]">
                 {game.name}
               </h1>
-              <p className="text-sm text-gray-300 mt-1 flex items-center gap-2">
+              <p className="text-sm text-ink mt-1 flex items-center gap-2">
                 <span>{t('detail_developed_by')}</span>
-                <span className="font-bold text-white bg-[#1e2630] px-2.5 py-0.5 rounded-full border border-[#2b3542]">
+                <span className="font-semibold text-white">
                   {game.creatorName} ({game.creatorType})
                 </span>
               </p>
             </div>
 
             {/* Synopsis / Description */}
-            <div className="bg-[#181e24] border border-[#26313d] rounded-2xl p-5 shadow-sm">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-2">
+            <div className="bg-panel border border-line rounded-[3px] p-5 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted mb-2">
                 {t('detail_synopsis')}
               </h3>
-              <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">
+              <p className="text-sm text-ink leading-relaxed whitespace-pre-line">
                 {game.description}
               </p>
 
               {/* Tag Chips */}
-              <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-[#232b35]">
+              <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-line">
                 {game.tags.map(tag => (
                   <span
                     key={tag}
-                    className="text-[11px] font-medium text-gray-300 bg-[#14181c] border border-[#293440] px-2.5 py-1 rounded-md"
+                    className="text-[11px] font-medium text-ink bg-bg border border-line px-2.5 py-1 rounded-[2px]"
                   >
                     #{tag}
                   </span>
@@ -394,105 +394,70 @@ export const GameDetailView: React.FC = () => {
               const reviewsCount = gameReviews.length;
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  {/* Aggregate Stats Cards */}
-                  <div className="md:col-span-5 grid grid-cols-2 gap-3">
-                    <div className="bg-[#181e24] border border-[#26313d] rounded-xl p-3.5 flex flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-gray-400">{t('detail_total_visits').replace(':', '')}</span>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00E59B]/10 text-[#00E59B] border border-[#00E59B]/20">API</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Eye className="w-4 h-4 text-[#00E59B]" />
-                        <span className="text-xl font-bold text-white tracking-tight">
-                          {totalVisitsDisplay}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-gray-500 mt-1">{t('detail_roblox_official')}</span>
-                    </div>
-
-                    <div className="bg-[#181e24] border border-[#26313d] rounded-xl p-3.5 flex flex-col justify-between">
-                      <span className="text-[11px] font-semibold text-gray-400">{t('detail_in_backlogs')}</span>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Bookmark className="w-4 h-4 text-amber-400" />
-                        <span className="text-xl font-bold text-white tracking-tight">
-                          {backlogsCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US')}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-gray-500 mt-1">{t('detail_bloxboxd_lists')}</span>
-                    </div>
-
-                    <div className="bg-[#181e24] border border-[#26313d] rounded-xl p-3.5 flex flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-gray-400">{t('detail_favorited')}</span>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00A2FF]/10 text-[#00A2FF] border border-[#00A2FF]/20">API</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Star className="w-4 h-4 text-[#00A2FF] fill-[#00A2FF]" />
-                        <span className="text-xl font-bold text-white tracking-tight">
-                          {favoritedDisplay}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-gray-500 mt-1">{language === 'id' ? 'Favorit Roblox' : 'Roblox Favorites'}</span>
-                    </div>
-
-                    <div className="bg-[#181e24] border border-[#26313d] rounded-xl p-3.5 flex flex-col justify-between">
-                      <span className="text-[11px] font-semibold text-gray-400">{t('detail_reviews_count')}</span>
-                      <div className="flex items-center gap-2 mt-2">
-                        <MessageSquare className="w-4 h-4 text-purple-400" />
-                        <span className="text-xl font-bold text-white tracking-tight">
-                          {reviewsCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US')}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-gray-500 mt-1">{language === 'id' ? 'Ulasan Komunitas' : 'Community Reviews'}</span>
-                    </div>
+                <div className="space-y-6">
+                  {/* One flat meta strip instead of four boxes */}
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line py-3">
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="text-[17px] font-semibold text-white">{totalVisitsDisplay}</span>
+                      <span className="text-[11px] text-faint">{t('detail_total_visits').replace(':', '').toLowerCase()}</span>
+                    </span>
+                    <span className="h-4 w-px bg-line" />
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="text-[17px] font-semibold text-white">{backlogsCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US')}</span>
+                      <span className="text-[11px] text-faint">{t('detail_in_backlogs').toLowerCase()}</span>
+                    </span>
+                    <span className="h-4 w-px bg-line" />
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="text-[17px] font-semibold text-white">{favoritedDisplay}</span>
+                      <span className="text-[11px] text-faint">{t('detail_favorited').toLowerCase()}</span>
+                    </span>
+                    <span className="h-4 w-px bg-line" />
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="text-[17px] font-semibold text-white">{reviewsCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US')}</span>
+                      <span className="text-[11px] text-faint">{t('detail_reviews_count').toLowerCase()}</span>
+                    </span>
                   </div>
 
-                  {/* Rating Histogram (PRD Section 6.2 #1) */}
-                  <div className="md:col-span-7">
-                    <RatingHistogram
-                      histogram={game.ratingHistogram}
-                      totalCount={game.ratingCount}
-                      averageRating={game.ratingAverage}
-                      upVotes={game.upVotes}
-                      downVotes={game.downVotes}
-                    />
-                  </div>
+                  <RatingHistogram
+                    histogram={game.ratingHistogram}
+                    totalCount={game.ratingCount}
+                    averageRating={game.ratingAverage}
+                    upVotes={game.upVotes}
+                    downVotes={game.downVotes}
+                  />
                 </div>
               );
             })()}
 
             {/* Community Reviews Section (PRD Section 6.2 #1) */}
             <div className="space-y-4 pt-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#26313d] pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">
+                  <h2 className="bb-label">
                     {t('detail_community_reviews')}
                   </h2>
-                  <span className="text-xs font-semibold text-[#00E59B] bg-[#00E59B]/10 px-2 py-0.5 rounded-full">
-                    {gameReviews.length}
-                  </span>
+                  <span className="text-[11px] tabular-nums text-faint">{gameReviews.length}</span>
                 </div>
 
                 {/* Filter and Log button */}
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-[#181e24] border border-[#2b3542] rounded-lg p-0.5 text-xs">
+                  <div className="flex items-center bg-panel border border-line rounded-[2px] p-0.5 text-xs">
                     <button
                       onClick={() => setActiveReviewFilter('top')}
-                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                      className={`px-2.5 py-1 rounded-[2px] font-semibold transition-colors ${
                         activeReviewFilter === 'top' 
-                          ? 'bg-[#26323e] text-[#00E59B]' 
-                          : 'text-gray-400 hover:text-white'
+                          ? 'bg-panel-2 text-green' 
+                          : 'text-muted hover:text-white'
                       }`}
                     >
                       {t('detail_sort_top')}
                     </button>
                     <button
                       onClick={() => setActiveReviewFilter('recent')}
-                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                      className={`px-2.5 py-1 rounded-[2px] font-semibold transition-colors ${
                         activeReviewFilter === 'recent' 
-                          ? 'bg-[#26323e] text-[#00E59B]' 
-                          : 'text-gray-400 hover:text-white'
+                          ? 'bg-panel-2 text-green' 
+                          : 'text-muted hover:text-white'
                       }`}
                     >
                       {t('detail_sort_newest')}
@@ -501,9 +466,9 @@ export const GameDetailView: React.FC = () => {
 
                   <button
                     onClick={() => openLogModal(game)}
-                    className="px-3 py-1.5 rounded-lg bg-[#222a33] hover:bg-[#2c3642] border border-[#303c4a] text-xs font-bold text-white flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1.5 rounded-[2px] bg-panel hover:bg-panel-2 border border-line text-xs font-bold text-white flex items-center gap-1.5 transition-colors"
                   >
-                    <Plus className="w-3.5 h-3.5 text-[#00E59B]" />
+                    <Plus className="w-3.5 h-3.5 text-green" />
                     <span>{t('detail_write_review')}</span>
                   </button>
                 </div>
@@ -519,7 +484,7 @@ export const GameDetailView: React.FC = () => {
                     return (
                       <div
                         key={rev.id}
-                        className="bg-[#181e24] border border-[#252f3b] rounded-xl p-4 transition-all"
+                        className="bg-panel border border-line rounded-[3px] p-4 transition-colors"
                       >
                         {/* Reviewer Header */}
                         <div className="flex items-center justify-between mb-3">
@@ -531,21 +496,21 @@ export const GameDetailView: React.FC = () => {
                             <img
                               src={safeAvatarSrc(rev.userAvatar)}
                               alt={rev.username}
-                              className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10 group-hover:ring-[#00E59B] transition-all"
+                              className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10 group-hover:ring-green transition-colors"
                             />
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-white group-hover:text-[#00E59B] transition-colors">
+                                <span className="text-xs font-bold text-white group-hover:text-green transition-colors">
                                   {rev.username}
                                 </span>
                                 {rev.rating && (
-                                  <div className="flex items-center text-[#00E59B] text-xs font-bold">
-                                    <Star className="w-3 h-3 fill-[#00E59B] mr-0.5" />
+                                  <div className="flex items-center text-green text-xs font-bold">
+                                    <Star className="w-3 h-3 fill-green mr-0.5" />
                                     <span>{rev.rating.toFixed(1)}</span>
                                   </div>
                                 )}
                               </div>
-                              <span className="text-[10px] text-gray-400">
+                              <span className="text-[10px] text-muted">
                                 {rev.loggedDate}
                               </span>
                             </div>
@@ -555,10 +520,10 @@ export const GameDetailView: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => likeReview(rev.id)}
-                              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                              className={`flex items-center gap-1 px-2 py-1 rounded-[2px] text-xs font-medium transition-colors ${
                                 rev.isLiked 
-                                  ? 'bg-rose-500/15 text-rose-400' 
-                                  : 'bg-[#1e2630] text-gray-400 hover:text-white'
+                                  ? 'bg-orange/15 text-orange' 
+                                  : 'bg-panel text-muted hover:text-white'
                               }`}
                             >
                               <ThumbsUp className="w-3 h-3" />
@@ -567,7 +532,7 @@ export const GameDetailView: React.FC = () => {
 
                             <button
                               onClick={() => setActiveReviewComments(rev)}
-                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-[#1e2630] text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-colors"
+                              className="flex items-center gap-1 px-2 py-1 rounded-[2px] text-xs font-medium bg-panel text-muted hover:text-blue hover:bg-blue/10 transition-colors"
                               title={language === 'id' ? "Lihat & Tulis Komentar" : "View & Write Comments"}
                             >
                               <MessageSquare className="w-3 h-3" />
@@ -578,7 +543,7 @@ export const GameDetailView: React.FC = () => {
                             <button
                               onClick={() => handleReport(rev.id)}
                               title={language === 'id' ? "Laporkan ulasan yang tidak pantas" : "Report inappropriate review"}
-                              className="p-1 text-gray-400 hover:text-rose-400 transition-colors"
+                              className="p-1 text-muted hover:text-orange transition-colors"
                             >
                               <ShieldAlert className="w-3.5 h-3.5" />
                             </button>
@@ -589,24 +554,24 @@ export const GameDetailView: React.FC = () => {
                         {rev.hasSpoilers && !isRevealed ? (
                           <div 
                             onClick={() => toggleSpoiler(rev.id)}
-                            className="bg-[#1e242c] border border-dashed border-amber-500/40 rounded-lg p-3.5 cursor-pointer text-center hover:bg-[#242c36] transition-colors"
+                            className="bg-panel border border-dashed border-blue/40 rounded-[2px] p-3.5 cursor-pointer text-center hover:bg-panel-2 transition-colors"
                           >
-                            <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-400 mb-1">
+                            <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-blue mb-1">
                               <AlertTriangle className="w-4 h-4" />
                               <span>{t('detail_spoiler_warning')} ({game.name})</span>
                             </div>
-                            <span className="text-[11px] text-gray-400 underline">
+                            <span className="text-[11px] text-muted underline">
                               {t('detail_show_spoiler')}
                             </span>
                           </div>
                         ) : (
-                          <p className="text-xs text-gray-200 leading-relaxed whitespace-pre-wrap">
+                          <p className="text-xs text-ink leading-relaxed whitespace-pre-wrap">
                             {rev.reviewText}
                           </p>
                         )}
 
                         {isReported && (
-                          <div className="mt-2 text-[10px] text-amber-400 bg-amber-500/10 p-1.5 rounded text-center">
+                          <div className="mt-2 text-[10px] text-blue bg-blue/10 p-1.5 rounded text-center">
                             {language === 'id' ? 'Ulasan telah dilaporkan ke moderator Bloxboxd untuk ditinjau.' : 'Review has been reported to Bloxboxd moderators for review.'}
                           </div>
                         )}
@@ -615,23 +580,23 @@ export const GameDetailView: React.FC = () => {
                   })}
                 </div>
               ) : (
-                <div className="p-8 text-center bg-[#181e24] border border-[#252f3b] rounded-xl text-gray-400 text-xs">
+                <div className="p-8 text-center bg-panel border border-line rounded-[3px] text-muted text-xs">
                   {t('detail_no_reviews_title')} {t('detail_no_reviews_desc')}
                 </div>
               )}
 
               {/* Bottom Back to Catalog Action */}
-              <div className="pt-6 border-t border-[#26313d] flex items-center justify-between">
+              <div className="pt-6 border-t border-line flex items-center justify-between">
                 <button
                   onClick={backToCatalog}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1b222a] hover:bg-[#252f3b] border border-[#2d3744] hover:border-[#00E59B] text-xs font-bold text-white transition-all cursor-pointer shadow-sm group"
+                  className="flex items-center gap-2 px-4 py-2 rounded-[3px] bg-panel hover:bg-panel-2 border border-line hover:border-green text-xs font-bold text-white transition-colors cursor-pointer shadow-sm group"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5 text-[#00E59B] group-hover:-translate-x-0.5 transition-transform" />
+                  <ArrowLeft className="w-3.5 h-3.5 text-green group-hover:-translate-x-0.5 transition-transform" />
                   <span>{t('detail_back_catalog')}</span>
                 </button>
                 <button
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  className="text-xs text-gray-400 hover:text-white transition-colors"
+                  className="text-xs text-muted hover:text-white transition-colors"
                 >
                   {language === 'id' ? 'Kembali ke atas ↑' : 'Back to top ↑'}
                 </button>

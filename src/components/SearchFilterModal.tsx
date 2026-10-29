@@ -75,22 +75,22 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
     { 
       id: 'rating', 
       label: t('sort_rating'), 
-      icon: <Star className="w-3.5 h-3.5 text-[#00E59B] fill-[#00E59B]" /> 
+      icon: <Star className="w-3.5 h-3.5 text-green fill-green" /> 
     },
     { 
       id: 'visits', 
       label: t('sort_visits'), 
-      icon: <Users className="w-3.5 h-3.5 text-[#00A2FF]" /> 
+      icon: <Users className="w-3.5 h-3.5 text-blue" /> 
     },
     { 
       id: 'newest', 
       label: t('sort_newest'), 
-      icon: <Calendar className="w-3.5 h-3.5 text-purple-400" /> 
+      icon: <Calendar className="w-3.5 h-3.5 text-blue" /> 
     },
     { 
       id: 'az', 
       label: t('sort_az'), 
-      icon: <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" /> 
+      icon: <ArrowUpDown className="w-3.5 h-3.5 text-muted" /> 
     },
   ];
 
@@ -117,14 +117,14 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
   // Reusable filter content inside either the anchored Popover or safe Modal
   const content = (
     <div 
-      className="w-full bg-[#161c23] border border-[#2c3846] rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[640px]"
+      className="w-full bg-panel border border-line rounded-[3px] shadow-[0_16px_48px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[640px]"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-[#242d38] bg-[#12161b]">
+      <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-line bg-bg">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-[#00E59B]/10 border border-[#00E59B]/25">
-            <SlidersHorizontal className="w-4 h-4 text-[#00E59B]" />
+          <div className="p-1.5 rounded-[2px] bg-green/10 border border-green/25">
+            <SlidersHorizontal className="w-4 h-4 text-green" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -132,12 +132,12 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
                 {t('filter_modal_title')}
               </h3>
               {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-[#00E59B] text-black">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green text-black">
                   {t('filter_modal_active', { count: activeFiltersCount })}
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-gray-400">
+            <p className="text-[11px] text-muted">
               {t('filter_modal_desc')}
             </p>
           </div>
@@ -147,7 +147,7 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
           {activeFiltersCount > 0 && (
             <button
               onClick={resetAllFilters}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-gray-300 hover:text-white hover:bg-[#202732] border border-[#2b3644] transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-[2px] text-[11px] font-semibold text-ink hover:text-white hover:bg-panel-2 border border-line transition-colors"
               title={language === 'id' ? 'Reset semua filter ke default' : 'Reset all filters to default'}
             >
               <RotateCcw className="w-3 h-3" />
@@ -156,7 +156,7 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
           )}
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#222b37] transition-colors"
+            className="p-1.5 rounded-[2px] text-muted hover:text-white hover:bg-panel-2 transition-colors"
             aria-label={language === 'id' ? 'Tutup filter' : 'Close filters'}
           >
             <X className="w-4 h-4" />
@@ -169,10 +169,10 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
         {/* 1. Urutkan Berdasarkan (Sort By) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
               {t('filter_modal_sort_label')}
             </label>
-            <span className="text-[11px] text-[#00E59B] font-semibold">
+            <span className="text-[11px] text-green font-semibold">
               {sortOptions.find(s => s.id === sortBy)?.label}
             </span>
           </div>
@@ -183,17 +183,17 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
                 <button
                   key={opt.id}
                   onClick={() => setSortBy(opt.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-left border transition-all ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-[3px] text-left border transition-colors ${
                     isActive
-                      ? 'bg-[#00E59B]/15 border-[#00E59B] text-white shadow-sm'
-                      : 'bg-[#1a2129] border-[#27323f] text-gray-300 hover:border-[#384656] hover:bg-[#1f2832]'
+                      ? 'bg-green/15 border-green text-white shadow-sm'
+                      : 'bg-panel border-line text-ink hover:border-line hover:bg-panel-2'
                   }`}
                 >
                   <span className="flex-shrink-0">{opt.icon}</span>
-                  <span className={`text-xs font-semibold truncate ${isActive ? 'text-[#00E59B] font-bold' : 'text-gray-200'}`}>
+                  <span className={`text-xs font-semibold truncate ${isActive ? 'text-green font-bold' : 'text-ink'}`}>
                     {opt.label}
                   </span>
-                  {isActive && <Check className="w-3.5 h-3.5 text-[#00E59B] ml-auto flex-shrink-0" />}
+                  {isActive && <Check className="w-3.5 h-3.5 text-green ml-auto flex-shrink-0" />}
                 </button>
               );
             })}
@@ -203,13 +203,13 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
         {/* 2. Dua Kolom: Rating & Pemain Online */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {/* Minimum Rating */}
-          <div className="space-y-2 bg-[#1a2129]/60 p-3 rounded-xl border border-[#252f3c]">
+          <div className="space-y-2 bg-panel/60 p-3 rounded-[3px] border border-line">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+              <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
                 {t('filter_min_rating_label')}
               </label>
               {minRating > 0 && (
-                <span className="text-[10px] text-[#00E59B] font-bold">{minRating}+ ★</span>
+                <span className="text-[10px] text-green font-bold">{minRating}+ ★</span>
               )}
             </div>
             <div className="grid grid-cols-4 gap-1">
@@ -219,10 +219,10 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
                   <button
                     key={opt.value}
                     onClick={() => setMinRating(opt.value)}
-                    className={`py-1.5 px-1 rounded-lg text-xs font-bold border text-center transition-all ${
+                    className={`py-1.5 px-1 rounded-[2px] text-xs font-bold border text-center transition-colors ${
                       isActive
-                        ? 'bg-[#00E59B]/15 border-[#00E59B] text-[#00E59B]'
-                        : 'bg-[#171d24] border-[#27323f] text-gray-300 hover:border-[#354354]'
+                        ? 'bg-green/15 border-green text-green'
+                        : 'bg-panel border-line text-ink hover:border-line'
                     }`}
                   >
                     {opt.label}
@@ -233,13 +233,13 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
           </div>
 
           {/* Minimum Pemain Online */}
-          <div className="space-y-2 bg-[#1a2129]/60 p-3 rounded-xl border border-[#252f3c]">
+          <div className="space-y-2 bg-panel/60 p-3 rounded-[3px] border border-line">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+              <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
                 {t('filter_min_players_label')}
               </label>
               {minPlayers > 0 && (
-                <span className="text-[10px] text-[#00A2FF] font-bold">{minPlayers.toLocaleString()}+</span>
+                <span className="text-[10px] text-blue font-bold">{minPlayers.toLocaleString()}+</span>
               )}
             </div>
             <div className="grid grid-cols-4 gap-1">
@@ -249,10 +249,10 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
                   <button
                     key={opt.value}
                     onClick={() => setMinPlayers(opt.value)}
-                    className={`py-1.5 px-1 rounded-lg text-xs font-bold border text-center transition-all ${
+                    className={`py-1.5 px-1 rounded-[2px] text-xs font-bold border text-center transition-colors ${
                       isActive
-                        ? 'bg-[#00A2FF]/15 border-[#00A2FF] text-[#00A2FF]'
-                        : 'bg-[#171d24] border-[#27323f] text-gray-300 hover:border-[#354354]'
+                        ? 'bg-blue/15 border-blue text-blue'
+                        : 'bg-panel border-line text-ink hover:border-line'
                     }`}
                   >
                     {opt.label}
@@ -265,8 +265,8 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="px-4 sm:px-5 py-3 border-t border-[#242d38] bg-[#12161b] flex items-center justify-between gap-3">
-        <div className="text-xs text-gray-400">
+      <div className="px-4 sm:px-5 py-3 border-t border-line bg-bg flex items-center justify-between gap-3">
+        <div className="text-xs text-muted">
           <span>
             {t('filter_modal_matching', { count: matchingCount })}
           </span>
@@ -275,13 +275,13 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-300 hover:text-white hover:bg-[#202732] border border-[#28323f] transition-colors"
+            className="px-3.5 py-1.5 rounded-[3px] text-xs font-semibold text-ink hover:text-white hover:bg-panel-2 border border-line transition-colors"
           >
             {t('filter_modal_close')}
           </button>
           <button
             onClick={handleApply}
-            className="px-4 py-1.5 rounded-xl text-xs font-extrabold bg-[#00E59B] hover:bg-[#00c988] text-black transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+            className="px-4 py-1.5 rounded-[3px] text-xs font-semibold bg-green hover:bg-[#00c94b] text-black transition-colors active:scale-95 flex items-center gap-1.5"
           >
             <span>{t('filter_modal_apply')}</span>
           </button>
@@ -302,7 +302,7 @@ export const SearchFilterModal: React.FC<SearchFilterModalProps> = ({
   // If modal variant (mobile screens or full fallback): safely padded so top is never cut off
   return (
     <div 
-      className="fixed inset-0 z-50 overflow-y-auto flex items-start justify-center p-3 sm:p-4 pt-14 sm:pt-20 pb-8 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 overflow-y-auto flex items-start justify-center p-3 sm:p-4 pt-14 sm:pt-20 pb-8 bg-black/75  animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div className="w-full max-w-lg">

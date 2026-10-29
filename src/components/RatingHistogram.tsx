@@ -33,35 +33,35 @@ export const RatingHistogram: React.FC<RatingHistogramProps> = ({
   const approvalPct = totalVotes > 0 ? Math.round(((upVotes || 0) / totalVotes) * 100) : null;
 
   return (
-    <div className="bg-[#181e24] border border-[#26303b] rounded-xl p-4.5 flex flex-col justify-between h-full">
+    <div className="bg-panel border border-line rounded-[3px] p-4.5 flex flex-col justify-between h-full">
       <div>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-white tracking-tight">
+            <span className="text-3xl font-semibold text-white tracking-tight">
               {averageRating.toFixed(1)}
             </span>
-            <span className="text-sm font-medium text-[#00E59B]">
+            <span className="text-sm font-medium text-green">
               {language === 'id' ? '★ dari 5' : '★ out of 5'}
             </span>
           </div>
 
           <div className="flex flex-col items-end">
-            <span className="text-xs font-semibold text-gray-300">
+            <span className="text-xs font-semibold text-ink">
               {formatCompact(totalCount)} {language === 'id' ? 'penilaian' : 'ratings'}
             </span>
-            <span className="text-[10px] text-gray-500">
+            <span className="text-[10px] text-faint">
               ({totalCount.toLocaleString(language === 'id' ? 'id-ID' : 'en-US')} {language === 'id' ? 'total' : 'total'})
             </span>
           </div>
         </div>
 
         {approvalPct !== null && (
-          <div className="flex items-center justify-between mb-3 text-[11px] text-gray-400 bg-[#12161b] px-2.5 py-1.5 rounded-lg border border-[#222b35]">
-            <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+          <div className="flex items-center justify-between mb-3 text-[11px] text-muted bg-bg px-2.5 py-1.5 rounded-[2px] border border-line">
+            <div className="flex items-center gap-1.5 text-green font-medium">
               <ThumbsUp className="w-3.5 h-3.5" />
               <span>{approvalPct}% {language === 'id' ? 'Kepuasan Positif' : 'Positive Approval'}</span>
             </div>
-            <div className="text-gray-400 font-mono text-[10px]">
+            <div className="text-muted font-mono text-[10px]">
               {formatCompact(upVotes)} 👍 / {formatCompact(downVotes)} 👎
             </div>
           </div>
@@ -70,7 +70,7 @@ export const RatingHistogram: React.FC<RatingHistogramProps> = ({
 
       {/* 10-bar histogram */}
       <div>
-        <div className="h-14 flex items-end gap-1.5 pt-2 pb-1 border-b border-[#26303b]">
+        <div className="h-14 flex items-end gap-1.5 pt-2 pb-1 border-b border-line">
           {steps.map((star) => {
             const count = histogram[star] || 0;
             const pct = totalCount > 0 ? (count / totalCount) * 100 : 0;
@@ -83,16 +83,16 @@ export const RatingHistogram: React.FC<RatingHistogramProps> = ({
               >
                 {/* Tooltip on hover */}
                 <div className="absolute -top-9 z-20 hidden group-hover:flex flex-col items-center pointer-events-none">
-                  <div className="bg-[#0f1216] border border-[#2b3642] px-2 py-1 rounded text-[10px] font-semibold text-white whitespace-nowrap shadow-lg">
+                  <div className="bg-bg border border-line px-2 py-1 rounded text-[10px] font-semibold text-white whitespace-nowrap">
                     {star}★: {count.toLocaleString()} ({pct.toFixed(1)}%)
                   </div>
-                  <div className="w-1.5 h-1.5 bg-[#0f1216] rotate-45 border-r border-b border-[#2b3642] -mt-0.5" />
+                  <div className="w-1.5 h-1.5 bg-bg rotate-45 border-r border-b border-line -mt-0.5" />
                 </div>
 
                 {/* Bar element */}
                 <div
                   style={{ height: `${heightPct}%` }}
-                  className="w-full bg-[#2c3744] group-hover:bg-[#00E59B] rounded-t-xs transition-all duration-200 cursor-pointer shadow-sm"
+                  className="w-full bg-panel-2 group-hover:bg-green rounded-t-xs transition-colors duration-200 cursor-pointer shadow-sm"
                 />
               </div>
             );
@@ -100,7 +100,7 @@ export const RatingHistogram: React.FC<RatingHistogramProps> = ({
         </div>
 
         {/* Axis labels */}
-        <div className="flex justify-between items-center text-[11px] text-gray-400 font-mono pt-1.5">
+        <div className="flex justify-between items-center text-[11px] text-muted font-mono pt-1.5">
           <span>½★</span>
           <span>2½★</span>
           <span>5★</span>

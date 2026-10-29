@@ -79,29 +79,29 @@ export const ListsView: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={backToCatalog}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#181e24] hover:bg-[#232c37] border border-[#27323e] hover:border-[#00E59B] text-xs font-semibold text-gray-300 hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-panel hover:bg-panel-2 border border-line hover:border-green text-xs font-semibold text-ink hover:text-white transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-[#00E59B]" />
+            <ArrowLeft className="w-3.5 h-3.5 text-green" />
             <span>{t('lists_back_catalog')}</span>
           </button>
           <button
             onClick={() => setActiveTab('lists')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#181e24] hover:bg-[#232c37] border border-[#27323e] text-xs font-semibold text-gray-300 hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-panel hover:bg-panel-2 border border-line text-xs font-semibold text-ink hover:text-white transition-colors cursor-pointer"
           >
             <span>{t('lists_back_all')}</span>
           </button>
         </div>
 
         {/* List Header */}
-        <div className="bg-[#181e24] border border-[#26313d] rounded-2xl p-6 sm:p-8 space-y-4 shadow-xl">
+        <div className="bg-panel border border-line rounded-[3px] p-6 sm:p-8 space-y-4 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                currentList.isRanked ? 'bg-[#00E59B]/15 text-[#00E59B]' : 'bg-[#00A2FF]/15 text-[#00A2FF]'
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-[0.08em] ${
+                currentList.isRanked ? 'bg-green/15 text-green' : 'bg-blue/15 text-blue'
               }`}>
                 {currentList.isRanked ? t('lists_ranked_label') : t('lists_unranked_label')}
               </span>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted">
                 {currentList.items.length} {t('lists_games_count')}
               </span>
             </div>
@@ -109,7 +109,7 @@ export const ListsView: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => likeList(currentList.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#222a33] hover:bg-rose-500/15 text-gray-300 hover:text-rose-400 border border-[#2f3a47] text-xs font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-panel hover:bg-orange/15 text-ink hover:text-orange border border-line text-xs font-semibold transition-colors"
               >
                 <Heart className="w-3.5 h-3.5 fill-current" />
                 <span>{currentList.likesCount} {t('lists_like')}</span>
@@ -119,7 +119,7 @@ export const ListsView: React.FC = () => {
                 onClick={() => {
                   deleteList(currentList.id);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-semibold transition-colors cursor-pointer"
                 title={t('lists_delete_btn')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -128,25 +128,25 @@ export const ListsView: React.FC = () => {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="bb-display text-[26px] sm:text-[30px]">
             {currentList.title}
           </h1>
 
-          <p className="text-sm text-gray-300 leading-relaxed max-w-3xl">
+          <p className="text-sm text-ink leading-relaxed max-w-3xl">
             {currentList.description}
           </p>
 
           <div 
             onClick={() => currentList.userId && viewUserProfile(currentList.userId)}
-            className="flex items-center gap-2.5 pt-3 border-t border-[#232b35] cursor-pointer group w-fit"
+            className="flex items-center gap-2.5 pt-3 border-t border-line cursor-pointer group w-fit"
           >
             <img
               src={safeAvatarSrc(currentList.userAvatar)}
               alt={currentList.userName}
-              className="w-7 h-7 rounded-full object-cover group-hover:ring-2 group-hover:ring-[#00E59B] transition-all"
+              className="h-7 w-7 rounded-full border border-line object-cover"
             />
-            <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
-              {t('lists_curated_by')} <strong className="text-white group-hover:text-[#00E59B] transition-colors">{currentList.userName}</strong>
+            <span className="text-xs text-muted group-hover:text-white transition-colors">
+              {t('lists_curated_by')} <strong className="text-white group-hover:text-green transition-colors">{currentList.userName}</strong>
             </span>
           </div>
         </div>
@@ -160,11 +160,11 @@ export const ListsView: React.FC = () => {
             return (
               <div
                 key={item.id}
-                className="bg-[#181e24] border border-[#26313d] hover:border-[#00E59B]/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all group"
+                className="bg-panel border border-line hover:border-green/40 rounded-[3px] p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors group"
               >
                 <div className="flex items-start sm:items-center gap-4 min-w-0">
                   {/* Position number */}
-                  <span className="text-xl sm:text-2xl font-black text-gray-400 group-hover:text-[#00E59B] w-8 text-center flex-shrink-0 transition-colors">
+                  <span className="text-xl sm:text-2xl font-semibold text-muted group-hover:text-green w-8 text-center flex-shrink-0 transition-colors">
                     {currentList.isRanked ? `#${item.position}` : '•'}
                   </span>
 
@@ -173,22 +173,22 @@ export const ListsView: React.FC = () => {
                     src={safeImgSrc(game.iconUrl)}
                     alt={game.name}
                     onClick={() => viewGame(game.id)}
-                    className="w-16 h-16 rounded-xl object-cover cursor-pointer flex-shrink-0 border border-white/10 hover:scale-105 transition-transform"
+                    className="w-16 h-16 rounded-[3px] object-cover cursor-pointer flex-shrink-0 border border-white/10  transition-transform"
                   />
 
                   {/* Title & Notes */}
                   <div className="min-w-0">
                     <h3
                       onClick={() => viewGame(game.id)}
-                      className="text-base font-bold text-white hover:text-[#00E59B] cursor-pointer transition-colors truncate"
+                      className="text-base font-bold text-white hover:text-green cursor-pointer transition-colors truncate"
                     >
                       {game.name}
                     </h3>
-                    <p className="text-xs text-gray-400">
-                      {game.creatorName} • {game.genre} • <span className="text-[#00E59B]">{game.ratingAverage.toFixed(1)} ★</span>
+                    <p className="text-xs text-muted">
+                      {game.creatorName} • {game.genre} • <span className="text-green">{game.ratingAverage.toFixed(1)} ★</span>
                     </p>
                     {item.notes && (
-                      <p className="text-xs text-gray-300 mt-2 italic bg-[#14181c] p-2.5 rounded-lg border border-[#232b35]">
+                      <p className="text-xs text-ink mt-2 italic bg-bg p-2.5 rounded-[2px] border border-line">
                         "{item.notes}"
                       </p>
                     )}
@@ -198,7 +198,7 @@ export const ListsView: React.FC = () => {
                 <div className="flex items-center gap-2 self-end sm:self-auto">
                   <button
                     onClick={() => viewGame(game.id)}
-                    className="px-3 py-1.5 rounded-lg bg-[#00E59B]/10 hover:bg-[#00E59B] text-[#00E59B] hover:text-black text-xs font-bold transition-all"
+                    className="px-3 py-1.5 rounded-[2px] bg-green/10 hover:bg-green text-green hover:text-black text-xs font-bold transition-colors"
                   >
                     {language === 'id' ? 'Lihat Detail' : 'View Details'}
                   </button>
@@ -213,17 +213,17 @@ export const ListsView: React.FC = () => {
 
   // All Lists Browser View
   return (
-    <div className="min-h-screen pb-20 max-w-7xl mx-auto px-4 sm:px-6 pt-8 space-y-8">
+    <div className="min-h-screen pb-20 max-w-[1280px] mx-auto px-4 sm:px-6 pt-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#252f3b] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <ListOrdered className="w-5 h-5 text-[#00A2FF]" />
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <ListOrdered className="w-5 h-5 text-blue" />
+            <h1 className="bb-display text-[26px] sm:text-[30px]">
               {t('lists_title')}
             </h1>
           </div>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted mt-1">
             {t('lists_desc')}
           </p>
         </div>
@@ -231,16 +231,16 @@ export const ListsView: React.FC = () => {
         <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
           <button
             onClick={backToCatalog}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#181e24] hover:bg-[#232c37] border border-[#27323e] hover:border-[#00E59B] text-xs font-semibold text-gray-300 hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-[3px] bg-panel hover:bg-panel-2 border border-line hover:border-green text-xs font-semibold text-ink hover:text-white transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-[#00E59B]" />
+            <ArrowLeft className="w-3.5 h-3.5 text-green" />
             <span>{t('lists_back_catalog')}</span>
           </button>
 
           {customLists.length > 0 && (
             <button
               onClick={() => clearAllLists()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1f2630] hover:bg-red-500/20 border border-[#2b3542] hover:border-red-500/40 text-xs font-semibold text-gray-300 hover:text-red-400 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-[3px] bg-panel hover:bg-red-500/20 border border-line hover:border-red-500/40 text-xs font-semibold text-ink hover:text-red-400 transition-colors cursor-pointer"
               title={language === 'id' ? 'Hapus semua list' : 'Clear all lists'}
             >
               <Trash2 className="w-3.5 h-3.5 text-red-400" />
@@ -256,7 +256,7 @@ export const ListsView: React.FC = () => {
                 setCreateModalOpen(true);
               }
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00A2FF] hover:bg-[#0092e6] text-white text-xs font-bold transition-all shadow-[0_0_16px_rgba(0,162,255,0.3)]"
+            className="bb-btn bb-btn-primary"
           >
             <Plus className="w-4 h-4" />
             <span>{t('lists_create_btn')}</span>
@@ -266,16 +266,11 @@ export const ListsView: React.FC = () => {
 
       {/* Grid of Lists or Empty State */}
       {customLists.length === 0 ? (
-        <div className="bg-[#181e24] border border-[#26313d] rounded-2xl p-12 text-center space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-[#00A2FF]/10 flex items-center justify-center text-[#00A2FF]">
-            <ListOrdered className="w-8 h-8" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-lg font-bold text-white">{t('lists_empty_title')}</h3>
-            <p className="text-xs text-gray-400 max-w-sm mx-auto">
-              {t('lists_empty_desc')}
-            </p>
-          </div>
+        <div className="border-y border-line py-16 text-center">
+          <h3 className="bb-display text-[24px]">{t('lists_empty_title')}</h3>
+          <p className="mx-auto mt-2 max-w-sm text-[13px] text-muted">
+            {t('lists_empty_desc')}
+          </p>
           <button
             onClick={() => {
               if (!user) {
@@ -284,7 +279,7 @@ export const ListsView: React.FC = () => {
                 setCreateModalOpen(true);
               }
             }}
-            className="px-5 py-2.5 rounded-xl bg-[#00A2FF] hover:bg-[#0092e6] text-white text-xs font-bold transition-all shadow-md"
+            className="bb-btn bb-btn-primary"
           >
             {language === 'id' ? 'Buat List Pertama' : 'Create First List'}
           </button>
@@ -302,7 +297,7 @@ export const ListsView: React.FC = () => {
             <div
               key={list.id}
               onClick={() => viewList(list.id)}
-              className="bg-[#181e24] border border-[#26313d] hover:border-[#00A2FF]/50 rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:shadow-xl group flex flex-col justify-between"
+              className="bg-panel border border-line hover:border-blue/50 rounded-[3px] p-5 cursor-pointer transition-colors duration-300 hover:shadow-xl group flex flex-col justify-between"
             >
               <div>
                 {/* 3-Poster Overlapping Preview */}
@@ -312,35 +307,35 @@ export const ListsView: React.FC = () => {
                       key={game.id}
                       src={safeImgSrc(game.iconUrl)}
                       alt={game.name}
-                      className="w-16 h-16 rounded-xl object-cover border-2 border-[#181e24] shadow-lg group-hover:scale-105 transition-transform"
+                      className="w-16 h-16 rounded-[3px] object-cover border-2 border-panel group- transition-transform"
                       style={{ zIndex: 3 - i }}
                     />
                   ))}
-                  <div className="w-16 h-16 rounded-xl bg-[#202833] border-2 border-[#181e24] flex items-center justify-center text-xs font-bold text-gray-400">
+                  <div className="w-16 h-16 rounded-[3px] bg-panel-2 border-2 border-panel flex items-center justify-center text-xs font-bold text-muted">
                     +{list.items.length}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                    list.isRanked ? 'bg-[#00E59B]/15 text-[#00E59B]' : 'bg-[#00A2FF]/15 text-[#00A2FF]'
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-[0.08em] ${
+                    list.isRanked ? 'bg-green/15 text-green' : 'bg-blue/15 text-blue'
                   }`}>
                     {list.isRanked ? t('lists_ranked_label') : t('lists_unranked_label')}
                   </span>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted">
                     {list.items.length} {t('lists_games_count')}
                   </span>
                 </div>
 
-                <h3 className="text-base font-bold text-white group-hover:text-[#00A2FF] transition-colors line-clamp-1">
+                <h3 className="text-base font-bold text-white group-hover:text-blue transition-colors line-clamp-1">
                   {list.title}
                 </h3>
-                <p className="text-xs text-gray-400 line-clamp-2 mt-1.5 leading-relaxed">
+                <p className="text-xs text-muted line-clamp-2 mt-1.5 leading-relaxed">
                   {list.description}
                 </p>
               </div>
 
-              <div className="flex items-center justify-between pt-4 mt-4 border-t border-[#232b35] text-xs">
+              <div className="flex items-center justify-between pt-4 mt-4 border-t border-line text-xs">
                 <div 
                   onClick={(e) => {
                     e.stopPropagation();
@@ -351,16 +346,16 @@ export const ListsView: React.FC = () => {
                   <img
                     src={safeAvatarSrc(list.userAvatar)}
                     alt={list.userName}
-                    className="w-5 h-5 rounded-full object-cover group-hover/creator:ring-1 group-hover/creator:ring-[#00E59B]"
+                    className="w-5 h-5 rounded-full object-cover group-hover/creator:ring-1 group-hover/creator:ring-green"
                   />
-                  <span className="text-gray-400 font-medium truncate max-w-[150px] group-hover/creator:text-[#00E59B] transition-colors">
+                  <span className="text-muted font-medium truncate max-w-[150px] group-hover/creator:text-green transition-colors">
                     {list.userName}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-rose-400 font-semibold">
-                    <Heart className="w-3.5 h-3.5 fill-rose-500" />
+                  <div className="flex items-center gap-1 text-orange font-semibold">
+                    <Heart className="w-3.5 h-3.5 fill-orange" />
                     <span>{list.likesCount}</span>
                   </div>
                   {user && list.userId === user.id && (
@@ -369,7 +364,7 @@ export const ListsView: React.FC = () => {
                         e.stopPropagation();
                         deleteList(list.id);
                       }}
-                      className="p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      className="p-1 rounded-[2px] text-faint hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                       title={t('lists_delete_btn')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -385,16 +380,16 @@ export const ListsView: React.FC = () => {
 
       {/* Create List Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75  overflow-y-auto">
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-[#181e24] border border-[#2b3542] rounded-2xl p-6 shadow-2xl space-y-5 my-8"
+            className="w-full max-w-xl bg-panel border border-line rounded-[3px] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.55)] space-y-5 my-8"
           >
-            <div className="flex items-center justify-between border-b border-[#232b35] pb-3">
-              <h3 className="text-lg font-bold text-white">{t('modal_create_list_title')}</h3>
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="bb-label">{t('modal_create_list_title')}</h3>
               <button 
                 onClick={() => setCreateModalOpen(false)}
-                className="text-gray-400 hover:text-white p-1"
+                className="text-muted hover:text-white p-1"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -402,7 +397,7 @@ export const ListsView: React.FC = () => {
 
             <form onSubmit={handleCreateList} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1">
                   {t('modal_create_list_name')}
                 </label>
                 <input
@@ -411,12 +406,12 @@ export const ListsView: React.FC = () => {
                   placeholder={t('modal_create_list_name_ph')}
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full bg-[#1b222a] border border-[#2b3542] rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#00A2FF] outline-none"
+                  className="w-full bg-panel border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-blue outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1">
                   {t('modal_create_list_desc')}
                 </label>
                 <textarea
@@ -424,7 +419,7 @@ export const ListsView: React.FC = () => {
                   placeholder={t('modal_create_list_desc_ph')}
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full bg-[#1b222a] border border-[#2b3542] rounded-lg px-3.5 py-2 text-xs text-white focus:border-[#00A2FF] outline-none"
+                  className="w-full bg-panel border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-blue outline-none"
                 />
               </div>
 
@@ -436,14 +431,14 @@ export const ListsView: React.FC = () => {
                   onChange={(e) => setIsRanked(e.target.checked)}
                   className="w-4 h-4 rounded accent-[#00A2FF]"
                 />
-                <label htmlFor="rankedCheck" className="text-xs font-medium text-gray-300 cursor-pointer">
+                <label htmlFor="rankedCheck" className="text-xs font-medium text-ink cursor-pointer">
                   {t('modal_create_list_ranked')}
                 </label>
               </div>
 
               {/* Select experiences */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1.5">
                   {language === 'id' ? `Pilih Game (${selectedGameIds.length} dipilih)` : `Select Experiences (${selectedGameIds.length} chosen)`}
                 </label>
                 <input
@@ -451,10 +446,10 @@ export const ListsView: React.FC = () => {
                   placeholder={t('modal_create_list_search_ph')}
                   value={gameSearch}
                   onChange={(e) => setGameSearch(e.target.value)}
-                  className="w-full bg-[#14181c] border border-[#242d38] rounded-lg px-3 py-1.5 text-xs text-white mb-2"
+                  className="w-full bg-bg border border-line rounded-[2px] px-3 py-1.5 text-xs text-white mb-2"
                 />
 
-                <div className="max-h-48 overflow-y-auto space-y-1.5 bg-[#14181c] p-2 rounded-xl border border-[#242d38]">
+                <div className="max-h-48 overflow-y-auto space-y-1.5 bg-bg p-2 rounded-[3px] border border-line">
                   {games
                     .filter(g => g.name.toLowerCase().includes(gameSearch.toLowerCase()))
                     .map(g => {
@@ -463,33 +458,33 @@ export const ListsView: React.FC = () => {
                         <div
                           key={g.id}
                           onClick={() => toggleGameSelection(g.id)}
-                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs transition-colors ${
-                            isSelected ? 'bg-[#00A2FF]/20 text-white' : 'hover:bg-[#1f2732] text-gray-300'
+                          className={`flex items-center justify-between p-2 rounded-[2px] cursor-pointer text-xs transition-colors ${
+                            isSelected ? 'bg-blue/20 text-white' : 'hover:bg-panel-2 text-ink'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
                             <img src={safeImgSrc(g.iconUrl)} alt={g.name} className="w-7 h-7 rounded object-cover" />
                             <span className="font-semibold">{g.name}</span>
                           </div>
-                          {isSelected && <Check className="w-4 h-4 text-[#00A2FF]" />}
+                          {isSelected && <Check className="w-4 h-4 text-blue" />}
                         </div>
                       );
                     })}
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#232b35]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white"
+                  className="px-4 py-2 text-xs font-semibold text-muted hover:text-white"
                 >
                   {t('modal_create_list_cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={!newTitle.trim() || selectedGameIds.length === 0}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#00A2FF] hover:bg-[#0092e6] disabled:opacity-50 rounded-lg transition-all"
+                  className="px-5 py-2 text-xs font-bold text-white bg-blue hover:bg-blue disabled:opacity-50 rounded-[2px] transition-colors"
                 >
                   {t('modal_create_list_save')}
                 </button>

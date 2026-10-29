@@ -10,6 +10,11 @@ interface GameCardProps {
   priority?: boolean;
 }
 
+/**
+ * Poster-first card. No container box, no gradient scrim, no pill badges:
+ * the poster carries the image, the caption carries the data, and the only
+ * colour is the rating star and the single "Log" action on hover.
+ */
 const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', userLog: propUserLog, priority = false }) => {
   const { viewGame, getUserLogForGame, toggleGameStatus, toggleLike, openLogModal, language, t } = useApp();
   const userLog = propUserLog !== undefined ? propUserLog : getUserLogForGame(game.id);
@@ -22,42 +27,41 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
 
   if (layout === 'compact') {
     return (
-      <div 
+      <button
         onClick={() => viewGame(game.id)}
-        className="group flex items-center gap-3 p-2.5 rounded-lg bg-[#1a2026] hover:bg-[#222a33] border border-[#26303b] cursor-pointer transition-all duration-200"
+        className="group flex w-full items-center gap-3 border-b border-line-soft py-2 text-left last:border-0"
       >
-        <img 
-          src={safeImgSrc(game.iconUrl)} 
-          alt={game.name}
+        <img
+          src={safeImgSrc(game.iconUrl)}
+          alt=""
           loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
           onError={(e) => {
-            if (e.currentTarget.src !== DEFAULT_ICON_URL) {
-              e.currentTarget.src = DEFAULT_ICON_URL;
-            }
+            if (e.currentTarget.src !== DEFAULT_ICON_URL) e.currentTarget.src = DEFAULT_ICON_URL;
           }}
-          className="w-12 h-12 rounded-md object-cover flex-shrink-0 group-hover:scale-105 transition-transform" 
+          className="h-9 w-9 shrink-0 rounded-[2px] border border-line object-cover"
         />
-        <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-sm text-white truncate group-hover:text-[#00E59B] transition-colors">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-semibold text-ink group-hover:text-white">
             {game.name}
-          </h4>
-          <p className="text-xs text-gray-400 truncate">{game.creatorName}</p>
-        </div>
-        <div className="flex items-center gap-1 text-xs font-semibold text-[#00E59B]">
-          <Star className="w-3.5 h-3.5 fill-[#00E59B]" />
-          <span>{game.ratingAverage.toFixed(1)}</span>
-        </div>
-      </div>
+          </span>
+          <span className="block truncate text-[11px] text-faint">{game.creatorName}</span>
+        </span>
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-orange">
+          <Star className="h-3 w-3 fill-orange" strokeWidth={0} />
+          {game.ratingAverage.toFixed(1)}
+        </span>
+      </button>
     );
   }
 
   return (
-    <div className="group relative flex flex-col rounded-xl bg-[#181e24] border border-[#26313d] hover:border-[#00E59B]/50 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
-      {/* Poster Image (Square 1:1) */}
-      <div 
+    <article className="group relative">
+      <div
         onClick={() => viewGame(game.id)}
-        className="relative aspect-square w-full overflow-hidden bg-[#111418] cursor-pointer"
+        className="bb-poster cursor-pointer group-hover:border-line"
+        role="link"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && viewGame(game.id)}
       >
         <img
           src={safeImgSrc(game.iconUrl)}
@@ -66,135 +70,88 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
           fetchPriority={priority ? 'high' : 'auto'}
           decoding={priority ? 'sync' : 'async'}
           onError={(e) => {
-            if (e.currentTarget.src !== DEFAULT_ICON_URL) {
-              e.currentTarget.src = DEFAULT_ICON_URL;
-            }
+            if (e.currentTarget.src !== DEFAULT_ICON_URL) e.currentTarget.src = DEFAULT_ICON_URL;
           }}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+          className="group-hover:brightness-110"
         />
 
-        {/* Subtle dark gradient overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#14181c] via-transparent to-black/20 opacity-80 group-hover:opacity-90 transition-opacity" />
+        {/* Status marker: a flat icon chip, not a coloured pill */}
+        {userLog && (
+          <span
+            className="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-[2px] bg-bg/90 text-ink"
+            title={isPlayed ? t('card_played') : isPlaying ? t('card_playing') : t('card_backlog')}
+          >
+            {isPlayed && <Eye className="h-3 w-3" strokeWidth={2.25} />}
+            {isPlaying && <span className="h-1.5 w-1.5 rounded-full bg-blue" />}
+            {isBacklog && <Bookmark className="h-3 w-3" strokeWidth={2.25} />}
+          </span>
+        )}
 
-        {/* Top Badges: User Status & Star Rating */}
-        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
-          {/* Active Shelf Status Badge */}
-          {userLog && (
-            <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md shadow-md ${
-              isPlayed ? 'bg-[#00E59B]/90 text-black' :
-              isPlaying ? 'bg-[#00A2FF]/90 text-white' :
-              isBacklog ? 'bg-amber-400/90 text-black' :
-              'bg-gray-700/80 text-gray-200'
-            }`}>
-              {isPlayed && <Eye className="w-3 h-3" />}
-              {isPlaying && t('card_playing')}
-              {isBacklog && t('card_backlog')}
-              {isPlayed && t('card_played')}
-            </span>
-          )}
-
-          {!userLog && (
-            <span className="text-[11px] font-medium text-gray-300 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full truncate max-w-[140px]" title={game.subgenre && game.subgenre !== game.genre ? `${game.genre} • ${game.subgenre}` : game.genre}>
-              {game.genre}{game.subgenre && game.subgenre !== game.genre ? ` • ${game.subgenre}` : ''}
-            </span>
-          )}
-
-          {/* Average Rating Pill */}
-          <div className="flex items-center gap-1 text-[11px] font-bold bg-black/75 backdrop-blur-md text-[#00E59B] px-2 py-0.5 rounded-full border border-white/10 shadow">
-            <Star className="w-3 h-3 fill-[#00E59B]" />
-            <span>{game.ratingAverage.toFixed(1)}</span>
-          </div>
-        </div>
-
-        {/* Hover Quick Actions Bar (Bottom of poster) */}
-        <div 
-          onClick={(e) => e.stopPropagation()} 
-          className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0"
+        {/* Hover actions: flat strip, hairline top, three small buttons */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute inset-x-0 bottom-0 flex items-stretch border-t border-line bg-bg/95 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100"
         >
-          {/* Quick Played Toggle */}
           <button
             onClick={() => toggleGameStatus(game.id, 'played')}
             title={isPlayed ? t('card_marked_played') : t('card_mark_played')}
-            className={`p-2 rounded-lg backdrop-blur-md transition-all ${
-              isPlayed 
-                ? 'bg-[#00E59B] text-black shadow-[0_0_12px_rgba(0,229,155,0.4)]' 
-                : 'bg-[#181e24]/90 text-gray-300 hover:text-white hover:bg-[#232c36]'
+            className={`flex h-7 flex-1 items-center justify-center border-r border-line text-[10px] font-semibold uppercase tracking-[0.08em] ${
+              isPlayed ? 'text-green' : 'text-muted hover:text-white'
             }`}
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="h-3.5 w-3.5" />
           </button>
-
-          {/* Quick Backlog Toggle */}
           <button
             onClick={() => toggleGameStatus(game.id, 'backlog')}
             title={isBacklog ? t('card_in_backlog') : t('card_add_backlog')}
-            className={`p-2 rounded-lg backdrop-blur-md transition-all ${
-              isBacklog 
-                ? 'bg-amber-400 text-black shadow-[0_0_12px_rgba(251,191,36,0.4)]' 
-                : 'bg-[#181e24]/90 text-gray-300 hover:text-white hover:bg-[#232c36]'
+            className={`flex h-7 flex-1 items-center justify-center border-r border-line text-[10px] font-semibold uppercase tracking-[0.08em] ${
+              isBacklog ? 'text-blue' : 'text-muted hover:text-white'
             }`}
           >
-            <Bookmark className="w-4 h-4" />
+            <Bookmark className="h-3.5 w-3.5" />
           </button>
-
-          {/* Quick Like Toggle */}
           <button
             onClick={() => toggleLike(game.id)}
             title={isLiked ? t('card_liked') : t('card_like')}
-            className={`p-2 rounded-lg backdrop-blur-md transition-all ${
-              isLiked 
-                ? 'bg-rose-500 text-white shadow-[0_0_12px_rgba(244,63,94,0.4)]' 
-                : 'bg-[#181e24]/90 text-gray-300 hover:text-white hover:bg-[#232c36]'
+            className={`flex h-7 flex-1 items-center justify-center border-r border-line ${
+              isLiked ? 'text-orange' : 'text-muted hover:text-white'
             }`}
           >
-            <Heart className={`w-4 h-4 ${isLiked ? 'fill-white' : ''}`} />
+            <Heart className={`h-3.5 w-3.5 ${isLiked ? 'fill-orange' : ''}`} />
           </button>
-
-          {/* Open Detailed Log Modal */}
           <button
             onClick={() => openLogModal(game)}
             title={t('detail_log_review')}
-            className="flex items-center gap-1 px-2.5 py-2 rounded-lg bg-[#00A2FF] text-white hover:bg-[#0090e3] text-xs font-bold transition-all shadow-[0_0_12px_rgba(0,162,255,0.4)]"
+            className="flex h-7 flex-[1.4] items-center justify-center gap-1 bg-green text-[10px] font-bold uppercase tracking-[0.08em] text-bg hover:bg-green"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>{t('card_log_btn')}</span>
+            <Plus className="h-3 w-3" strokeWidth={3} />
+            {t('card_log_btn')}
           </button>
         </div>
       </div>
 
-      {/* Card Body Details */}
-      <div 
-        onClick={() => viewGame(game.id)} 
-        className="p-3.5 cursor-pointer flex flex-col justify-between flex-1 bg-[#161c22]"
-      >
-        <div>
-          <h3 className="font-bold text-xs sm:text-sm text-white group-hover:text-[#00E59B] transition-colors line-clamp-1">
+      {/* Caption: title, meta line, rating. No box, no border. */}
+      <div className="mt-1.5 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <button
+            onClick={() => viewGame(game.id)}
+            className="block max-w-full truncate text-left text-[13px] font-semibold leading-snug text-ink hover:text-white"
+            title={game.name}
+          >
             {game.name}
-          </h3>
-          <p className="text-[11px] sm:text-xs text-gray-400 truncate mt-0.5">
-            {game.creatorName} {game.releaseYear ? `• ${game.releaseYear}` : ''}
+          </button>
+          <p className="mt-[3px] truncate text-[11px] leading-snug text-faint">
+            {game.releaseYear || '—'}
+            {game.genre ? ` · ${game.genre}` : ''}
+            {userRating ? ` · ${t('card_you_rated')} ${userRating.toFixed(1)}` : ''}
           </p>
         </div>
-
-        {/* User's logged rating if recorded */}
-        <div className="mt-2 pt-1.5 sm:mt-2.5 sm:pt-2 border-t border-[#232b35] flex items-center justify-between text-xs">
-          {userRating ? (
-            <div className="flex items-center gap-1 text-[#00E59B] font-bold">
-              <Star className="w-3 h-3 fill-[#00E59B]" />
-              <span className="text-[10px] sm:text-xs">{t('card_you_rated')} {userRating.toFixed(1)} ★</span>
-            </div>
-          ) : (
-            <span className="text-gray-300 text-[10px] sm:text-[11px] font-mono">
-              {game.playerCount ? `${(game.playerCount).toLocaleString(language === 'id' ? 'id-ID' : 'en-US')} ${t('card_online')}` : t('card_active')}
-            </span>
-          )}
-
-          <span className="text-gray-300 text-[10px] sm:text-[11px]">
-            {game.totalVisits || '0'} {t('card_visits')}
-          </span>
-        </div>
+        <span className="mt-0.5 flex shrink-0 items-center gap-1 text-[11px] font-semibold text-orange">
+          <Star className="h-3 w-3 fill-orange" strokeWidth={0} />
+          {game.ratingAverage.toFixed(1)}
+        </span>
       </div>
-    </div>
+    </article>
   );
 };
 

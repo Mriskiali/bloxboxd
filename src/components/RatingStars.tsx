@@ -70,7 +70,7 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
             >
               {/* Background empty star */}
               <Star
-                className={`${starSizes[size]} text-[#2c343d] transition-colors`}
+                className={`${starSizes[size]} text-line transition-colors`}
                 fill="#1c2228"
               />
 
@@ -78,7 +78,7 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
               {isHalf && (
                 <div className="absolute inset-0 p-0.5 overflow-hidden w-1/2 pointer-events-none">
                   <Star
-                    className={`${starSizes[size]} text-[#00E59B] drop-shadow-[0_0_8px_rgba(0,229,155,0.4)]`}
+                    className={`${starSizes[size]} text-green drop-shadow-[0_0_8px_rgba(0,229,155,0.4)]`}
                     fill="#00E59B"
                   />
                 </div>
@@ -88,7 +88,7 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
               {isFull && (
                 <div className="absolute inset-0 p-0.5 pointer-events-none">
                   <Star
-                    className={`${starSizes[size]} text-[#00E59B] drop-shadow-[0_0_8px_rgba(0,229,155,0.4)]`}
+                    className={`${starSizes[size]} text-green drop-shadow-[0_0_8px_rgba(0,229,155,0.4)]`}
                     fill="#00E59B"
                   />
                 </div>
@@ -99,7 +99,7 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
       </div>
 
       {showText && (
-        <span className="text-xs font-semibold tracking-wide text-[#00E59B]">
+        <span className="text-xs font-semibold tracking-wide text-green">
           {getRatingLabel(displayVal)}
         </span>
       )}

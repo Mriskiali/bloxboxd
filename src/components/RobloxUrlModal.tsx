@@ -149,29 +149,29 @@ export const RobloxUrlModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0a0e12]/85  overflow-y-auto">
       <div 
         onClick={(e) => e.stopPropagation()} 
-        className="relative w-full max-w-xl bg-[#181e24] border border-[#2b3542] rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 my-6"
+        className="relative w-full max-w-xl bg-panel border border-line rounded-[3px] p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.55)] space-y-4 my-6"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#232b35] pb-3">
+        <div className="flex items-center justify-between border-b border-line pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#00E59B]/15 text-[#00E59B] border border-[#00E59B]/30 flex items-center justify-center font-bold shadow-inner">
+            <div className="w-9 h-9 rounded-[3px] bg-green/15 text-green border border-green/30 flex items-center justify-center font-bold">
               <Plus className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
+              <h3 className="text-base sm:text-lg font-semibold text-white tracking-tight">
                 {t('url_modal_title')}
               </h3>
-              <p className="text-[11px] text-gray-400">
+              <p className="text-[11px] text-muted">
                 {t('url_modal_desc')}
               </p>
             </div>
           </div>
           <button 
             onClick={() => setUrlImportModalOpen(false)}
-            className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-[#202731] transition-colors"
+            className="text-muted hover:text-white p-1.5 rounded-[2px] hover:bg-panel-2 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -179,12 +179,12 @@ export const RobloxUrlModal: React.FC = () => {
 
         {/* Form Tambah Game */}
         <form onSubmit={(e) => handleResolveUrl(e)} className="space-y-3">
-          <label className="block text-xs font-bold text-gray-300">
+          <label className="block text-xs font-bold text-ink">
             {t('url_modal_link_label')}
           </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <LinkIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <LinkIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
               <input
                 type="text"
                 autoFocus
@@ -192,13 +192,13 @@ export const RobloxUrlModal: React.FC = () => {
                 placeholder={t('url_modal_input_ph')}
                 value={inputUrl}
                 onChange={(e) => setInputUrl(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-[#14181c] border border-[#2b3542] focus:border-[#00E59B] rounded-xl text-xs sm:text-sm text-white outline-none transition-all shadow-inner"
+                className="w-full pl-10 pr-4 py-2.5 bg-bg border border-line focus:border-green rounded-[3px] text-xs sm:text-sm text-white outline-none transition-colors"
               />
             </div>
             <button
               type="submit"
               disabled={loading || !inputUrl.trim()}
-              className="px-5 py-2.5 bg-[#00E59B] hover:bg-[#00c988] disabled:opacity-50 text-black font-extrabold text-xs rounded-xl shadow transition-all flex items-center gap-1.5 whitespace-nowrap"
+              className="px-5 py-2.5 bg-green hover:bg-[#00c94b] disabled:opacity-50 text-black font-semibold text-xs rounded-[3px] shadow transition-colors flex items-center gap-1.5 whitespace-nowrap"
             >
               {loading ? (
                 <>
@@ -215,7 +215,7 @@ export const RobloxUrlModal: React.FC = () => {
           </div>
 
           {/* Quick suggestions / examples */}
-          <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px] text-gray-400">
+          <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px] text-muted">
             <span>{t('url_modal_quick_examples')}</span>
             {placeExamples.map((ex) => (
               <button
@@ -225,7 +225,7 @@ export const RobloxUrlModal: React.FC = () => {
                   setInputUrl(ex.id);
                   handleResolveUrl(undefined, ex.id);
                 }}
-                className="px-2 py-0.5 rounded bg-[#202732] hover:bg-[#283240] text-gray-300 hover:text-[#00E59B] transition-colors border border-white/5"
+                className="px-2 py-0.5 rounded bg-panel-2 hover:bg-panel-2 text-ink hover:text-green transition-colors border border-white/5"
               >
                 {ex.name} ({ex.id})
               </button>
@@ -235,7 +235,7 @@ export const RobloxUrlModal: React.FC = () => {
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-2.5 text-xs text-red-300">
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-[3px] flex items-start gap-2.5 text-xs text-red-300">
             <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">{error}</div>
           </div>
@@ -243,30 +243,30 @@ export const RobloxUrlModal: React.FC = () => {
 
         {/* Live Resolved Experience Preview Card */}
         {resolvedData && (
-          <div className="bg-[#14181c] border border-[#2a3442] rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
+          <div className="bg-bg border border-line rounded-[3px] p-4 sm:p-5 space-y-4">
             <div className="flex items-start gap-3.5">
               <img
                 src={safeImgSrc(resolvedData.iconUrl)}
                 alt={resolvedData.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover bg-black/60 border border-white/10 shadow-md flex-shrink-0"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-[3px] object-cover bg-black/60 border border-white/10 flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-sm sm:text-base font-extrabold text-white truncate">
+                  <h4 className="text-sm sm:bb-label truncate">
                     {resolvedData.name}
                   </h4>
-                  <span className="text-[10px] font-bold text-[#00E59B] bg-[#00E59B]/10 px-2 py-0.5 rounded border border-[#00E59B]/30">
+                  <span className="text-[10px] font-bold text-green bg-green/10 px-2 py-0.5 rounded border border-green/30">
                     {resolvedData.genre || 'Experience'}
                   </span>
                 </div>
 
-                <p className="text-xs text-gray-400 mt-1 truncate">
-                  {t('url_modal_by')} <strong className="text-gray-200 font-semibold">{resolvedData.creatorName}</strong>
+                <p className="text-xs text-muted mt-1 truncate">
+                  {t('url_modal_by')} <strong className="text-ink font-semibold">{resolvedData.creatorName}</strong>
                   {resolvedData.releaseYear ? ` • ${t('url_modal_released')} ${resolvedData.releaseYear}` : ''}
                 </p>
 
-                <div className="flex items-center gap-3 text-xs text-gray-400 mt-2 flex-wrap">
-                  <span className="text-[#00E59B] font-extrabold flex items-center gap-1">
+                <div className="flex items-center gap-3 text-xs text-muted mt-2 flex-wrap">
+                  <span className="text-green font-semibold flex items-center gap-1">
                     ★ {resolvedData.ratingAverage?.toFixed(1) || '4.5'}
                   </span>
                   <span>•</span>
@@ -278,7 +278,7 @@ export const RobloxUrlModal: React.FC = () => {
             </div>
 
             {resolvedData.description && (
-              <p className="text-xs text-gray-300 line-clamp-3 bg-[#1b222a] p-3 rounded-xl border border-white/5 leading-relaxed">
+              <p className="text-xs text-ink line-clamp-3 bg-panel p-3 rounded-[3px] border border-white/5 leading-relaxed">
                 {resolvedData.description}
               </p>
             )}
@@ -287,7 +287,7 @@ export const RobloxUrlModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAddGame}
-                className="w-full sm:flex-1 py-3 bg-[#00E59B] hover:bg-[#00c988] active:scale-[0.99] text-black font-black text-xs sm:text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 py-3 bg-green hover:bg-[#00c94b] active:scale-[0.99] text-black font-semibold text-xs sm:text-sm rounded-[3px] transition-colors flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
                 <span>{t('url_modal_add_catalog')}</span>
@@ -298,10 +298,10 @@ export const RobloxUrlModal: React.FC = () => {
                   href={`https://www.roblox.com/games/${resolvedData.rootPlaceId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto px-4 py-3 bg-[#202832] hover:bg-[#283340] text-gray-200 text-xs font-bold rounded-xl border border-[#2d3846] transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full sm:w-auto px-4 py-3 bg-panel-2 hover:bg-panel-2 text-ink text-xs font-bold rounded-[3px] border border-line transition-colors flex items-center justify-center gap-1.5"
                 >
                   <span>{t('url_modal_open_roblox')}</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+                  <ExternalLink className="w-3.5 h-3.5 text-muted" />
                 </a>
               ) : null}
             </div>

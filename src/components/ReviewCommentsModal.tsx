@@ -88,22 +88,22 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a0e12]/85  animate-in fade-in duration-200">
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[#182028] border border-[#2b3947] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+        className="w-full max-w-lg bg-panel border border-line rounded-[3px] shadow-[0_8px_24px_rgba(0,0,0,0.55)] overflow-hidden flex flex-col max-h-[85vh]"
       >
         {/* Modal Header */}
-        <div className="px-5 py-4 border-b border-[#26323f] flex items-center justify-between bg-[#151c23]">
+        <div className="px-5 py-4 border-b border-line flex items-center justify-between bg-panel">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#00E59B]/10 text-[#00E59B]">
+            <div className="p-2 rounded-[3px] bg-green/10 text-green">
               <MessageSquare className="w-4 h-4" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-white">
                 {t('comments_modal_title')}
               </h3>
-              <p className="text-xs text-gray-400 truncate max-w-xs">
+              <p className="text-xs text-muted truncate max-w-xs">
                 {language === 'id' 
                   ? `Ulasan ${review.username} tentang ${review.gameTitle}` 
                   : `${review.username}'s review on ${review.gameTitle}`}
@@ -112,14 +112,14 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-[#202934] transition-colors"
+            className="p-1.5 text-muted hover:text-white rounded-[2px] hover:bg-panel-2 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Original Review Snippet */}
-        <div className="p-4 bg-[#131920] border-b border-[#222c37] flex items-start gap-3 text-xs">
+        <div className="p-4 bg-bg border-b border-line flex items-start gap-3 text-xs">
           <img 
             src={safeAvatarSrc(review.userAvatar)} 
             alt={review.username} 
@@ -127,7 +127,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
               onClose();
               viewUserProfile(review.userId);
             }}
-            className="w-8 h-8 rounded-full object-cover bg-black/40 flex-shrink-0 border border-white/10 hover:border-[#00E59B] cursor-pointer transition-colors"
+            className="w-8 h-8 rounded-full object-cover bg-black/40 flex-shrink-0 border border-white/10 hover:border-green cursor-pointer transition-colors"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -136,25 +136,25 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
                   onClose();
                   viewUserProfile(review.userId);
                 }}
-                className="font-bold text-white hover:text-[#00E59B] cursor-pointer transition-colors"
+                className="font-bold text-white hover:text-green cursor-pointer transition-colors"
               >
                 {review.username}
               </span>
               {review.rating && (
-                <span className="text-[#00E59B] font-mono font-bold">★ {review.rating.toFixed(1)}</span>
+                <span className="text-green font-mono font-bold">★ {review.rating.toFixed(1)}</span>
               )}
             </div>
-            <p className="text-gray-300 italic line-clamp-2">
+            <p className="text-ink italic line-clamp-2">
               "{review.reviewText}"
             </p>
           </div>
         </div>
 
         {/* Comments List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 divide-y divide-[#222c37]/50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 divide-y divide-line/50">
           {isLoading ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-2 text-gray-400 text-xs">
-              <Loader2 className="w-5 h-5 animate-spin text-[#00E59B]" />
+            <div className="py-12 flex flex-col items-center justify-center gap-2 text-muted text-xs">
+              <Loader2 className="w-5 h-5 animate-spin text-green" />
               <span>{t('comments_modal_loading')}</span>
             </div>
           ) : comments.length > 0 ? (
@@ -167,7 +167,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
                     onClose();
                     viewUserProfile(c.userId);
                   }}
-                  className="w-7 h-7 rounded-full object-cover bg-black/40 flex-shrink-0 border border-white/10 hover:border-[#00E59B] cursor-pointer transition-colors mt-0.5" 
+                  className="w-7 h-7 rounded-full object-cover bg-black/40 flex-shrink-0 border border-white/10 hover:border-green cursor-pointer transition-colors mt-0.5" 
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
@@ -176,26 +176,26 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
                         onClose();
                         viewUserProfile(c.userId);
                       }}
-                      className="font-bold text-white hover:text-[#00E59B] cursor-pointer transition-colors"
+                      className="font-bold text-white hover:text-green cursor-pointer transition-colors"
                     >
                       {c.username}
                     </span>
-                    <span className="text-[10px] text-gray-500">
+                    <span className="text-[10px] text-faint">
                       {new Date(c.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-gray-200 leading-relaxed break-words bg-[#131920] p-2.5 rounded-xl border border-[#232c37]">
+                  <p className="text-ink leading-relaxed break-words bg-bg p-2.5 rounded-[3px] border border-line">
                     {c.commentText}
                   </p>
                 </div>
               </div>
             ))
           ) : (
-            <div className="py-12 text-center text-gray-400 text-xs space-y-1">
-              <p className="font-semibold text-gray-300">
+            <div className="py-12 text-center text-muted text-xs space-y-1">
+              <p className="font-semibold text-ink">
                 {language === 'id' ? 'Belum ada komentar.' : 'No comments yet.'}
               </p>
-              <p className="text-gray-500">
+              <p className="text-faint">
                 {language === 'id' ? 'Jadilah yang pertama mengomentari ulasan ini!' : 'Be the first to reply to this review!'}
               </p>
             </div>
@@ -203,7 +203,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
         </div>
 
         {/* Comment Input Footer */}
-        <form onSubmit={handleSubmit} className="p-3 bg-[#151c23] border-t border-[#26323f] flex items-center gap-2">
+        <form onSubmit={handleSubmit} className="p-3 bg-panel border-t border-line flex items-center gap-2">
           {user ? (
             <>
               <input
@@ -212,12 +212,12 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 maxLength={300}
-                className="flex-1 px-3.5 py-2 text-xs bg-[#1e2732] border border-[#2e3b4a] focus:border-[#00E59B] rounded-xl text-white placeholder:text-gray-500 outline-none transition-all"
+                className="flex-1 px-3.5 py-2 text-xs bg-panel-2 border border-line focus:border-green rounded-[3px] text-white placeholder:text-faint outline-none transition-colors"
               />
               <button
                 type="submit"
                 disabled={isSubmitting || !newComment.trim()}
-                className="p-2 bg-[#00E59B] hover:bg-[#00c988] disabled:opacity-50 text-black rounded-xl transition-all font-bold flex-shrink-0 active:scale-95"
+                className="p-2 bg-green hover:bg-[#00c94b] disabled:opacity-50 text-black rounded-[3px] transition-colors font-bold flex-shrink-0 active:scale-95"
                 title={t('comments_modal_send')}
               >
                 {isSubmitting ? (
@@ -229,14 +229,14 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
             </>
           ) : (
             <div className="w-full flex items-center justify-between px-2 py-1 text-xs">
-              <span className="text-gray-400">{t('comments_modal_login_prompt')}</span>
+              <span className="text-muted">{t('comments_modal_login_prompt')}</span>
               <button
                 type="button"
                 onClick={() => {
                   onClose();
                   setLoginModalOpen(true);
                 }}
-                className="px-3 py-1 bg-[#00E59B] text-black font-bold rounded-lg text-xs hover:bg-[#00c988] transition-colors"
+                className="px-3 py-1 bg-green text-black font-bold rounded-[2px] text-xs hover:bg-[#00c94b] transition-colors"
               >
                 {t('nav_login_roblox')}
               </button>

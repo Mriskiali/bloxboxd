@@ -25,8 +25,8 @@ const RobloxLoginModal = lazy(() => import('./components/RobloxLoginModal').then
 
 const ViewLoader: React.FC<{ text?: string }> = ({ text = 'Memuat tampilan...' }) => (
   <div className="flex flex-col items-center justify-center min-h-[45vh] w-full py-20">
-    <div className="w-10 h-10 rounded-full border-3 border-[#00E59B] border-t-transparent animate-spin mb-3" />
-    <span className="text-xs font-semibold text-gray-400">{text}</span>
+    <div className="w-10 h-10 rounded-full border-3 border-green border-t-transparent animate-spin mb-3" />
+    <span className="text-xs font-semibold text-muted">{text}</span>
   </div>
 );
 import { 
@@ -348,7 +348,7 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#14181c] text-[#e0e6ed]">
+    <div className="min-h-screen flex flex-col bg-bg text-ink">
       {/* Top Navigation */}
       <Navbar />
 
@@ -356,173 +356,76 @@ const MainAppContent: React.FC = () => {
       <main className="flex-1">
         {activeTab === 'catalog' && (
           <div className="pb-24">
-            {/* Spotlight Hero Banner (Multi-Genre Live Showcase Slideshow) */}
+            {/* Spotlight: flat ground, editorial text left, poster right. No background image. */}
             {spotlightGame && (
-              <div 
+              <section
                 onMouseEnter={() => setIsSpotlightPaused(true)}
                 onMouseLeave={() => setIsSpotlightPaused(false)}
                 onTouchStart={() => setIsSpotlightPaused(true)}
-                onTouchEnd={() => {
-                  setTimeout(() => setIsSpotlightPaused(false), 3500);
-                }}
-                className="relative border-b border-[#232b35] overflow-hidden bg-[#111418] transition-colors duration-500 group/banner"
+                onTouchEnd={() => { setTimeout(() => setIsSpotlightPaused(false), 3500); }}
+                className="border-b border-line"
               >
-                {/* Background image with blur and dark gradient */}
-                <div className="absolute inset-0 z-0 pointer-events-none">
-                  <img
-                    key={spotlightGame.id}
-                    src={safeImgSrc(spotlightGame.bannerUrl || spotlightGame.iconUrl)}
-                    alt={spotlightGame.name}
-                    className="w-full h-full object-cover opacity-25 filter blur-xs scale-105 transition-opacity duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#14181c] via-[#14181c]/75 to-transparent" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#14181c] via-[#14181c]/85 to-transparent" />
-                </div>
+                <div className="mx-auto flex max-w-[1280px] flex-col gap-8 px-4 py-10 sm:px-6 sm:py-12 md:flex-row md:items-center md:justify-between md:gap-16">
+                  <div className="max-w-[560px] flex-1">
+                    <p className="bb-label">
+                      {language === 'id' ? 'Sorotan' : 'Spotlight'} · {spotlightGenre}
+                    </p>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14 relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-                  <div className="max-w-2xl space-y-4 flex-1">
-                    {/* Badge & Carousel Controls Header */}
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00E59B]/15 border border-[#00E59B]/30 text-[#00E59B] text-xs font-bold tracking-wider uppercase">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>
-                          {spotlightGenre === 'Platform Trending'
-                            ? (language === 'id' ? '🔥 #1 Trending di Roblox' : '🔥 #1 Trending on Roblox')
-                            : (language === 'id' ? `✨ #1 Top di Genre ${spotlightGenre}` : `✨ #1 Top in ${spotlightGenre}`)}
-                        </span>
-                      </div>
-
-                      {/* Pagination & Auto-Rotate Controls */}
-                      {spotlightCandidates.length > 1 && (
-                        <div className="flex items-center gap-1.5 bg-[#171d24]/90 backdrop-blur-md px-2 py-1 rounded-xl border border-[#2b3542] shadow-sm">
-                          {/* Play / Pause Toggle Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setIsSpotlightPaused(prev => !prev);
-                            }}
-                            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-[#252f3b] transition-colors cursor-pointer"
-                            title={isSpotlightPaused ? (language === 'id' ? "Lanjutkan auto-rotate" : "Resume slideshow") : (language === 'id' ? "Jeda auto-rotate" : "Pause slideshow")}
-                            aria-label={isSpotlightPaused ? "Play slideshow" : "Pause slideshow"}
-                          >
-                            {isSpotlightPaused ? (
-                              <Play className="w-3.5 h-3.5 text-[#00E59B]" />
-                            ) : (
-                              <Pause className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-
-                          <div className="w-[1px] h-3.5 bg-[#2b3542]" />
-
-                          <button
-                            onClick={handlePrevSpotlight}
-                            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-[#252f3b] transition-colors cursor-pointer"
-                            title={language === 'id' ? "Lihat genre spotlight sebelumnya" : "View previous spotlight"}
-                            aria-label="Previous Spotlight"
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                          </button>
-
-                          <div className="flex items-center gap-1 px-1">
-                            {spotlightCandidates.map((c, idx) => (
-                              <button
-                                key={c.game.id || idx}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSpotlightIndex(idx);
-                                }}
-                                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                                  idx === activeSpotlightIndex
-                                    ? 'w-4 bg-[#00E59B]'
-                                    : 'w-1.5 bg-gray-600 hover:bg-gray-400'
-                                }`}
-                                title={`#1 ${c.genreCategory}: ${c.game.name}`}
-                                aria-label={`#1 ${c.genreCategory}: ${c.game.name}`}
-                              />
-                            ))}
-                          </div>
-
-                          <button
-                            onClick={handleNextSpotlight}
-                            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-[#252f3b] transition-colors cursor-pointer"
-                            title={language === 'id' ? "Lihat genre spotlight berikutnya" : "View next spotlight"}
-                            aria-label="Next Spotlight"
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                    <h1 className="bb-display mt-2 line-clamp-2 text-[34px] sm:text-[44px]">
                       {spotlightGame.name}
                     </h1>
 
-                    <p className="text-sm sm:text-base text-gray-300 leading-relaxed line-clamp-3">
+                    <p className="mt-3 line-clamp-2 max-w-[520px] text-[14px] leading-relaxed text-muted">
                       {spotlightGame.description || t('hero_desc')}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-3 text-xs font-semibold pt-1">
-                      <div className="flex items-center gap-1.5 text-[#00E59B] font-bold text-xs sm:text-sm bg-black/60 px-3 py-1.5 rounded-lg border border-[#00E59B]/20">
-                        <Star className="w-4 h-4 fill-[#00E59B]" />
-                        <span>{spotlightGame.ratingAverage.toFixed(1)} / 5.0</span>
-                      </div>
-
-                      <span className="text-gray-300 bg-[#1e2630] px-3 py-1.5 rounded-lg border border-[#2b3542] text-xs font-semibold">
-                        {spotlightGenre}
+                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-faint">
+                      <span className="flex items-center gap-1 font-semibold text-orange">
+                        <Star className="h-3.5 w-3.5 fill-orange" strokeWidth={0} />
+                        {spotlightGame.ratingAverage.toFixed(1)}
                       </span>
-
-                      <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00E59B] opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00E59B]"></span>
-                        </span>
-                        <span>{(spotlightGame.playerCount || 0).toLocaleString(language === 'id' ? 'id-ID' : 'en-US')} {t('card_online')}</span>
-                      </div>
-
+                      <span className="h-3 w-px bg-panel-2" />
+                      <span>{(spotlightGame.playerCount || 0).toLocaleString(language === 'id' ? 'id-ID' : 'en-US')} {t('card_online')}</span>
                       {spotlightGame.creatorName && (
-                        <span className="text-gray-400 text-xs py-1.5 hidden sm:inline-block">
-                          {language === 'id' ? 'Oleh' : 'By'} <strong className="text-gray-200">{spotlightGame.creatorName}</strong>
-                        </span>
+                        <>
+                          <span className="h-3 w-px bg-panel-2" />
+                          <span className="truncate">
+                            {language === 'id' ? 'oleh' : 'by'} <span className="text-ink">{spotlightGame.creatorName}</span>
+                          </span>
+                        </>
                       )}
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-                      <button
-                        onClick={() => viewGame(spotlightGame.id)}
-                        className="px-5 py-2.5 rounded-xl bg-[#00E59B] hover:bg-[#00c988] text-black font-extrabold text-xs transition-all shadow-[0_0_20px_rgba(0,229,155,0.4)] flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <span>{language === 'id' ? 'Lihat Detail & Log' : 'View Details & Log'}</span>
-                        <ChevronRight className="w-4 h-4" />
+                    <div className="mt-5 flex flex-wrap items-center gap-2">
+                      <button onClick={() => viewGame(spotlightGame.id)} className="bb-btn bb-btn-primary">
+                        {language === 'id' ? 'Lihat detail & log' : 'View details & log'}
+                        <ChevronRight className="h-3.5 w-3.5" />
                       </button>
-
                       <a
                         href={`https://www.roblox.com/games/${spotlightGame.rootPlaceId || spotlightGame.universeId || spotlightGame.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-2.5 rounded-xl bg-[#1e2630] hover:bg-[#283341] text-white text-xs font-bold transition-colors border border-[#2e3947] flex items-center justify-center gap-2"
+                        className="bb-btn bb-btn-secondary"
                       >
-                        <Gamepad2 className="w-4 h-4 text-[#00E59B]" />
-                        <span>{t('detail_play_roblox')}</span>
-                        <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+                        {t('detail_play_roblox')}
+                        <ExternalLink className="h-3 w-3 text-faint" />
                       </a>
-
                       <button
                         onClick={() => setUrlImportModalOpen(true)}
-                        className="px-4 py-2.5 rounded-xl bg-[#222a33]/60 hover:bg-[#2c3642] text-gray-300 hover:text-white text-xs font-bold transition-colors border border-[#313c49] text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="text-[12px] font-semibold text-faint underline-offset-4 hover:text-ink hover:underline"
                       >
-                        <PlusCircle className="w-4 h-4 text-gray-400" />
-                        <span>{language === 'id' ? 'Impor Game' : 'Import Game'}</span>
+                        {language === 'id' ? 'Impor game' : 'Import game'}
                       </button>
                     </div>
                   </div>
 
-                  {/* Spotlight Poster Card */}
-                  <div 
-                    onClick={() => viewGame(spotlightGame.id)}
-                    className="cursor-pointer group flex-shrink-0 mx-auto md:mx-0 relative"
-                  >
-                    <div className="w-44 sm:w-56 md:w-60 aspect-square rounded-2xl overflow-hidden border-2 border-[#2c3644] group-hover:border-[#00E59B] shadow-2xl transition-all group-hover:scale-105 duration-300 relative bg-[#182028]">
+                  {/* Poster + index, no glow, no scale */}
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <button
+                      onClick={() => viewGame(spotlightGame.id)}
+                      className="bb-poster w-[150px] sm:w-[190px] hover:border-line"
+                      aria-label={spotlightGame.name}
+                    >
                       <img
                         key={spotlightGame.id}
                         src={safeImgSrc(spotlightGame.iconUrl)}
@@ -530,327 +433,235 @@ const MainAppContent: React.FC = () => {
                         loading="eager"
                         fetchPriority="high"
                         decoding="sync"
-                        className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                        <span className="text-[11px] font-bold text-[#00E59B] flex items-center gap-1">
-                          <span>{language === 'id' ? 'Buka Detail' : 'View Details'}</span>
-                          <ChevronRight className="w-3 h-3" />
-                        </span>
+                    </button>
+
+                    {spotlightCandidates.length > 1 && (
+                      <div className="flex w-[150px] flex-col gap-2 sm:w-[190px]">
+                        <div className="flex items-center justify-between">
+                          <span className="font-serif text-[13px] tabular-nums text-faint">
+                            {String(activeSpotlightIndex + 1).padStart(2, '0')} / {String(spotlightCandidates.length).padStart(2, '0')}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setIsSpotlightPaused(prev => !prev)}
+                              className="p-0.5 text-faint hover:text-ink"
+                              aria-label={isSpotlightPaused ? 'Play slideshow' : 'Pause slideshow'}
+                            >
+                              {isSpotlightPaused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+                            </button>
+                            <button
+                              onClick={handlePrevSpotlight}
+                              className="p-0.5 text-faint hover:text-ink"
+                              aria-label="Previous spotlight"
+                            >
+                              <ChevronLeft className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={handleNextSpotlight}
+                              className="p-0.5 text-faint hover:text-ink"
+                              aria-label="Next spotlight"
+                            >
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    {/* Rank Badge on Poster */}
-                    <div className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-black/85 backdrop-blur-md border border-white/15 text-[10px] font-black text-white flex items-center gap-1 shadow-lg">
-                      <span className="text-[#00E59B]">#1</span>
-                      <span>{spotlightGenre === 'Platform Trending' ? 'Trending' : spotlightGenre}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Auto-Slide Progress Bar Indicator */}
-                {spotlightCandidates.length > 1 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black/40 overflow-hidden z-20">
-                    <div 
-                      key={activeSpotlightIndex}
-                      className="h-full bg-gradient-to-r from-[#00E59B] via-[#00E59B] to-emerald-400 animate-spotlight-progress"
-                      style={{
-                        animationPlayState: isSpotlightPaused ? 'paused' : 'running'
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Catalog Content Container */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-10 space-y-8">
-              {/* Header with Title, Live Sync Status & Filter Controls */}
-              <div className="space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                      <Compass className="w-5 h-5 text-[#00E59B]" />
-                      <span>{t('catalog_title')}</span>
-                    </h2>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {language === 'id' 
-                        ? 'Jelajahi, beri log dan ulasan pada pengalaman Roblox dengan data resmi real-time' 
-                        : 'Explore, log and review Roblox experiences with official real-time data'}
-                    </p>
-                  </div>
-
-                  {/* Real-time Status & Quick Sort Controls */}
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    {/* Live Roblox API Indicator */}
-                    <div 
-                      className="flex items-center gap-2 bg-[#182028] border border-[#273341] px-3 py-1.5 rounded-xl text-xs"
-                      title={language === 'id' ? "Bloxboxd selalu terhubung langsung dengan official Roblox API" : "Bloxboxd connects directly with official Roblox API"}
-                    >
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00E59B] opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00E59B]"></span>
-                      </span>
-                      <span className="text-gray-300 font-semibold hidden sm:inline">Roblox API Live Sync</span>
-                      <span className="text-[11px] text-[#00E59B] font-mono font-bold">
-                        {isRealtimeSyncing ? (language === 'id' ? 'Memperbarui...' : 'Updating...') : '🟢 Realtime'}
-                      </span>
-                      <button
-                        onClick={() => refreshRealtimeStats()}
-                        disabled={isRealtimeSyncing}
-                        className="p-1 hover:text-[#00E59B] text-gray-400 rounded transition-colors"
-                        title={language === 'id' ? "Segarkan data realtime dari Roblox sekarang" : "Refresh realtime Roblox stats now"}
-                      >
-                        <RotateCcw className={`w-3.5 h-3.5 ${isRealtimeSyncing ? 'animate-spin text-[#00E59B]' : ''}`} />
-                      </button>
-                    </div>
-
-                    {/* Quick Sort Selector */}
-                    <div className="flex items-center gap-1.5 bg-[#182028] border border-[#273341] px-2.5 py-1.5 rounded-xl text-xs">
-                      <SlidersHorizontal className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-gray-400 font-semibold hidden sm:inline">{t('catalog_sort_by')}</span>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => {
-                          const val = e.target.value as any;
-                          startTransition(() => {
-                            setSortBy(val);
-                          });
-                        }}
-                        aria-label={t('catalog_sort_by')}
-                        className="bg-transparent text-xs font-bold text-white outline-none cursor-pointer pr-1"
-                      >
-                        <option value="popular" className="bg-[#182028] text-white">{t('sort_popular')}</option>
-                        <option value="rating" className="bg-[#182028] text-white">{t('sort_rating')}</option>
-                        <option value="visits" className="bg-[#182028] text-white">{t('sort_visits')}</option>
-                        <option value="newest" className="bg-[#182028] text-white">{t('sort_newest')}</option>
-                        <option value="az" className="bg-[#182028] text-white">{t('sort_az')}</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Experiences Count Banner & Active Search Query */}
-                <div className="flex items-center justify-between text-xs text-gray-400 px-0.5 pt-1 border-t border-[#232b35]/60">
-                  <div>
-                    {searchQuery.trim() ? (
-                      <div className="flex items-center gap-2">
-                        <span>
-                          {language === 'id' ? (
-                            <>Ditemukan <strong className="text-white">{sortedGames.length}</strong> pengalaman cocok dengan "<strong className="text-[#00E59B]">{searchQuery}</strong>"</>
-                          ) : (
-                            <>Found <strong className="text-white">{sortedGames.length}</strong> experiences matching "<strong className="text-[#00E59B]">{searchQuery}</strong>"</>
-                          )}
-                        </span>
-                        <button
-                          onClick={() => setSearchQuery('')}
-                          className="px-2 py-0.5 rounded-full bg-[#242d38] hover:bg-[#303c4a] text-gray-300 hover:text-white text-[11px] font-semibold flex items-center gap-1 transition-colors"
-                        >
-                          <span>✕</span>
-                          <span>{language === 'id' ? 'Hapus' : 'Clear'}</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <span>
-                        {language === 'id' ? (
-                          <>Menampilkan <strong className="text-white">{sortedGames.length}</strong> pengalaman di Roblox</>
-                        ) : (
-                          <>Showing <strong className="text-white">{sortedGames.length}</strong> experiences on Roblox</>
-                        )}
-                      </span>
                     )}
                   </div>
                 </div>
+
+                {spotlightCandidates.length > 1 && (
+                  <div className="mx-auto max-w-[1280px] px-4 sm:px-6">
+                    <div className="h-px w-full bg-panel-2-soft">
+                      <div
+                        key={activeSpotlightIndex}
+                        className="h-px bg-green/70 animate-spotlight-progress"
+                        style={{ animationPlayState: isSpotlightPaused ? 'paused' : 'running' }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            <div className="mx-auto max-w-[1280px] px-4 pt-8 sm:px-6">
+              {/* Catalog header: label, serif title, count on the left; sort on the right */}
+              <div className="bb-section-head">
+                <div className="min-w-0 flex-1">
+                  <p className="bb-label">{t('catalog_title')}</p>
+                  <h2 className="bb-display mt-1 text-[24px] sm:text-[28px]">
+                    {searchQuery.trim()
+                      ? (language === 'id' ? `Hasil untuk “${searchQuery}”` : `Results for “${searchQuery}”`)
+                      : (language === 'id' ? 'Semua pengalaman' : 'All experiences')}
+                  </h2>
+                </div>
+
+                <div className="flex shrink-0 items-end gap-2">
+                  <span className="hidden text-[11px] text-faint sm:inline">
+                    {sortedGames.length} {language === 'id' ? 'game' : 'games'}
+                  </span>
+                  <button
+                    onClick={() => refreshRealtimeStats()}
+                    disabled={isRealtimeSyncing}
+                    className="flex h-7 w-7 items-center justify-center border border-line text-muted hover:border-line hover:text-white disabled:opacity-50"
+                    title={language === 'id' ? 'Segarkan data dari Roblox' : 'Refresh Roblox data'}
+                  >
+                    <RotateCcw className={`h-3 w-3 ${isRealtimeSyncing ? 'animate-spin' : ''}`} />
+                  </button>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => {
+                      const val = e.target.value as any;
+                      startTransition(() => setSortBy(val));
+                    }}
+                    aria-label={t('catalog_sort_by')}
+                    className="h-7 border border-line bg-panel px-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted outline-none hover:border-line"
+                  >
+                    <option value="popular" className="bg-panel text-ink">{t('sort_popular')}</option>
+                    <option value="rating" className="bg-panel text-ink">{t('sort_rating')}</option>
+                    <option value="visits" className="bg-panel text-ink">{t('sort_visits')}</option>
+                    <option value="newest" className="bg-panel text-ink">{t('sort_newest')}</option>
+                    <option value="az" className="bg-panel text-ink">{t('sort_az')}</option>
+                  </select>
+                  {searchQuery.trim() && (
+                    <button onClick={() => setSearchQuery('')} className="bb-btn bb-btn-ghost h-7 px-2 text-[11px]">
+                      {language === 'id' ? 'Hapus' : 'Clear'}
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Experiences Grid (Responsive 2 to 6 columns) - Renders ONLY visible slice */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {visibleGames.map((game, index) => (
-                  <GameCard 
-                    key={game.id} 
-                    game={game} 
-                    layout="grid" 
-                    userLog={userLogMap.get(game.id) || null} 
-                    priority={index < 4}
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    layout="grid"
+                    userLog={userLogMap.get(game.id) || null}
+                    priority={index < 6}
                   />
                 ))}
               </div>
 
-              {/* Shimmering GameGridSkeleton when fetching next live batch from Roblox */}
               {isFetchingLiveBatch && (
-                <div className="mt-4 sm:mt-6">
+                <div className="mt-6">
                   <GameGridSkeleton count={6} layout="grid" />
                 </div>
               )}
 
-              {/* Sentinel trigger element for IntersectionObserver */}
               <div ref={sentinelRef} className="h-4 w-full pointer-events-none" />
 
-              {/* Progressive Load More & Infinite Scroll Section */}
               {sortedGames.length > 0 && (
-                <div className="pt-6 pb-4 flex flex-col items-center justify-center gap-4">
-                  {/* Progress Indicator */}
-                  <div className="flex flex-col items-center gap-1.5 text-xs text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <span>
-                        {language === 'id' ? (
-                          <>Menampilkan <strong className="text-white">{visibleGames.length}</strong> dari <strong className="text-white">{sortedGames.length}</strong> game</>
-                        ) : (
-                          <>Showing <strong className="text-white">{visibleGames.length}</strong> of <strong className="text-white">{sortedGames.length}</strong> games</>
-                        )}
-                      </span>
-                      {sortedGames.length > visibleGames.length ? (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#1e2630] border border-[#2b3542] text-[#00E59B] font-semibold">
-                          +{sortedGames.length - visibleGames.length} {language === 'id' ? 'lagi' : 'more'}
-                        </span>
-                      ) : hasMoreLive && !searchQuery.trim() ? (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#1e2630] border border-[#2b3542] text-[#00E59B] font-semibold flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#00E59B] animate-pulse" />
-                          {language === 'id' ? 'Live Stream Roblox' : 'Roblox Live Stream'}
-                        </span>
-                      ) : null}
-                    </div>
-                    {/* Visual progress bar */}
-                    <div className="w-48 sm:w-64 h-1.5 bg-[#1e2630] rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-[#00E59B] to-[#00A2FF] transition-all duration-300 rounded-full"
-                        style={{ width: `${Math.min(100, Math.round((visibleGames.length / sortedGames.length) * 100))}%` }}
-                      />
-                    </div>
-                  </div>
+                <div className="flex flex-col items-center gap-3 border-t border-line-soft py-6">
+                  <p className="text-[11px] text-faint">
+                    {visibleGames.length} / {sortedGames.length} {language === 'id' ? 'game' : 'games'}
+                    {sortedGames.length > visibleGames.length
+                      ? ` · +${sortedGames.length - visibleGames.length} ${language === 'id' ? 'lagi' : 'more'}`
+                      : hasMoreLive && !searchQuery.trim() ? (language === 'id' ? ' · live stream' : ' · live stream') : ''}
+                  </p>
 
-                  {/* Load More Button or Completed Marker */}
                   {hasMore ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <button
-                        onClick={() => {
-                          if (visibleCount < sortedGames.length) {
-                            setIsLoadingMore(true);
-                            setTimeout(() => {
-                              setVisibleCount(prev => Math.min(prev + BATCH_SIZE, sortedGames.length));
-                              setIsLoadingMore(false);
-                            }, 100);
-                          } else if (!searchQuery.trim() && hasMoreLive) {
-                            fetchNextDiscoverBatch('All', nextPageToken);
-                          }
-                        }}
-                        disabled={isLoadingMore || isFetchingLiveBatch}
-                        className="px-6 py-2.5 bg-[#1b222a] hover:bg-[#232c37] active:scale-95 text-white font-bold text-xs rounded-xl border border-[#2c3746] hover:border-[#00E59B] transition-all flex items-center gap-2 shadow-lg group disabled:opacity-50"
-                      >
-                        {(isLoadingMore || isFetchingLiveBatch) ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin text-[#00E59B]" />
-                            <span>{t('catalog_loading_more')}</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>
-                              {visibleGames.length < sortedGames.length 
-                                ? (language === 'id' 
-                                    ? `Muat Lebih Banyak Game (${Math.max(0, sortedGames.length - visibleGames.length)} lagi)` 
-                                    : `Load More Games (${Math.max(0, sortedGames.length - visibleGames.length)} remaining)`) 
-                                : t('catalog_explore_more_all')}
-                            </span>
-                            <ChevronDown className="w-4 h-4 text-[#00E59B] group-hover:translate-y-0.5 transition-transform" />
-                          </>
-                        )}
-                      </button>
-                      <p className="text-[11px] text-gray-500">
-                        {language === 'id' 
-                          ? 'Atau scroll ke bawah terus — sistem akan menyedot game baru secara otomatis' 
-                          : 'Or keep scrolling — the catalog will discover more games automatically'}
-                      </p>
-                    </div>
+                    <button
+                      onClick={() => {
+                        if (visibleCount < sortedGames.length) {
+                          setIsLoadingMore(true);
+                          setTimeout(() => {
+                            setVisibleCount(prev => Math.min(prev + BATCH_SIZE, sortedGames.length));
+                            setIsLoadingMore(false);
+                          }, 100);
+                        } else if (!searchQuery.trim() && hasMoreLive) {
+                          fetchNextDiscoverBatch('All', nextPageToken);
+                        }
+                      }}
+                      disabled={isLoadingMore || isFetchingLiveBatch}
+                      className="bb-btn bb-btn-secondary"
+                    >
+                      {(isLoadingMore || isFetchingLiveBatch) ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          {t('catalog_loading_more')}
+                        </>
+                      ) : (
+                        <>
+                          {visibleGames.length < sortedGames.length
+                            ? (language === 'id' ? 'Muat lebih banyak' : 'Load more')
+                            : t('catalog_explore_more_all')}
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </>
+                      )}
+                    </button>
                   ) : (
-                    <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 bg-[#171d24] px-4 py-2 rounded-full border border-[#232b35]">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#00E59B]" />
-                      <span>
-                        {language === 'id' 
-                          ? `Semua ${sortedGames.length} game telah dimuat` 
-                          : `All ${sortedGames.length} games loaded`}
-                      </span>
-                    </div>
+                    <span className="flex items-center gap-1.5 text-[11px] text-faint">
+                      <CheckCircle2 className="h-3 w-3 text-green" />
+                      {language === 'id' ? 'Semua game telah dimuat' : 'All games loaded'}
+                    </span>
                   )}
                 </div>
               )}
 
-              {/* Initial Loading Skeleton when switching genre or first load */}
               {(initialGenreLoading || (isFetchingLiveBatch && sortedGames.length === 0)) && (
                 <div className="py-4">
                   <GameGridSkeleton count={10} layout="grid" />
                 </div>
               )}
 
-              {/* Empty state when no games match query or genre */}
               {!initialGenreLoading && !isFetchingLiveBatch && sortedGames.length === 0 && (
-                <div className="py-16 text-center bg-[#181e24] rounded-2xl border border-[#252f3b] p-8 space-y-4">
+                <div className="border-t border-line py-16 text-center">
                   {searchQuery.trim() ? (
                     <>
-                      <p className="text-base font-bold text-white">
-                        {language === 'id' 
-                          ? `Tidak ada game lokal yang cocok dengan "${searchQuery}".`
-                          : `No local experiences match "${searchQuery}".`}
+                      <p className="bb-display text-[22px]">
+                        {language === 'id' ? `Tidak ada yang cocok dengan “${searchQuery}”` : `Nothing matches “${searchQuery}”`}
                       </p>
-                      <p className="text-xs text-gray-400 max-w-md mx-auto">
+                      <p className="mx-auto mt-2 max-w-md text-[13px] text-muted">
                         {language === 'id'
-                          ? 'Kamu bisa mencari langsung ke seluruh platform database Roblox via tombol di bawah ini:'
-                          : 'You can search across the entire Roblox platform database via the button below:'}
+                          ? 'Cari langsung ke seluruh database Roblox, atau impor lewat link.'
+                          : 'Search the whole Roblox database, or import by link.'}
                       </p>
 
                       {onlineSearchError && (
-                        <p className="text-xs text-rose-400 bg-rose-500/10 py-1.5 px-3 rounded-lg max-w-md mx-auto">
+                        <p className="mx-auto mt-3 max-w-md border border-line px-3 py-1.5 text-[12px] text-orange">
                           {onlineSearchError}
                         </p>
                       )}
 
-                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                         <button
                           onClick={() => handleSearchRobloxLive()}
                           disabled={isSearchingOnline}
-                          className="px-5 py-2.5 bg-[#00E59B] hover:bg-[#00c988] text-black font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                          className="bb-btn bb-btn-primary"
                         >
                           {isSearchingOnline ? (
                             <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>{language === 'id' ? 'Mencari di Roblox...' : 'Searching Roblox...'}</span>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              {language === 'id' ? 'Mencari...' : 'Searching...'}
                             </>
                           ) : (
                             <>
-                              <Globe2 className="w-4 h-4" />
-                              <span>
-                                {language === 'id' 
-                                  ? `Cari "${searchQuery}" di Seluruh Game Roblox` 
-                                  : `Search "${searchQuery}" across all Roblox games`}
-                              </span>
+                              <Globe2 className="h-3.5 w-3.5" />
+                              {language === 'id' ? 'Cari di seluruh Roblox' : 'Search all of Roblox'}
                             </>
                           )}
                         </button>
-                        <button
-                          onClick={() => setUrlImportModalOpen(true)}
-                          className="px-4 py-2.5 bg-[#222a33] text-gray-200 hover:text-white font-bold text-xs rounded-xl border border-[#313c49]"
-                        >
-                          {language === 'id' ? 'Buka Dialog Import / Link / ID' : 'Open Import Link / ID Dialog'}
+                        <button onClick={() => setUrlImportModalOpen(true)} className="bb-btn bb-btn-secondary">
+                          {language === 'id' ? 'Impor link / ID' : 'Import link / ID'}
                         </button>
-                        <button
-                          onClick={() => setSearchQuery('')}
-                          className="px-4 py-2.5 bg-transparent text-gray-400 hover:text-white text-xs font-semibold"
-                        >
-                          {language === 'id' ? 'Hapus Pencarian' : 'Clear Search'}
+                        <button onClick={() => setSearchQuery('')} className="bb-btn bb-btn-ghost">
+                          {language === 'id' ? 'Hapus pencarian' : 'Clear search'}
                         </button>
                       </div>
                     </>
                   ) : (
                     <>
-                      <p className="text-base font-bold text-white">
-                        {language === 'id' ? 'Katalog sedang dimuat...' : 'Catalog is loading...'}
+                      <p className="bb-display text-[22px]">
+                        {language === 'id' ? 'Katalog kosong' : 'Empty catalog'}
                       </p>
-                      <div className="flex items-center justify-center gap-3 pt-2">
-                        <button
-                          onClick={() => fetchNextDiscoverBatch('All', undefined, true)}
-                          className="px-5 py-2.5 bg-[#00E59B] hover:bg-[#00c988] text-black font-extrabold text-xs rounded-xl shadow-lg transition-all"
-                        >
-                          {language === 'id' ? 'Tarik Game dari Roblox' : 'Fetch Games from Roblox'}
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => fetchNextDiscoverBatch('All', undefined, true)}
+                        className="bb-btn bb-btn-primary mt-4"
+                      >
+                        {language === 'id' ? 'Tarik game dari Roblox' : 'Fetch games from Roblox'}
+                      </button>
                     </>
                   )}
                 </div>
@@ -895,24 +706,17 @@ const MainAppContent: React.FC = () => {
         )}
       </main>
 
-      {/* Footer (Letterboxd Style) */}
-      <footer className="border-t border-[#232b35] bg-[#101317] py-8 px-4 sm:px-6 mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
-          <div className="flex items-center gap-2.5">
+      {/* Footer: flat ground, hairline top, no brand colour */}
+      <footer className="mt-auto border-t border-line bg-bg px-4 py-8 sm:px-6">
+        <div className="mx-auto flex max-w-[1280px] flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-center gap-2">
             <BloxboxdLogo size="sm" />
-            <span className="font-mono font-bold text-white tracking-wider">
-              BLOX<span className="text-[#00E59B]">BOXD</span>
-            </span>
-            <span>— The Social Catalog & Tracker for Roblox Players</span>
+            <span className="font-serif text-[17px] font-semibold tracking-[-0.02em] text-white">bloxboxd</span>
+            <span className="text-[12px] text-faint">— katalog sosial untuk pemain Roblox</span>
           </div>
 
-          <div className="text-center sm:text-right text-[11px] space-y-0.5">
-            <p className="text-gray-400">
-              Inspired by Letterboxd & Backloggd. Built for Roblox enthusiasts, curators, and creators.
-            </p>
-            <p className="text-gray-400">
-              Bloxboxd is an independent community catalog and is not affiliated with Roblox Corporation.
-            </p>
+          <div className="max-w-md text-[11px] leading-relaxed text-faint sm:text-right">
+            <p>Terinspirasi Letterboxd & Backloggd. Tidak berafiliasi dengan Roblox Corporation.</p>
           </div>
         </div>
       </footer>
