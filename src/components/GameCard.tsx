@@ -141,22 +141,21 @@ const GameCardComponent: React.FC<GameCardProps> = ({ game, layout = 'grid', use
       </div>
 
       {/* Caption: title, meta line, rating. No box, no border. */}
-      <div className="mt-1.5 flex items-start justify-between gap-2">
-        <div className="min-w-0">
+      <div className="mt-1.5 flex items-start justify-between gap-1.5">
+        <div className="min-w-0 flex-1">
           <button
             onClick={() => viewGame(game.id)}
-            className="block max-w-full truncate text-left text-[13px] font-semibold leading-snug text-ink hover:text-white"
+            className="block w-full truncate text-left text-[12px] sm:text-[13px] font-semibold leading-snug text-ink hover:text-white"
             title={game.name}
           >
             {game.name}
           </button>
-          <p className="mt-[3px] truncate text-[11px] leading-snug text-faint">
-            {game.releaseYear || '—'}
-            {game.genre ? ` · ${game.genre}` : ''}
-            {game.playerCount ? ` · ${compactCount(game.playerCount, language === 'id' ? 'id-ID' : 'en-US')} ${t('card_online')}` : ''}
+          <p className="mt-[2px] truncate text-[11px] leading-snug text-faint">
+            {game.genre || 'Roblox'}
+            {game.playerCount ? ` · ${compactCount(game.playerCount, language === 'id' ? 'id-ID' : 'en-US')}` : ''}
           </p>
         </div>
-        <span className="mt-0.5 flex shrink-0 items-center gap-1 text-[11px] font-semibold text-orange">
+        <span className="mt-0.5 flex shrink-0 items-center gap-0.5 text-[11px] font-semibold text-orange">
           <Star className="h-3 w-3 fill-orange" strokeWidth={0} />
           {game.ratingAverage.toFixed(1)}
         </span>

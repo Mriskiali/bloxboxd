@@ -137,7 +137,11 @@ export const Navbar: React.FC = () => {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const handleSelectGame = (game: Game) => {
@@ -377,58 +381,66 @@ export const Navbar: React.FC = () => {
               </button>
 
               {profileMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-60 overflow-hidden rounded-[3px] border border-line bg-panel shadow-[0_8px_24px_rgba(0,0,0,0.55)]">
-                  <div className="border-b border-line px-3 py-2.5">
-                    <p className="truncate text-[13px] font-semibold text-white">{user.displayName}</p>
-                    <p className="truncate text-[11px] text-faint">@{user.username}</p>
-                    {user.isVerifiedOwner && (
-                      <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-green">
-                        <ShieldCheck className="h-3 w-3" /> {t('nav_verified')}
-                      </span>
-                    )}
-                  </div>
+                <>
+                  {/* Backdrop on mobile so tapping outside closes it immediately */}
+                  <div
+                    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs md:hidden"
+                    onClick={() => setProfileMenuOpen(false)}
+                  />
 
-                  <div className="py-1">
-                    {[
-                      { icon: User, label: t('nav_my_profile'), action: () => { setSelectedUserId(null); setActiveTab('profile'); setActiveProfileTab('overview'); } },
-                      { icon: Compass, label: t('nav_my_collection'), action: () => { setSelectedUserId(null); setActiveTab('profile'); setActiveProfileTab('games'); } },
-                      { icon: ShieldCheck, label: t('nav_switch_account'), action: () => setLoginModalOpen(true) },
-                      { icon: Settings, label: t('nav_edit_profile'), action: () => setEditProfileModalOpen(true) }
-                    ].map(({ icon: Icon, label, action }) => (
+                  <div className="fixed inset-x-4 top-14 z-50 overflow-hidden rounded-[8px] border border-line bg-[#181d22] shadow-[0_20px_48px_rgba(0,0,0,0.8)] md:absolute md:inset-x-auto md:top-full md:right-0 md:mt-1 md:w-60 md:rounded-[3px] md:shadow-[0_8px_24px_rgba(0,0,0,0.55)]">
+                    <div className="border-b border-line px-3.5 py-2.5 bg-bg/50">
+                      <p className="truncate text-[13px] font-semibold text-white">{user.displayName}</p>
+                      <p className="truncate text-[11px] text-faint">@{user.username}</p>
+                      {user.isVerifiedOwner && (
+                        <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-green">
+                          <ShieldCheck className="h-3 w-3" /> {t('nav_verified')}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="py-1">
+                      {[
+                        { icon: User, label: t('nav_my_profile'), action: () => { setSelectedUserId(null); setActiveTab('profile'); setActiveProfileTab('overview'); } },
+                        { icon: Compass, label: t('nav_my_collection'), action: () => { setSelectedUserId(null); setActiveTab('profile'); setActiveProfileTab('games'); } },
+                        { icon: ShieldCheck, label: t('nav_switch_account'), action: () => setLoginModalOpen(true) },
+                        { icon: Settings, label: t('nav_edit_profile'), action: () => setEditProfileModalOpen(true) }
+                      ].map(({ icon: Icon, label, action }) => (
+                        <button
+                          key={label}
+                          onClick={() => { action(); setProfileMenuOpen(false); }}
+                          className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-white min-h-[40px]"
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          {label}
+                        </button>
+                      ))}
+
                       <button
-                        key={label}
-                        onClick={() => { action(); setProfileMenuOpen(false); }}
-                        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-white"
+                        onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+                        className="flex w-full items-center justify-between px-3.5 py-2.5 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-white min-h-[40px]"
                       >
-                        <Icon className="h-3.5 w-3.5" />
-                        {label}
+                        <span className="flex items-center gap-2.5">
+                          <Globe className="h-3.5 w-3.5" />
+                          {t('nav_lang_toggle')}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-[0.08em] text-faint">
+                          {language === 'id' ? 'ID' : 'EN'}
+                        </span>
                       </button>
-                    ))}
+                    </div>
 
-                    <button
-                      onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-white"
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <Globe className="h-3.5 w-3.5" />
-                        {t('nav_lang_toggle')}
-                      </span>
-                      <span className="text-[10px] uppercase tracking-[0.08em] text-faint">
-                        {language === 'id' ? 'ID' : 'EN'}
-                      </span>
-                    </button>
+                    <div className="border-t border-line py-1">
+                      <button
+                        onClick={() => { logoutRobloxAccount(); setProfileMenuOpen(false); }}
+                        className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-orange min-h-[40px]"
+                      >
+                        <LogOut className="h-3.5 w-3.5" />
+                        {t('nav_logout')}
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="border-t border-line py-1">
-                    <button
-                      onClick={() => { logoutRobloxAccount(); setProfileMenuOpen(false); }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12px] text-muted transition-colors hover:bg-panel-2 hover:text-orange"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      {t('nav_logout')}
-                    </button>
-                  </div>
-                </div>
+                </>
               )}
             </div>
           )}
