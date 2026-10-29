@@ -99,6 +99,7 @@ export interface CustomList {
   items: ListItem[];
   createdAt: string;
   likesCount: number;
+  isLiked?: boolean;
 }
 
 export const DEFAULT_AVATAR_URL = `data:image/svg+xml;utf8,${encodeURIComponent(`

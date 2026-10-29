@@ -1138,20 +1138,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const likeList = (listId: string) => {
+    if (!user) {
+      setLoginModalOpen(true);
+      return;
+    }
+
     setCustomLists(prev => prev.map(l => {
       if (l.id === listId) {
-        return { ...l, likesCount: l.likesCount + 1 };
+        const nextLiked = !l.isLiked;
+        return {
+          ...l,
+          isLiked: nextLiked,
+          likesCount: nextLiked ? (l.likesCount || 0) + 1 : Math.max(0, (l.likesCount || 0) - 1)
+        };
       }
       return l;
     }));
 
-    if (user) {
-      fetch(`/api/lists/${encodeURIComponent(listId)}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ userId: user.id })
-      }).catch(e => console.warn('Failed to like list in database:', e));
-    }
+    fetch(`/api/lists/${encodeURIComponent(listId)}/like`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ userId: user.id })
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && typeof data.likesCount === 'number') {
+          setCustomLists(prev => prev.map(l => l.id === listId ? {
+            ...l,
+            isLiked: Boolean(data.liked),
+            likesCount: data.likesCount
+          } : l));
+        }
+      })
+      .catch(e => console.warn('Failed to toggle like list in database:', e));
   };
 
   return (

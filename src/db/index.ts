@@ -727,16 +727,21 @@ export async function toggleReviewLike(userId: string, reviewId: string): Promis
 // Custom Lists Helper Functions
 // ---------------------------------------------------------------------------
 
-export async function getAllCustomLists(): Promise<any[]> {
-  const result = await db.execute(`
-    SELECT l.*,
-           COALESCE(p.display_name, p.username, l.user_name) as live_username,
-           COALESCE(p.avatar_url, l.user_avatar) as live_avatar
-    FROM custom_lists l
-    LEFT JOIN user_profiles p ON (p.id = l.user_id OR p.roblox_user_id = l.user_id)
-    WHERE l.is_public = 1 
-    ORDER BY l.created_at DESC LIMIT 100
-  `);
+export async function getAllCustomLists(currentUserId?: string): Promise<any[]> {
+  const canonicalId = currentUserId ? canonicalUserId(currentUserId) : null;
+  const result = await db.execute({
+    sql: `
+      SELECT l.*,
+             COALESCE(p.display_name, p.username, l.user_name) as live_username,
+             COALESCE(p.avatar_url, l.user_avatar) as live_avatar,
+             CASE WHEN ? IS NOT NULL THEN (SELECT 1 FROM list_likes ll WHERE ll.list_id = l.id AND ll.user_id = ?) ELSE 0 END as is_liked
+      FROM custom_lists l
+      LEFT JOIN user_profiles p ON (p.id = l.user_id OR p.roblox_user_id = l.user_id)
+      WHERE l.is_public = 1 
+      ORDER BY l.created_at DESC LIMIT 100
+    `,
+    args: [canonicalId, canonicalId]
+  });
   return result.rows.map((row: any) => ({
     id: row.id,
     userId: row.user_id,
@@ -747,6 +752,7 @@ export async function getAllCustomLists(): Promise<any[]> {
     isRanked: Boolean(row.is_ranked),
     isPublic: Boolean(row.is_public),
     likesCount: Number(row.likes_count) || 0,
+    isLiked: Boolean(row.is_liked),
     items: row.items ? JSON.parse(row.items) : [],
     createdAt: row.created_at,
     updatedAt: row.updated_at

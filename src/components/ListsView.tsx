@@ -104,9 +104,129 @@ export const ListsView: React.FC = () => {
     );
   };
 
+  const renderListModal = () => {
+    if (!createModalOpen) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs overflow-y-auto">
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-xl bg-panel border border-line rounded-[3px] p-5 sm:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.65)] space-y-4 my-8 max-h-[92vh] flex flex-col"
+        >
+          <div className="flex items-center justify-between border-b border-line pb-3 flex-shrink-0">
+            <h3 className="bb-label">{editingListId ? t('modal_edit_list_title') : t('modal_create_list_title')}</h3>
+            <button 
+              onClick={() => setCreateModalOpen(false)}
+              className="text-muted hover:text-white p-1 rounded-[2px] hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveList} className="space-y-4 overflow-y-auto pr-1 flex-1">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1">
+                {t('modal_create_list_name')}
+              </label>
+              <input
+                type="text"
+                required
+                placeholder={t('modal_create_list_name_ph')}
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="w-full bg-bg border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-green outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1">
+                {t('modal_create_list_desc')}
+              </label>
+              <textarea
+                rows={3}
+                placeholder={t('modal_create_list_desc_ph')}
+                value={newDesc}
+                onChange={(e) => setNewDesc(e.target.value)}
+                className="w-full bg-bg border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-green outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="rankedCheck"
+                checked={isRanked}
+                onChange={(e) => setIsRanked(e.target.checked)}
+                className="rounded border-line bg-panel text-green focus:ring-0 cursor-pointer"
+              />
+              <label htmlFor="rankedCheck" className="text-xs font-medium text-ink cursor-pointer">
+                {t('modal_create_list_ranked')}
+              </label>
+            </div>
+
+            {/* Select experiences */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1.5">
+                {language === 'id' ? `Pilih Game (${selectedGameIds.length} dipilih)` : `Select Experiences (${selectedGameIds.length} chosen)`}
+              </label>
+              <input
+                type="text"
+                placeholder={t('modal_create_list_search_ph')}
+                value={gameSearch}
+                onChange={(e) => setGameSearch(e.target.value)}
+                className="w-full bg-bg border border-line rounded-[2px] px-3 py-1.5 text-xs text-white mb-2"
+              />
+
+              <div className="max-h-48 overflow-y-auto space-y-1 bg-bg p-2 rounded-[3px] border border-line">
+                {games
+                  .filter(g => g.name.toLowerCase().includes(gameSearch.toLowerCase()))
+                  .map(g => {
+                    const isSelected = selectedGameIds.includes(g.id);
+                    return (
+                      <div
+                        key={g.id}
+                        onClick={() => toggleGameSelection(g.id)}
+                        className={`flex items-center justify-between p-2 rounded-[2px] cursor-pointer text-xs transition-colors ${
+                          isSelected ? 'bg-green/15 text-white border border-green/30' : 'hover:bg-panel-2 text-ink'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img src={safeImgSrc(g.iconUrl)} alt={g.name} className="w-7 h-7 rounded object-cover flex-shrink-0" />
+                          <span className="font-semibold truncate">{g.name}</span>
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 text-green flex-shrink-0 ml-2" />}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-line flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-muted hover:text-white cursor-pointer"
+              >
+                {t('modal_create_list_cancel')}
+              </button>
+              <button
+                type="submit"
+                disabled={!newTitle.trim() || selectedGameIds.length === 0}
+                className="bb-btn bb-btn-primary min-h-[36px]"
+              >
+                <Check className="w-4 h-4" />
+                <span>{editingListId ? t('modal_edit_list_save') : t('modal_create_list_save')}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   // If in list detail mode
   if (activeTab === 'list-detail' && currentList) {
     return (
+    <>
       <div className="min-h-screen pb-20 max-w-5xl mx-auto px-4 sm:px-6 pt-8 space-y-8">
         {/* Back navigation buttons */}
         <div className="flex items-center gap-2">
@@ -142,9 +262,14 @@ export const ListsView: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => likeList(currentList.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-panel hover:bg-orange/15 text-ink hover:text-orange border border-line text-xs font-semibold transition-colors"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] border text-xs font-semibold transition-colors cursor-pointer ${
+                  currentList.isLiked
+                    ? 'bg-orange/15 text-orange border-orange/30'
+                    : 'bg-panel hover:bg-orange/15 text-ink hover:text-orange border-line'
+                }`}
+                title={currentList.isLiked ? (language === 'id' ? 'Batal Suka' : 'Unlike') : (language === 'id' ? 'Suka List' : 'Like')}
               >
-                <Heart className="w-3.5 h-3.5 fill-current" />
+                <Heart className={`w-3.5 h-3.5 ${currentList.isLiked ? 'fill-orange text-orange' : 'fill-current'}`} />
                 <span>{currentList.likesCount} {t('lists_like')}</span>
               </button>
 
@@ -260,6 +385,8 @@ export const ListsView: React.FC = () => {
           })}
         </div>
       </div>
+      {renderListModal()}
+    </>
     );
   }
 
@@ -414,10 +541,19 @@ export const ListsView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-orange font-semibold">
-                    <Heart className="w-3.5 h-3.5 fill-orange" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      likeList(list.id);
+                    }}
+                    className={`flex items-center gap-1 font-semibold transition-colors cursor-pointer text-xs ${
+                      list.isLiked ? 'text-orange' : 'text-muted hover:text-orange'
+                    }`}
+                    title={list.isLiked ? (language === 'id' ? 'Batal Suka' : 'Unlike') : (language === 'id' ? 'Suka List' : 'Like')}
+                  >
+                    <Heart className={`w-3.5 h-3.5 ${list.isLiked ? 'fill-orange text-orange' : ''}`} />
                     <span>{list.likesCount}</span>
-                  </div>
+                  </button>
                   {user && list.userId === user.id && (
                     <div className="flex items-center gap-1">
                       <button
@@ -457,122 +593,7 @@ export const ListsView: React.FC = () => {
       </div>
       )}
 
-      {/* Create / Edit List Modal */}
-      {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs overflow-y-auto">
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-panel border border-line rounded-[3px] p-5 sm:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.65)] space-y-4 my-8 max-h-[92vh] flex flex-col"
-          >
-            <div className="flex items-center justify-between border-b border-line pb-3 flex-shrink-0">
-              <h3 className="bb-label">{editingListId ? t('modal_edit_list_title') : t('modal_create_list_title')}</h3>
-              <button 
-                onClick={() => setCreateModalOpen(false)}
-                className="text-muted hover:text-white p-1 rounded-[2px] hover:bg-white/5 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveList} className="space-y-4 overflow-y-auto pr-1 flex-1">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1">
-                  {t('modal_create_list_name')}
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder={t('modal_create_list_name_ph')}
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full bg-bg border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-green outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1">
-                  {t('modal_create_list_desc')}
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder={t('modal_create_list_desc_ph')}
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full bg-bg border border-line rounded-[2px] px-3.5 py-2 text-xs text-white focus:border-green outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="rankedCheck"
-                  checked={isRanked}
-                  onChange={(e) => setIsRanked(e.target.checked)}
-                  className="rounded border-line bg-panel text-green focus:ring-0 cursor-pointer"
-                />
-                <label htmlFor="rankedCheck" className="text-xs font-medium text-ink cursor-pointer">
-                  {t('modal_create_list_ranked')}
-                </label>
-              </div>
-
-              {/* Select experiences */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-[0.08em] text-ink mb-1.5">
-                  {language === 'id' ? `Pilih Game (${selectedGameIds.length} dipilih)` : `Select Experiences (${selectedGameIds.length} chosen)`}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('modal_create_list_search_ph')}
-                  value={gameSearch}
-                  onChange={(e) => setGameSearch(e.target.value)}
-                  className="w-full bg-bg border border-line rounded-[2px] px-3 py-1.5 text-xs text-white mb-2"
-                />
-
-                <div className="max-h-48 overflow-y-auto space-y-1 bg-bg p-2 rounded-[3px] border border-line">
-                  {games
-                    .filter(g => g.name.toLowerCase().includes(gameSearch.toLowerCase()))
-                    .map(g => {
-                      const isSelected = selectedGameIds.includes(g.id);
-                      return (
-                        <div
-                          key={g.id}
-                          onClick={() => toggleGameSelection(g.id)}
-                          className={`flex items-center justify-between p-2 rounded-[2px] cursor-pointer text-xs transition-colors ${
-                            isSelected ? 'bg-green/15 text-white border border-green/30' : 'hover:bg-panel-2 text-ink'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <img src={safeImgSrc(g.iconUrl)} alt={g.name} className="w-7 h-7 rounded object-cover flex-shrink-0" />
-                            <span className="font-semibold truncate">{g.name}</span>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-green flex-shrink-0 ml-2" />}
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-muted hover:text-white cursor-pointer"
-                >
-                  {t('modal_create_list_cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={!newTitle.trim() || selectedGameIds.length === 0}
-                  className="bb-btn bb-btn-primary min-h-[36px]"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{editingListId ? t('modal_edit_list_save') : t('modal_create_list_save')}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+{renderListModal()}
     </div>
   );
 };

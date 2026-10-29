@@ -72,7 +72,8 @@ app.post('/api/reviews/:id/like', async (req, res) => {
 // Get public custom lists
 app.get('/api/lists', async (req, res) => {
   try {
-    const lists = await getAllCustomLists();
+    const userId = (req.query.userId as string)?.trim();
+    const lists = await getAllCustomLists(userId);
     return res.json({ lists });
   } catch (err) {
     console.error('Error fetching lists:', err);
