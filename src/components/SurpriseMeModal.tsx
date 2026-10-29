@@ -164,17 +164,20 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div 
         onClick={(e) => e.stopPropagation()} 
-        className="relative w-full max-w-2xl rounded-[3px] bg-panel border border-line p-5 sm:p-6 shadow-[0_20px_48px_rgba(0,0,0,0.7)] space-y-5 my-8 max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-2xl rounded-t-[12px] sm:rounded-[3px] bg-panel border-t sm:border border-line p-4 sm:p-6 shadow-[0_20px_48px_rgba(0,0,0,0.7)] space-y-4 sm:space-y-5 my-0 sm:my-8 max-h-[92dvh] sm:max-h-[88vh] flex flex-col"
         role="dialog"
         aria-modal="true"
       >
+        {/* Mobile drag handle */}
+        <div className="mx-auto w-10 h-1 rounded-full bg-line sm:hidden -mt-1 mb-1 flex-shrink-0" />
+
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-line pb-3.5 flex-shrink-0">
+        <div className="flex items-center justify-between border-b border-line pb-3 sm:pb-3.5 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-[3px] bg-green/15 text-green border border-green/25">
               <Compass className="w-5 h-5" />
@@ -191,7 +194,8 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
           <button 
             type="button"
             onClick={onClose}
-            className="text-muted hover:text-white p-1 rounded-[2px] hover:bg-white/5 transition-colors cursor-pointer"
+            className="text-muted hover:text-white p-2.5 -mr-2 rounded-[2px] hover:bg-white/5 transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -235,12 +239,12 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
               <span className="text-[10px] font-bold uppercase tracking-wider text-green">
                 {language === 'id' ? '2. Mau tema apa?' : '2. Pick a mood'}
               </span>
-              <span className="text-[10px] text-faint flex items-center gap-1.5">
-                {isLoadingLive && <Loader2 className="w-3 h-3 animate-spin text-green" />}
+              <span className="text-[10px] text-muted flex items-center gap-1.5">
+                {isLoadingLive && matchingGames.length === 0 && <Loader2 className="w-3 h-3 animate-spin text-green" />}
                 <span>{matchingGames.length} {language === 'id' ? 'game cocok' : 'games'}</span>
               </span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {FOCUSED_CATEGORIES.map(cat => {
                 const active = selectedCategory === cat.id;
                 return (
@@ -251,14 +255,14 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
                       setSelectedCategory(cat.id);
                       setShuffleSeed(0);
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[2px] text-xs font-semibold transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-[2px] text-xs font-semibold transition-all cursor-pointer truncate ${
                       active
-                        ? 'bg-white text-black shadow-[0_2px_8px_rgba(255,255,255,0.25)]'
+                        ? 'bg-green text-black font-bold shadow-[0_2px_8px_rgba(0,224,84,0.25)]'
                         : 'bg-panel hover:bg-panel-2 text-ink hover:text-white border border-line'
                     }`}
                   >
                     <span className="flex-shrink-0">{renderCategoryIcon(cat.iconName)}</span>
-                    <span>{language === 'id' ? cat.labelId : cat.labelEn}</span>
+                    <span className="truncate">{language === 'id' ? cat.labelId : cat.labelEn}</span>
                   </button>
                 );
               })}
@@ -267,7 +271,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Results Showcase Area */}
-        <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+        <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {showcaseGames.length > 0 ? (
             showcaseGames.map((game, index) => {
               const isBacklog = getUserLogForGame(game.id)?.status === 'backlog';
@@ -294,7 +298,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
                         <span className="text-[10px] font-bold text-green uppercase tracking-wider bg-green/10 border border-green/20 px-1.5 py-0.2 rounded-[2px]">
                           #{index + 1}
                         </span>
-                        <h4 className="text-sm font-bold text-white truncate group-hover:text-green transition-colors">
+                        <h4 className="text-xs sm:text-sm font-bold text-white line-clamp-1 group-hover:text-green transition-colors">
                           {game.name}
                         </h4>
                       </div>
@@ -335,7 +339,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
                       type="button"
                       onClick={(e) => handleSaveBacklog(e, game)}
                       title={isBacklog ? (language === 'id' ? 'Di Backlog' : 'In Backlog') : (language === 'id' ? 'Simpan ke Backlog' : 'Save to Backlog')}
-                      className={`p-2 rounded-[2px] border transition-colors cursor-pointer ${
+                      className={`p-2 sm:p-2.5 min-w-[38px] min-h-[38px] flex items-center justify-center rounded-[2px] border transition-colors cursor-pointer ${
                         isBacklog 
                           ? 'bg-green/15 text-green border-green/30' 
                           : 'bg-panel hover:bg-panel-2 text-muted hover:text-white border-line'
@@ -347,7 +351,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
                     <button
                       type="button"
                       onClick={() => launchRobloxExperience(game.rootPlaceId)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] bg-green hover:bg-[#00c94b] text-black font-bold text-xs shadow-[0_2px_8px_rgba(0,224,84,0.25)] transition-all cursor-pointer whitespace-nowrap"
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-[2px] bg-green hover:bg-[#00c94b] text-black font-bold text-xs shadow-[0_2px_8px_rgba(0,224,84,0.25)] transition-all cursor-pointer whitespace-nowrap"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
                       <span>{language === 'id' ? 'Mainkan' : 'Play'}</span>
@@ -381,7 +385,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-line pt-3 flex-shrink-0 text-xs">
-          <p className="text-faint text-[11px]">
+          <p className="text-muted text-[11px]">
             {language === 'id' ? 'Klik Mainkan untuk langsung buka game di Roblox.' : 'Click Play to launch directly in Roblox.'}
           </p>
 
@@ -389,7 +393,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
             type="button"
             disabled={isLoadingLive}
             onClick={handleShuffle}
-            className="flex items-center gap-1.5 text-xs font-semibold text-ink hover:text-green disabled:opacity-50 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-semibold text-ink hover:text-green disabled:opacity-50 transition-colors cursor-pointer min-h-[38px] px-2 py-1"
           >
             <RotateCw className={`w-3.5 h-3.5 ${isLoadingLive ? 'animate-spin text-green' : ''}`} />
             <span>{language === 'id' ? 'Ganti Pilihan' : 'Show Others'}</span>

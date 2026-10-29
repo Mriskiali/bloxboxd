@@ -175,26 +175,26 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-line bg-bg">
-      <div className="mx-auto flex h-12 max-w-[1280px] items-center gap-6 px-4 sm:px-6">
+      <div className="mx-auto flex h-12 max-w-[1280px] items-center gap-3 sm:gap-4 md:gap-4 lg:gap-6 px-3 sm:px-6">
         {/* Wordmark: lowercase serif, the one place the brand speaks */}
         <button
           onClick={() => { setActiveTab('catalog'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-          className="flex shrink-0 items-center gap-2"
+          className="flex shrink-0 items-center gap-1.5 sm:gap-2"
           aria-label="Bloxboxd"
         >
           <BloxboxdLogo size="sm" />
-          <span className="font-serif text-[21px] font-semibold leading-none tracking-[-0.02em] text-white">
+          <span className="font-serif text-[19px] sm:text-[21px] font-semibold leading-none tracking-[-0.02em] text-white">
             bloxboxd
           </span>
         </button>
 
         {/* Desktop nav: text links, active gets a green underline sitting on the rule */}
-        <nav className="hidden h-12 items-stretch gap-5 md:flex">
+        <nav className="hidden h-12 items-stretch gap-3 md:flex lg:gap-5">
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => { setActiveTab(item.id as any); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className={`relative flex items-center text-[13px] font-medium transition-colors ${
+              className={`relative flex items-center text-[12px] lg:text-[13px] font-medium transition-colors ${
                 isActive(item.id) ? 'text-white' : 'text-muted hover:text-ink'
               }`}
             >
@@ -206,8 +206,8 @@ export const Navbar: React.FC = () => {
           ))}
         </nav>
 
-        {/* Desktop search: bordered field, no pill */}
-        <div ref={searchContainerRef} className="relative ml-auto hidden w-[300px] md:block">
+        {/* Desktop search: bordered field, responsive width */}
+        <div ref={searchContainerRef} className="relative ml-auto hidden w-[180px] md:block lg:w-[240px] xl:w-[300px]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
             {isSearchingApi && (
@@ -221,7 +221,7 @@ export const Navbar: React.FC = () => {
               onChange={(e) => { setQuery(e.target.value); setIsSearchOpen(true); }}
               onFocus={() => setIsSearchOpen(true)}
               onKeyDown={handleKeyDown}
-              className="bb-input h-8 pl-8 pr-8 text-[13px]"
+              className="bb-input h-8 pl-8 pr-8 text-[12px] lg:text-[13px]"
             />
             {query && !isSearchingApi && (
               <button
@@ -522,19 +522,19 @@ export const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile tab bar */}
-      <nav className="flex items-stretch border-t border-line-soft md:hidden">
+      <nav className="flex items-stretch border-t border-line-soft md:hidden bg-bg">
         {navItems.map(item => {
           const Icon = item.icon;
           return (
             <button
               key={item.id}
               onClick={() => { setActiveTab(item.id as any); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className={`relative flex flex-1 items-center justify-center gap-1.5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] ${
-                isActive(item.id) ? 'text-white' : 'text-faint'
+              className={`relative flex flex-1 items-center justify-center gap-1.5 py-2.5 min-h-[44px] text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors ${
+                isActive(item.id) ? 'text-white' : 'text-faint hover:text-ink'
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
-              {item.label}
+              <span>{item.label}</span>
               {isActive(item.id) && <span className="absolute inset-x-0 top-0 h-[2px] bg-green" />}
             </button>
           );

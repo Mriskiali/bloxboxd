@@ -370,21 +370,21 @@ const MainAppContent: React.FC = () => {
                 onTouchEnd={() => { setTimeout(() => setIsSpotlightPaused(false), 3500); }}
                 className="border-b border-line"
               >
-                <div className="mx-auto flex max-w-[1280px] flex-col gap-8 px-4 py-10 sm:px-6 sm:py-12 md:flex-row md:items-center md:justify-between md:gap-16">
+                <div className="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10 md:flex-row md:items-center md:justify-between md:gap-12 lg:gap-16">
                   <div className="max-w-[560px] flex-1">
                     <p className="bb-label">
                       {language === 'id' ? 'Sorotan' : 'Spotlight'} · {spotlightGenre}
                     </p>
 
-                    <h1 className="bb-display mt-2 line-clamp-2 text-[34px] sm:text-[44px]">
+                    <h1 className="bb-display mt-2 line-clamp-2 text-[22px] sm:text-[28px] md:text-[36px] lg:text-[44px]">
                       {spotlightGame.name}
                     </h1>
 
-                    <p className="mt-3 line-clamp-2 max-w-[520px] text-[14px] leading-relaxed text-muted">
+                    <p className="mt-2.5 line-clamp-2 max-w-[520px] text-[13px] sm:text-[14px] leading-relaxed text-muted">
                       {spotlightGame.description || t('hero_desc')}
                     </p>
 
-                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-faint">
+                    <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] sm:text-[12px] text-faint">
                       <span className="flex items-center gap-1 font-semibold text-orange">
                         <Star className="h-3.5 w-3.5 fill-orange" strokeWidth={0} />
                         {spotlightGame.ratingAverage.toFixed(1)}
@@ -401,34 +401,36 @@ const MainAppContent: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="mt-5 flex flex-wrap items-center gap-2">
-                      <button onClick={() => viewGame(spotlightGame.id)} className="bb-btn bb-btn-primary">
-                        {language === 'id' ? 'Lihat detail & log' : 'View details & log'}
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </button>
-                      <a
-                        href={`https://www.roblox.com/games/${spotlightGame.rootPlaceId || spotlightGame.universeId || spotlightGame.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bb-btn bb-btn-secondary"
-                      >
-                        {t('detail_play_roblox')}
-                        <ExternalLink className="h-3 w-3 text-faint" />
-                      </a>
+                    <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                        <button onClick={() => viewGame(spotlightGame.id)} className="bb-btn bb-btn-primary justify-center min-h-[40px] px-4">
+                          {language === 'id' ? 'Lihat detail & log' : 'View details & log'}
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                        <a
+                          href={`https://www.roblox.com/games/${spotlightGame.rootPlaceId || spotlightGame.universeId || spotlightGame.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bb-btn bb-btn-secondary justify-center min-h-[40px] px-4"
+                        >
+                          {t('detail_play_roblox')}
+                          <ExternalLink className="h-3 w-3 text-faint" />
+                        </a>
+                      </div>
                       <button
                         onClick={() => setUrlImportModalOpen(true)}
-                        className="text-[12px] font-semibold text-faint underline-offset-4 hover:text-ink hover:underline"
+                        className="text-[12px] font-semibold text-faint underline-offset-4 hover:text-ink hover:underline py-1.5 text-center sm:text-left sm:ml-2"
                       >
                         {language === 'id' ? 'Impor game' : 'Import game'}
                       </button>
                     </div>
                   </div>
 
-                  {/* Poster + index, no glow, no scale */}
-                  <div className="flex shrink-0 flex-col items-end gap-2">
+                  {/* Poster + index, centered on mobile */}
+                  <div className="flex shrink-0 flex-col items-center sm:items-end gap-2 self-center md:self-auto">
                     <button
                       onClick={() => viewGame(spotlightGame.id)}
-                      className="bb-poster w-[150px] sm:w-[190px] hover:border-line"
+                      className="bb-poster w-[140px] sm:w-[170px] md:w-[190px] hover:border-line"
                       aria-label={spotlightGame.name}
                     >
                       <img
@@ -492,9 +494,9 @@ const MainAppContent: React.FC = () => {
 
             <div className="mx-auto max-w-[1280px] px-4 pt-8 sm:px-6">
               {/* Smart Discovery / Mood Picker Bar */}
-              <div className="flex items-center justify-between gap-3 p-4 mb-8 rounded-[3px] bg-panel border border-line flex-wrap shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-[3px] bg-green/15 text-green border border-green/25 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 mb-8 rounded-[3px] bg-panel border border-line shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="p-2.5 rounded-[3px] bg-green/15 text-green border border-green/25 flex-shrink-0 mt-0.5 sm:mt-0">
                     <Compass className="w-5 h-5" />
                   </div>
                   <div>
@@ -504,7 +506,7 @@ const MainAppContent: React.FC = () => {
                         {language === 'id' ? 'Kurasi' : 'Curated'}
                       </span>
                     </p>
-                    <p className="text-[11px] text-muted mt-0.5">
+                    <p className="text-[11px] text-muted mt-0.5 leading-relaxed">
                       {language === 'id'
                         ? 'Cari game bagus tanpa harus scroll feed Roblox yang itu-itu aja.'
                         : 'Find solid games without digging through bloated Roblox feeds.'}
@@ -515,7 +517,7 @@ const MainAppContent: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSurpriseModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-[3px] bg-green hover:bg-[#00c94b] text-black font-bold text-xs shadow-[0_2px_12px_rgba(0,224,84,0.3)] transition-all cursor-pointer whitespace-nowrap"
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 rounded-[3px] bg-green hover:bg-[#00c94b] text-black font-bold text-xs shadow-[0_2px_12px_rgba(0,224,84,0.3)] transition-all cursor-pointer whitespace-nowrap min-h-[40px]"
                 >
                   <Sparkles className="w-3.5 h-3.5 fill-current" />
                   <span>{language === 'id' ? 'Pilihkan Game' : 'Find a Game'}</span>
@@ -523,52 +525,54 @@ const MainAppContent: React.FC = () => {
               </div>
 
               {/* Catalog header: label, serif title, count on the left; sort on the right */}
-              <div className="bb-section-head">
+              <div className="bb-section-head flex-col sm:flex-row sm:items-end gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="bb-label">{t('catalog_title')}</p>
-                  <h2 className="bb-display mt-1 text-[24px] sm:text-[28px]">
+                  <h2 className="bb-display mt-1 text-[20px] sm:text-[24px] md:text-[28px]">
                     {searchQuery.trim()
                       ? (language === 'id' ? `Hasil untuk “${searchQuery}”` : `Results for “${searchQuery}”`)
                       : (language === 'id' ? 'Semua pengalaman' : 'All experiences')}
                   </h2>
                 </div>
 
-                <div className="flex shrink-0 items-end gap-2">
-                  <span className="hidden text-[11px] text-faint sm:inline">
+                <div className="flex shrink-0 items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                  <span className="text-[11px] text-faint">
                     {sortedGames.length} {language === 'id' ? 'game' : 'games'}
                   </span>
-                  <button
-                    onClick={() => refreshRealtimeStats()}
-                    disabled={isRealtimeSyncing}
-                    className="flex h-7 w-7 items-center justify-center border border-line text-muted hover:border-line hover:text-white disabled:opacity-50"
-                    title={language === 'id' ? 'Segarkan data dari Roblox' : 'Refresh Roblox data'}
-                  >
-                    <RotateCcw className={`h-3 w-3 ${isRealtimeSyncing ? 'animate-spin' : ''}`} />
-                  </button>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      startTransition(() => setSortBy(val));
-                    }}
-                    aria-label={t('catalog_sort_by')}
-                    className="h-7 border border-line bg-panel px-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted outline-none hover:border-line"
-                  >
-                    <option value="popular" className="bg-panel text-ink">{t('sort_popular')}</option>
-                    <option value="rating" className="bg-panel text-ink">{t('sort_rating')}</option>
-                    <option value="visits" className="bg-panel text-ink">{t('sort_visits')}</option>
-                    <option value="newest" className="bg-panel text-ink">{t('sort_newest')}</option>
-                    <option value="az" className="bg-panel text-ink">{t('sort_az')}</option>
-                  </select>
-                  {searchQuery.trim() && (
-                    <button onClick={() => setSearchQuery('')} className="bb-btn bb-btn-ghost h-7 px-2 text-[11px]">
-                      {language === 'id' ? 'Hapus' : 'Clear'}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => refreshRealtimeStats()}
+                      disabled={isRealtimeSyncing}
+                      className="flex h-7 w-7 items-center justify-center border border-line text-muted hover:border-line hover:text-white disabled:opacity-50"
+                      title={language === 'id' ? 'Segarkan data dari Roblox' : 'Refresh Roblox data'}
+                    >
+                      <RotateCcw className={`h-3 w-3 ${isRealtimeSyncing ? 'animate-spin' : ''}`} />
                     </button>
-                  )}
+                    <select
+                      value={sortBy}
+                      onChange={(e) => {
+                        const val = e.target.value as any;
+                        startTransition(() => setSortBy(val));
+                      }}
+                      aria-label={t('catalog_sort_by')}
+                      className="h-7 border border-line bg-panel px-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted outline-none hover:border-line"
+                    >
+                      <option value="popular" className="bg-panel text-ink">{t('sort_popular')}</option>
+                      <option value="rating" className="bg-panel text-ink">{t('sort_rating')}</option>
+                      <option value="visits" className="bg-panel text-ink">{t('sort_visits')}</option>
+                      <option value="newest" className="bg-panel text-ink">{t('sort_newest')}</option>
+                      <option value="az" className="bg-panel text-ink">{t('sort_az')}</option>
+                    </select>
+                    {searchQuery.trim() && (
+                      <button onClick={() => setSearchQuery('')} className="bb-btn bb-btn-ghost h-7 px-2 text-[11px]">
+                        {language === 'id' ? 'Hapus' : 'Clear'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              <div className="grid grid-cols-2 gap-x-2.5 gap-y-5 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-6 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {visibleGames.map((game, index) => (
                   <GameCard
                     key={game.id}
