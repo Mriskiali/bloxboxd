@@ -2,7 +2,6 @@
 import express from "express";
 import path2 from "path";
 import fs2 from "fs";
-import crypto2 from "crypto";
 
 // src/db/index.ts
 import { createClient } from "@libsql/client";
@@ -2595,6 +2594,29 @@ async function initDatabase() {
     )
   `);
   await db.execute(`
+    CREATE TABLE IF NOT EXISTS challenges (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      username TEXT NOT NULL,
+      phrase TEXT,
+      words TEXT,
+      asset_id INTEGER,
+      asset_name TEXT,
+      expected_wearing INTEGER,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    )
+  `);
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      key TEXT PRIMARY KEY,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      first_attempt_at INTEGER NOT NULL,
+      locked_until INTEGER
+    )
+  `);
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS user_profiles (
       id TEXT PRIMARY KEY,
       roblox_user_id INTEGER UNIQUE,
@@ -2736,6 +2758,25 @@ async function initDatabase() {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_review_comments_review_created ON review_comments(review_id, created_at ASC)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_user_profiles_username ON user_profiles(username)`);
   try {
+    const targets = [
+      ["game_logs", "user_id"],
+      ["reviews", "user_id"],
+      ["custom_lists", "user_id"],
+      ["review_comments", "user_id"],
+      ["review_likes", "user_id"],
+      ["list_likes", "user_id"],
+      ["follows", "follower_id"],
+      ["follows", "following_id"]
+    ];
+    for (const [table, col] of targets) {
+      await db.execute(
+        `UPDATE OR IGNORE ${table} SET ${col} = 'user-roblox-' || ${col} WHERE ${col} NOT LIKE 'user-roblox-%' AND ${col} GLOB '[0-9]*'`
+      );
+    }
+  } catch (err) {
+    console.warn("[Database] userId normalisation skipped:", err);
+  }
+  try {
     const gameCountRes = await db.execute("SELECT COUNT(*) as count FROM games");
     const gameCount = Number(gameCountRes.rows[0]?.count || 0);
     if (gameCount === 0 && INITIAL_GAMES.length > 0) {
@@ -2812,6 +2853,125 @@ async function isValidSession(token, userId) {
   });
   return result.rows.length > 0;
 }
+async function saveChallenge(c) {
+  await db.execute({
+    sql: `
+      INSERT OR REPLACE INTO challenges
+        (id, user_id, type, username, phrase, words, asset_id, asset_name, expected_wearing, created_at, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    args: [
+      c.id,
+      String(c.userId),
+      c.type,
+      c.username,
+      c.phrase ?? null,
+      c.words ? JSON.stringify(c.words) : null,
+      c.assetId ?? null,
+      c.assetName ?? null,
+      c.expectedWearing === void 0 ? null : c.expectedWearing ? 1 : 0,
+      new Date(c.createdAt).toISOString(),
+      new Date(c.expiresAt).toISOString()
+    ]
+  });
+}
+async function getChallenge(id) {
+  const result = await db.execute({
+    sql: `SELECT * FROM challenges WHERE id = ?`,
+    args: [id]
+  });
+  const row = result.rows[0];
+  if (!row) return null;
+  if (new Date(row.expires_at).getTime() < Date.now()) {
+    await db.execute({ sql: `DELETE FROM challenges WHERE id = ?`, args: [id] });
+    return null;
+  }
+  return {
+    id: row.id,
+    userId: Number(row.user_id),
+    type: row.type,
+    username: row.username,
+    phrase: row.phrase ?? void 0,
+    words: row.words ? JSON.parse(row.words) : void 0,
+    assetId: row.asset_id ?? void 0,
+    assetName: row.asset_name ?? void 0,
+    expectedWearing: row.expected_wearing === null ? void 0 : Boolean(row.expected_wearing),
+    createdAt: new Date(row.created_at).getTime(),
+    expiresAt: new Date(row.expires_at).getTime()
+  };
+}
+async function deleteChallenge(id) {
+  await db.execute({ sql: `DELETE FROM challenges WHERE id = ?`, args: [id] });
+}
+async function purgeExpiredChallenges() {
+  await db.execute({
+    sql: `DELETE FROM challenges WHERE expires_at < ?`,
+    args: [(/* @__PURE__ */ new Date()).toISOString()]
+  });
+}
+var MAX_LOGIN_ATTEMPTS = 5;
+var LOGIN_WINDOW_MS = 15 * 60 * 1e3;
+var LOGIN_LOCKOUT_MS = 15 * 60 * 1e3;
+async function checkLoginRateLimit(key) {
+  const result = await db.execute({
+    sql: `SELECT attempts, first_attempt_at, locked_until FROM login_attempts WHERE key = ?`,
+    args: [key]
+  });
+  const row = result.rows[0];
+  const now = Date.now();
+  if (!row) return { allowed: true, remainingAttempts: MAX_LOGIN_ATTEMPTS };
+  if (row.locked_until && now < Number(row.locked_until)) {
+    return { allowed: false, waitMinutes: Math.max(1, Math.ceil((Number(row.locked_until) - now) / 6e4)) };
+  }
+  if (now - Number(row.first_attempt_at) > LOGIN_WINDOW_MS) {
+    await db.execute({ sql: `DELETE FROM login_attempts WHERE key = ?`, args: [key] });
+    return { allowed: true, remainingAttempts: MAX_LOGIN_ATTEMPTS };
+  }
+  if (Number(row.attempts) >= MAX_LOGIN_ATTEMPTS) {
+    const lockedUntil = row.locked_until ? Number(row.locked_until) : now + LOGIN_LOCKOUT_MS;
+    if (!row.locked_until) {
+      await db.execute({
+        sql: `UPDATE login_attempts SET locked_until = ? WHERE key = ?`,
+        args: [lockedUntil, key]
+      });
+    }
+    return { allowed: false, waitMinutes: Math.max(1, Math.ceil((lockedUntil - now) / 6e4)) };
+  }
+  return { allowed: true, remainingAttempts: MAX_LOGIN_ATTEMPTS - Number(row.attempts) };
+}
+async function recordFailedLogin(key) {
+  const now = Date.now();
+  const result = await db.execute({
+    sql: `SELECT attempts, first_attempt_at FROM login_attempts WHERE key = ?`,
+    args: [key]
+  });
+  const row = result.rows[0];
+  if (!row || now - Number(row.first_attempt_at) > LOGIN_WINDOW_MS) {
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO login_attempts (key, attempts, first_attempt_at, locked_until) VALUES (?, 1, ?, NULL)`,
+      args: [key, now]
+    });
+    return MAX_LOGIN_ATTEMPTS - 1;
+  }
+  const attempts = Number(row.attempts) + 1;
+  const lockedUntil = attempts >= MAX_LOGIN_ATTEMPTS ? now + LOGIN_LOCKOUT_MS : null;
+  await db.execute({
+    sql: `UPDATE login_attempts SET attempts = ?, locked_until = ? WHERE key = ?`,
+    args: [attempts, lockedUntil, key]
+  });
+  return Math.max(0, MAX_LOGIN_ATTEMPTS - attempts);
+}
+async function resetLoginAttempts(key) {
+  await db.execute({ sql: `DELETE FROM login_attempts WHERE key = ?`, args: [key] });
+}
+function userIdVariants(id) {
+  const raw = String(id).trim();
+  const num = raw.replace(/^user-roblox-/, "");
+  const canonical = `user-roblox-${num}`;
+  const variants = /* @__PURE__ */ new Set([canonical, num]);
+  if (raw) variants.add(raw);
+  return [...variants];
+}
 async function getUserProfile(userId) {
   const result = await db.execute({
     sql: `SELECT * FROM user_profiles WHERE id = ? OR roblox_user_id = ?`,
@@ -2868,28 +3028,6 @@ async function upsertUserProfile(profile) {
       favJson
     ]
   });
-  const effectiveUsername = profile.robloxDisplayName || profile.displayName || profile.username;
-  const effectiveAvatar = profile.avatarUrl || "";
-  const rawRobloxId = profile.robloxUserId ? String(profile.robloxUserId) : "";
-  const prefixedId = profile.id.startsWith("user-roblox-") ? profile.id : `user-roblox-${profile.id}`;
-  try {
-    if (effectiveAvatar) {
-      await db.execute({
-        sql: `UPDATE reviews SET username = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
-        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
-      });
-      await db.execute({
-        sql: `UPDATE custom_lists SET user_name = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
-        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
-      });
-      await db.execute({
-        sql: `UPDATE review_comments SET username = ?, user_avatar = ? WHERE user_id = ? OR user_id = ? OR user_id = ?`,
-        args: [effectiveUsername, effectiveAvatar, profile.id, prefixedId, rawRobloxId]
-      });
-    }
-  } catch (e) {
-    console.warn("[Database] Failed to cascade profile updates to reviews/lists:", e);
-  }
 }
 async function searchUserProfiles(query, limit = 8) {
   const cleanQ = query.trim().toLowerCase();
@@ -2918,12 +3056,11 @@ async function searchUserProfiles(query, limit = 8) {
   }));
 }
 async function getUserGameLogs(userId) {
-  const cleanId = (userId || "").trim();
-  const rawNumId = cleanId.replace("user-roblox-", "");
-  const prefixedId = cleanId.startsWith("user-roblox-") ? cleanId : `user-roblox-${cleanId}`;
+  const variants = userIdVariants(userId);
+  const where = variants.map(() => "user_id = ?").join(" OR ");
   const result = await db.execute({
-    sql: `SELECT * FROM game_logs WHERE user_id = ? OR user_id = ? OR user_id = ? ORDER BY logged_date DESC, updated_at DESC`,
-    args: [cleanId, rawNumId, prefixedId]
+    sql: `SELECT * FROM game_logs WHERE ${where} ORDER BY logged_date DESC, updated_at DESC`,
+    args: variants
   });
   return result.rows.map((row) => ({
     id: row.id,
@@ -2960,7 +3097,7 @@ async function upsertGameLog(log) {
     `,
     args: [
       log.id || `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      log.userId,
+      canonicalUserId(log.userId),
       log.gameId,
       log.status,
       log.rating ?? null,
@@ -2975,12 +3112,11 @@ async function upsertGameLog(log) {
   });
 }
 async function deleteGameLog(userId, logId) {
-  const cleanId = (userId || "").trim();
-  const rawNumId = cleanId.replace("user-roblox-", "");
-  const prefixedId = cleanId.startsWith("user-roblox-") ? cleanId : `user-roblox-${cleanId}`;
+  const variants = userIdVariants(userId);
+  const where = variants.map(() => "user_id = ?").join(" OR ");
   const result = await db.execute({
-    sql: `DELETE FROM game_logs WHERE id = ? AND (user_id = ? OR user_id = ? OR user_id = ?)`,
-    args: [logId, cleanId, rawNumId, prefixedId]
+    sql: `DELETE FROM game_logs WHERE id = ? AND (${where})`,
+    args: [logId, ...variants]
   });
   return result.rowsAffected > 0;
 }
@@ -3074,7 +3210,7 @@ async function upsertReview(rev) {
       rev.gameId,
       rev.gameTitle || "",
       rev.gameIcon || "",
-      rev.userId,
+      canonicalUserId(rev.userId),
       rev.username,
       rev.userAvatar || "",
       rev.rating ?? null,
@@ -3160,7 +3296,7 @@ async function upsertCustomList(list) {
     `,
     args: [
       list.id || `list-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      list.userId,
+      canonicalUserId(list.userId),
       list.userName,
       list.userAvatar || "",
       list.title,
@@ -3181,6 +3317,7 @@ async function deleteCustomList(userId, listId) {
   return result.rowsAffected > 0;
 }
 async function toggleListLike(userId, listId) {
+  userId = canonicalUserId(userId);
   const existing = await db.execute({
     sql: `SELECT 1 FROM list_likes WHERE user_id = ? AND list_id = ?`,
     args: [userId, listId]
@@ -3210,6 +3347,8 @@ async function toggleListLike(userId, listId) {
   }
 }
 async function toggleFollowUser(followerId, followingId) {
+  followerId = canonicalUserId(followerId);
+  followingId = canonicalUserId(followingId);
   const existing = await db.execute({
     sql: `SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?`,
     args: [followerId, followingId]
@@ -3381,7 +3520,7 @@ async function addReviewComment(comment) {
       INSERT INTO review_comments (id, review_id, user_id, username, user_avatar, comment_text, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    args: [id, comment.reviewId, comment.userId, comment.username, comment.userAvatar || "", comment.commentText, now]
+    args: [id, comment.reviewId, canonicalUserId(comment.userId), comment.username, comment.userAvatar || "", comment.commentText, now]
   });
   return {
     id,
@@ -3590,115 +3729,8 @@ async function bulkUpsertGames(games) {
   }
 }
 
-// server.ts
-var app = express();
-var PORT = 3e3;
-var originalFetch = globalThis.fetch;
-globalThis.fetch = async function(input, init) {
-  const urlStr = typeof input === "string" ? input : input instanceof URL ? input.toString() : input?.url || "";
-  if (urlStr.includes(".roblox.com")) {
-    try {
-      const res = await originalFetch(input, init);
-      if (res.ok || res.status !== 403 && res.status !== 429) {
-        return res;
-      }
-    } catch (e) {
-    }
-    const proxyUrl = urlStr.replace("https://games.roblox.com", "https://games.roproxy.com").replace("https://thumbnails.roblox.com", "https://thumbnails.roproxy.com").replace("https://users.roblox.com", "https://users.roproxy.com").replace("https://apis.roblox.com", "https://apis.roproxy.com").replace("https://friends.roblox.com", "https://friends.roproxy.com");
-    return originalFetch(proxyUrl, init);
-  }
-  return originalFetch(input, init);
-};
-app.disable("x-powered-by");
-app.use(express.json({ limit: "1mb" }));
-app.use((req, res, next) => {
-  res.setHeader("X-Frame-Options", "SAMEORIGIN");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-XSS-Protection", "1; mode=block");
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self' data:; img-src 'self' data: blob: https://*.rbxcdn.com https://tr.rbxcdn.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://apis.roblox.com https://apis.roproxy.com https://games.roblox.com https://thumbnails.roblox.com https://*.turso.io;"
-  );
-  next();
-});
-var isDbInitialized = false;
-var dbInitPromise = null;
-app.use(async (req, res, next) => {
-  const rawUrl = req.headers["x-matched-path"] || req.headers["x-vercel-matched-path"] || req.originalUrl;
-  if (typeof rawUrl === "string" && rawUrl.startsWith("/api")) {
-    req.url = rawUrl;
-  }
-  if (!isDbInitialized) {
-    if (!dbInitPromise) {
-      dbInitPromise = initDatabase().then(() => {
-        isDbInitialized = true;
-      }).catch((err) => {
-        console.error("[Database Init Error]:", err);
-        isDbInitialized = true;
-      });
-    }
-    await dbInitPromise;
-  }
-  next();
-});
-app.get("/favicon.ico", (req, res) => {
-  const iconPath = path2.join(process.cwd(), "public/favicon.svg");
-  if (fs2.existsSync(iconPath)) {
-    res.setHeader("Content-Type", "image/svg+xml");
-    return res.sendFile(iconPath);
-  }
-  return res.status(404).end();
-});
-function sanitizeText(input, maxLength = 2e3) {
-  if (!input || typeof input !== "string") return "";
-  return input.trim().replace(/[<>]/g, "").slice(0, maxLength);
-}
-var pinRateLimitMap = /* @__PURE__ */ new Map();
-function checkPinRateLimit(key) {
-  const MAX_ATTEMPTS = 5;
-  const WINDOW_MS = 15 * 60 * 1e3;
-  const LOCKOUT_MS = 15 * 60 * 1e3;
-  const now = Date.now();
-  const record = pinRateLimitMap.get(key);
-  if (!record) {
-    return { allowed: true, remainingAttempts: MAX_ATTEMPTS };
-  }
-  if (record.lockedUntil && now < record.lockedUntil) {
-    const waitMinutes = Math.max(1, Math.ceil((record.lockedUntil - now) / 6e4));
-    return { allowed: false, waitMinutes };
-  }
-  if (now - record.firstAttemptAt > WINDOW_MS) {
-    pinRateLimitMap.delete(key);
-    return { allowed: true, remainingAttempts: MAX_ATTEMPTS };
-  }
-  if (record.attempts >= MAX_ATTEMPTS) {
-    if (!record.lockedUntil) {
-      record.lockedUntil = now + LOCKOUT_MS;
-    }
-    const waitMinutes = Math.max(1, Math.ceil((record.lockedUntil - now) / 6e4));
-    return { allowed: false, waitMinutes };
-  }
-  return { allowed: true, remainingAttempts: MAX_ATTEMPTS - record.attempts };
-}
-function recordFailedPinAttempt(key) {
-  const now = Date.now();
-  const record = pinRateLimitMap.get(key);
-  if (!record) {
-    pinRateLimitMap.set(key, { attempts: 1, firstAttemptAt: now });
-    return 4;
-  }
-  record.attempts += 1;
-  if (record.attempts >= 5) {
-    record.lockedUntil = now + 15 * 60 * 1e3;
-    return 0;
-  }
-  return Math.max(0, 5 - record.attempts);
-}
-function resetPinAttempts(key) {
-  pinRateLimitMap.delete(key);
-}
+// src/lib/roblox.ts
+import crypto2 from "crypto";
 var gameCache = /* @__PURE__ */ new Map();
 var CACHE_TTL_MS = 24 * 60 * 60 * 1e3;
 function extractPlaceId(input) {
@@ -3712,9 +3744,6 @@ function extractPlaceId(input) {
   }
   return null;
 }
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", service: "Bloxboxd API" });
-});
 function computeRatingStats(upVotes, downVotes) {
   const up = Math.max(0, upVotes || 0);
   const down = Math.max(0, downVotes || 0);
@@ -4059,146 +4088,6 @@ async function searchRobloxLiveOnline(rawQuery) {
   }
   return formattedResults;
 }
-app.get("/api/roblox/resolve", async (req, res) => {
-  try {
-    const query = (req.query.query || req.query.placeId || "").trim();
-    if (!query) {
-      return res.status(400).json({ error: "Query or placeId parameter is required" });
-    }
-    const placeId = extractPlaceId(query);
-    if (!placeId) {
-      try {
-        const dbGames = await getCachedDbCatalog();
-        const qLower = query.toLowerCase();
-        const dbMatch = dbGames.find((g) => {
-          const nameMatch = g.name.toLowerCase().includes(qLower);
-          const creatorMatch = (g.creatorName || "").toLowerCase().includes(qLower);
-          const tagMatch = Array.isArray(g.tags) && g.tags.some((t) => t.toLowerCase() === qLower);
-          return nameMatch || creatorMatch || tagMatch;
-        });
-        if (dbMatch) {
-          return res.json({ source: "database", ...dbMatch });
-        }
-      } catch (e) {
-        console.warn("DB check in resolve error:", e);
-      }
-      const onlineResults = await searchRobloxLiveOnline(query);
-      if (onlineResults.length > 0) {
-        const bestMatch = onlineResults[0];
-        upsertGame(bestMatch).catch((e) => console.warn("[Database] Failed to background upsert search result:", e));
-        return res.json({ source: "roblox-online-search", ...bestMatch });
-      }
-      return res.status(404).json({ error: `Game "${query}" not found on Roblox. Coba masukkan Place ID atau link Roblox jika namanya spesifik.` });
-    }
-    const cacheKey = `place_${placeId}`;
-    const cached = gameCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return res.json({ source: "cache", ...cached.data });
-    }
-    const universeRes = await fetch(`https://apis.roblox.com/universes/v1/places/${placeId}/universe`, {
-      headers: { "User-Agent": "Bloxboxd/1.0" }
-    });
-    if (!universeRes.ok) {
-      return res.status(universeRes.status).json({
-        error: `Failed to resolve Place ID ${placeId} on Roblox.`,
-        status: universeRes.status
-      });
-    }
-    const universeData = await universeRes.json();
-    const universeId = universeData.universeId;
-    if (!universeId) {
-      return res.status(404).json({ error: "Universe ID not found for this Place" });
-    }
-    const resolvedGame = await fetchUniverseDetails(universeId, placeId);
-    gameCache.set(cacheKey, { data: resolvedGame, timestamp: Date.now() });
-    upsertGame(resolvedGame).catch((e) => console.warn("[Database] Failed to background upsert resolved game:", e));
-    return res.json({ source: "roblox_api", ...resolvedGame });
-  } catch (error) {
-    console.error("Error resolving Roblox experience:", error);
-    return res.status(500).json({ error: "Internal server error while contacting Roblox services" });
-  }
-});
-app.get("/api/roblox/batch", async (req, res) => {
-  try {
-    const universeIds = req.query.universeIds?.trim();
-    if (!universeIds) {
-      return res.status(400).json({ error: "universeIds parameter is required" });
-    }
-    const ids = universeIds.split(",").map((s) => s.trim()).filter(Boolean);
-    if (ids.length === 0) {
-      return res.json({ data: [] });
-    }
-    const CHUNK_SIZE = 30;
-    const chunks = [];
-    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-      chunks.push(ids.slice(i, i + CHUNK_SIZE));
-    }
-    const allResults = [];
-    await Promise.all(
-      chunks.map(async (chunkIds) => {
-        try {
-          const [gamesRes, votesRes, iconRes, thumbRes] = await Promise.all([
-            fetch(`https://games.roblox.com/v1/games?universeIds=${chunkIds.join(",")}`, {
-              headers: { "User-Agent": "Bloxboxd/1.0" }
-            }),
-            fetch(`https://games.roblox.com/v1/games/votes?universeIds=${chunkIds.join(",")}`, {
-              headers: { "User-Agent": "Bloxboxd/1.0" }
-            }),
-            fetch(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${chunkIds.join(",")}&size=512x512&format=Png&isCircular=false`, {
-              headers: { "User-Agent": "Bloxboxd/1.0" }
-            }),
-            fetch(`https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=${chunkIds.join(",")}&countPerUniverse=1&defaults=true&size=768x432&format=Png&isCircular=false`, {
-              headers: { "User-Agent": "Bloxboxd/1.0" }
-            })
-          ]);
-          const gamesData = gamesRes.ok ? await gamesRes.json() : { data: [] };
-          const votesData = votesRes.ok ? await votesRes.json() : { data: [] };
-          const iconData = iconRes.ok ? await iconRes.json() : { data: [] };
-          const thumbData = thumbRes.ok ? await thumbRes.json() : { data: [] };
-          for (const g of gamesData.data || []) {
-            const icon = iconData.data?.find((i) => i.targetId === g.id)?.imageUrl || null;
-            const banner = thumbData.data?.find((t) => t.universeId === g.id)?.thumbnails?.[0]?.imageUrl || null;
-            const vote = votesData.data?.find((v) => v.id === g.id);
-            const upVotes = vote?.upVotes || 0;
-            const downVotes = vote?.downVotes || 0;
-            const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
-            const genreMeta = extractRobloxGenreMetadata(g.genre, g.genre_l1, g.genre_l2);
-            allResults.push({
-              universeId: g.id,
-              rootPlaceId: g.rootPlaceId,
-              name: g.name,
-              description: g.description,
-              creatorName: g.creator?.name,
-              playerCount: g.playing || 0,
-              totalVisits: g.visits ? Number(g.visits).toLocaleString() : "0",
-              rawVisits: g.visits || 0,
-              favoritedCount: g.favoritedCount || 0,
-              upVotes,
-              downVotes,
-              genre: genreMeta.genre,
-              subgenre: genreMeta.subgenre,
-              genre_l1: genreMeta.genre_l1,
-              genre_l2: genreMeta.genre_l2,
-              tags: genreMeta.tags,
-              ratingAverage,
-              ratingCount,
-              ratingHistogram,
-              iconUrl: icon,
-              bannerUrl: banner,
-              updatedAt: Date.now()
-            });
-          }
-        } catch (chunkErr) {
-          console.error("Error fetching batch chunk:", chunkErr);
-        }
-      })
-    );
-    return res.json({ data: allResults, count: allResults.length, timestamp: Date.now() });
-  } catch (err) {
-    console.error("Error fetching batch roblox data:", err);
-    return res.status(500).json({ error: "Failed to fetch batch data" });
-  }
-});
 var cachedDiscoverGames = [];
 var lastDiscoverFetchTime = 0;
 var DISCOVER_CACHE_TTL = 10 * 60 * 1e3;
@@ -4308,950 +4197,1090 @@ async function fetchRobloxOmniSearchPage(query, pageToken) {
   }
   return result;
 }
-app.get("/api/roblox/discover", async (req, res) => {
-  try {
-    const genre = (req.query.genre || "All").trim();
-    const pageToken = (req.query.pageToken || "").trim();
-    const page = Math.max(1, parseInt(req.query.page || "1", 10));
-    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit || "30", 10)));
-    let rawGames = [];
-    let nextPageToken = void 0;
-    if (genre !== "All" && GENRE_KEYWORD_MAP[genre]) {
-      const query = GENRE_KEYWORD_MAP[genre];
-      const searchRes = await fetchRobloxOmniSearchPage(query, pageToken || void 0);
-      rawGames = searchRes.games;
-      nextPageToken = searchRes.nextPageToken;
-    } else {
-      if (pageToken) {
-        const searchRes = await fetchRobloxOmniSearchPage("popular top multiplayer games", pageToken);
+function installRobloxFetchFailover() {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async function(input, init) {
+    const urlStr = typeof input === "string" ? input : input instanceof URL ? input.toString() : input?.url || "";
+    if (urlStr.includes(".roblox.com")) {
+      try {
+        const res = await originalFetch(input, init);
+        if (res.ok || res.status !== 403 && res.status !== 429) {
+          return res;
+        }
+      } catch (e) {
+      }
+      const proxyUrl = urlStr.replace("https://games.roblox.com", "https://games.roproxy.com").replace("https://thumbnails.roblox.com", "https://thumbnails.roproxy.com").replace("https://users.roblox.com", "https://users.roproxy.com").replace("https://apis.roblox.com", "https://apis.roproxy.com").replace("https://friends.roblox.com", "https://friends.roproxy.com");
+      return originalFetch(proxyUrl, init);
+    }
+    return originalFetch(input, init);
+  };
+}
+
+// src/routes/roblox.ts
+function registerRobloxRoutes(app2) {
+  app2.get("/api/roblox/resolve", async (req, res) => {
+    try {
+      const query = (req.query.query || req.query.placeId || "").trim();
+      if (!query) {
+        return res.status(400).json({ error: "Query or placeId parameter is required" });
+      }
+      const placeId = extractPlaceId(query);
+      if (!placeId) {
+        try {
+          const dbGames = await getCachedDbCatalog();
+          const qLower = query.toLowerCase();
+          const dbMatch = dbGames.find((g) => {
+            const nameMatch = g.name.toLowerCase().includes(qLower);
+            const creatorMatch = (g.creatorName || "").toLowerCase().includes(qLower);
+            const tagMatch = Array.isArray(g.tags) && g.tags.some((t) => t.toLowerCase() === qLower);
+            return nameMatch || creatorMatch || tagMatch;
+          });
+          if (dbMatch) {
+            return res.json({ source: "database", ...dbMatch });
+          }
+        } catch (e) {
+          console.warn("DB check in resolve error:", e);
+        }
+        const onlineResults = await searchRobloxLiveOnline(query);
+        if (onlineResults.length > 0) {
+          const bestMatch = onlineResults[0];
+          upsertGame(bestMatch).catch((e) => console.warn("[Database] Failed to background upsert search result:", e));
+          return res.json({ source: "roblox-online-search", ...bestMatch });
+        }
+        return res.status(404).json({ error: `Game "${query}" not found on Roblox. Coba masukkan Place ID atau link Roblox jika namanya spesifik.` });
+      }
+      const cacheKey = `place_${placeId}`;
+      const cached = gameCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        return res.json({ source: "cache", ...cached.data });
+      }
+      const universeRes = await fetch(`https://apis.roblox.com/universes/v1/places/${placeId}/universe`, {
+        headers: { "User-Agent": "Bloxboxd/1.0" }
+      });
+      if (!universeRes.ok) {
+        return res.status(universeRes.status).json({
+          error: `Failed to resolve Place ID ${placeId} on Roblox.`,
+          status: universeRes.status
+        });
+      }
+      const universeData = await universeRes.json();
+      const universeId = universeData.universeId;
+      if (!universeId) {
+        return res.status(404).json({ error: "Universe ID not found for this Place" });
+      }
+      const resolvedGame = await fetchUniverseDetails(universeId, placeId);
+      gameCache.set(cacheKey, { data: resolvedGame, timestamp: Date.now() });
+      upsertGame(resolvedGame).catch((e) => console.warn("[Database] Failed to background upsert resolved game:", e));
+      return res.json({ source: "roblox_api", ...resolvedGame });
+    } catch (error) {
+      console.error("Error resolving Roblox experience:", error);
+      return res.status(500).json({ error: "Internal server error while contacting Roblox services" });
+    }
+  });
+  app2.get("/api/roblox/batch", async (req, res) => {
+    try {
+      const universeIds = req.query.universeIds?.trim();
+      if (!universeIds) {
+        return res.status(400).json({ error: "universeIds parameter is required" });
+      }
+      const ids = universeIds.split(",").map((s) => s.trim()).filter(Boolean);
+      if (ids.length === 0) {
+        return res.json({ data: [] });
+      }
+      const CHUNK_SIZE = 30;
+      const chunks = [];
+      for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+        chunks.push(ids.slice(i, i + CHUNK_SIZE));
+      }
+      const allResults = [];
+      await Promise.all(
+        chunks.map(async (chunkIds) => {
+          try {
+            const [gamesRes, votesRes, iconRes, thumbRes] = await Promise.all([
+              fetch(`https://games.roblox.com/v1/games?universeIds=${chunkIds.join(",")}`, {
+                headers: { "User-Agent": "Bloxboxd/1.0" }
+              }),
+              fetch(`https://games.roblox.com/v1/games/votes?universeIds=${chunkIds.join(",")}`, {
+                headers: { "User-Agent": "Bloxboxd/1.0" }
+              }),
+              fetch(`https://thumbnails.roblox.com/v1/games/icons?universeIds=${chunkIds.join(",")}&size=512x512&format=Png&isCircular=false`, {
+                headers: { "User-Agent": "Bloxboxd/1.0" }
+              }),
+              fetch(`https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=${chunkIds.join(",")}&countPerUniverse=1&defaults=true&size=768x432&format=Png&isCircular=false`, {
+                headers: { "User-Agent": "Bloxboxd/1.0" }
+              })
+            ]);
+            const gamesData = gamesRes.ok ? await gamesRes.json() : { data: [] };
+            const votesData = votesRes.ok ? await votesRes.json() : { data: [] };
+            const iconData = iconRes.ok ? await iconRes.json() : { data: [] };
+            const thumbData = thumbRes.ok ? await thumbRes.json() : { data: [] };
+            for (const g of gamesData.data || []) {
+              const icon = iconData.data?.find((i) => i.targetId === g.id)?.imageUrl || null;
+              const banner = thumbData.data?.find((t) => t.universeId === g.id)?.thumbnails?.[0]?.imageUrl || null;
+              const vote = votesData.data?.find((v) => v.id === g.id);
+              const upVotes = vote?.upVotes || 0;
+              const downVotes = vote?.downVotes || 0;
+              const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
+              const genreMeta = extractRobloxGenreMetadata(g.genre, g.genre_l1, g.genre_l2);
+              allResults.push({
+                universeId: g.id,
+                rootPlaceId: g.rootPlaceId,
+                name: g.name,
+                description: g.description,
+                creatorName: g.creator?.name,
+                playerCount: g.playing || 0,
+                totalVisits: g.visits ? Number(g.visits).toLocaleString() : "0",
+                rawVisits: g.visits || 0,
+                favoritedCount: g.favoritedCount || 0,
+                upVotes,
+                downVotes,
+                genre: genreMeta.genre,
+                subgenre: genreMeta.subgenre,
+                genre_l1: genreMeta.genre_l1,
+                genre_l2: genreMeta.genre_l2,
+                tags: genreMeta.tags,
+                ratingAverage,
+                ratingCount,
+                ratingHistogram,
+                iconUrl: icon,
+                bannerUrl: banner,
+                updatedAt: Date.now()
+              });
+            }
+          } catch (chunkErr) {
+            console.error("Error fetching batch chunk:", chunkErr);
+          }
+        })
+      );
+      return res.json({ data: allResults, count: allResults.length, timestamp: Date.now() });
+    } catch (err) {
+      console.error("Error fetching batch roblox data:", err);
+      return res.status(500).json({ error: "Failed to fetch batch data" });
+    }
+  });
+  app2.get("/api/roblox/discover", async (req, res) => {
+    try {
+      const genre = (req.query.genre || "All").trim();
+      const pageToken = (req.query.pageToken || "").trim();
+      const page = Math.max(1, parseInt(req.query.page || "1", 10));
+      const limit = Math.max(1, Math.min(100, parseInt(req.query.limit || "30", 10)));
+      let rawGames = [];
+      let nextPageToken = void 0;
+      if (genre !== "All" && GENRE_KEYWORD_MAP[genre]) {
+        const query = GENRE_KEYWORD_MAP[genre];
+        const searchRes = await fetchRobloxOmniSearchPage(query, pageToken || void 0);
         rawGames = searchRes.games;
         nextPageToken = searchRes.nextPageToken;
       } else {
-        const [exploreGames, omniRes] = await Promise.all([
-          fetchLiveDiscoverGames(),
-          fetchRobloxOmniSearchPage("popular top multiplayer games")
-        ]);
-        const combinedMap = /* @__PURE__ */ new Map();
-        for (const g of exploreGames) {
-          if (g.universeId) combinedMap.set(g.universeId, g);
+        if (pageToken) {
+          const searchRes = await fetchRobloxOmniSearchPage("popular top multiplayer games", pageToken);
+          rawGames = searchRes.games;
+          nextPageToken = searchRes.nextPageToken;
+        } else {
+          const [exploreGames, omniRes] = await Promise.all([
+            fetchLiveDiscoverGames(),
+            fetchRobloxOmniSearchPage("popular top multiplayer games")
+          ]);
+          const combinedMap = /* @__PURE__ */ new Map();
+          for (const g of exploreGames) {
+            if (g.universeId) combinedMap.set(g.universeId, g);
+          }
+          for (const g of omniRes.games) {
+            if (g.universeId && !combinedMap.has(g.universeId)) {
+              combinedMap.set(g.universeId, g);
+            }
+          }
+          rawGames = Array.from(combinedMap.values()).slice(0, limit);
+          nextPageToken = omniRes.nextPageToken;
         }
-        for (const g of omniRes.games) {
-          if (g.universeId && !combinedMap.has(g.universeId)) {
-            combinedMap.set(g.universeId, g);
+      }
+      if (rawGames.length === 0) {
+        const fallbackGames = await fetchLiveDiscoverGames();
+        const offset = (page - 1) * limit;
+        rawGames = fallbackGames.slice(offset, offset + limit);
+      }
+      if (rawGames.length === 0) {
+        try {
+          const dbGames = await getCachedDbCatalog();
+          const filtered = genre !== "All" ? dbGames.filter((g) => (g.genre || "").toLowerCase().includes(genre.toLowerCase()) || (g.tags || []).some((t) => t.toLowerCase().includes(genre.toLowerCase()))) : dbGames;
+          if (filtered.length > 0) {
+            const isCursorPagination = Boolean(pageToken);
+            const offset = isCursorPagination ? 0 : (page - 1) * limit;
+            const slice = filtered.slice(offset, offset + limit);
+            return res.json({
+              games: slice,
+              page,
+              total: filtered.length,
+              hasMore: isCursorPagination ? false : offset + limit < filtered.length,
+              nextPageToken: void 0,
+              source: "database-resilience-fallback"
+            });
+          }
+        } catch (dbErr) {
+          console.warn("Database fallback error in discover:", dbErr);
+        }
+        return res.json({ games: [], page, total: 0, hasMore: false, nextPageToken: void 0 });
+      }
+      const universeIds = rawGames.map((g) => g.universeId);
+      const [iconMap, universeDetailsMap] = await Promise.all([
+        fetchBatchIcons(universeIds),
+        fetchBatchUniverseDetails(universeIds)
+      ]);
+      const formattedGames = rawGames.map((item) => {
+        const details = universeDetailsMap.get(item.universeId);
+        const upVotes = details?.favoritedCount || item.totalUpVotes || 0;
+        const downVotes = item.totalDownVotes || 0;
+        const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
+        const iconUrl = iconMap.get(item.universeId) || "https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter";
+        const rawVisits = details?.visits ?? ((item.playerCount || 0) * 20 || 1e4);
+        const rawGenre = details?.genre || item.genre;
+        const genreL1 = details?.genre_l1 || item.genreL1 || item.genre_l1;
+        const genreL2 = details?.genre_l2 || item.genreL2 || item.genre_l2;
+        const genreMeta = extractRobloxGenreMetadata(rawGenre, genreL1, genreL2);
+        if (genre && genre !== "All" && (genreMeta.genre === "Variety" || !genreMeta.genre)) {
+          genreMeta.genre = genre;
+          if (!genreMeta.subgenre) genreMeta.subgenre = genre;
+          if (!genreMeta.tags.includes(genre.toLowerCase())) {
+            genreMeta.tags.push(genre.toLowerCase());
           }
         }
-        rawGames = Array.from(combinedMap.values()).slice(0, limit);
-        nextPageToken = omniRes.nextPageToken;
-      }
-    }
-    if (rawGames.length === 0) {
-      const fallbackGames = await fetchLiveDiscoverGames();
-      const offset = (page - 1) * limit;
-      rawGames = fallbackGames.slice(offset, offset + limit);
-    }
-    if (rawGames.length === 0) {
-      try {
-        const dbGames = await getCachedDbCatalog();
-        const filtered = genre !== "All" ? dbGames.filter((g) => (g.genre || "").toLowerCase().includes(genre.toLowerCase()) || (g.tags || []).some((t) => t.toLowerCase().includes(genre.toLowerCase()))) : dbGames;
-        if (filtered.length > 0) {
-          const isCursorPagination = Boolean(pageToken);
-          const offset = isCursorPagination ? 0 : (page - 1) * limit;
-          const slice = filtered.slice(offset, offset + limit);
-          return res.json({
-            games: slice,
-            page,
-            total: filtered.length,
-            hasMore: isCursorPagination ? false : offset + limit < filtered.length,
-            nextPageToken: void 0,
-            source: "database-resilience-fallback"
-          });
-        }
-      } catch (dbErr) {
-        console.warn("Database fallback error in discover:", dbErr);
-      }
-      return res.json({ games: [], page, total: 0, hasMore: false, nextPageToken: void 0 });
-    }
-    const universeIds = rawGames.map((g) => g.universeId);
-    const [iconMap, universeDetailsMap] = await Promise.all([
-      fetchBatchIcons(universeIds),
-      fetchBatchUniverseDetails(universeIds)
-    ]);
-    const formattedGames = rawGames.map((item) => {
-      const details = universeDetailsMap.get(item.universeId);
-      const upVotes = details?.favoritedCount || item.totalUpVotes || 0;
-      const downVotes = item.totalDownVotes || 0;
-      const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(upVotes, downVotes);
-      const iconUrl = iconMap.get(item.universeId) || "https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter";
-      const rawVisits = details?.visits ?? ((item.playerCount || 0) * 20 || 1e4);
-      const rawGenre = details?.genre || item.genre;
-      const genreL1 = details?.genre_l1 || item.genreL1 || item.genre_l1;
-      const genreL2 = details?.genre_l2 || item.genreL2 || item.genre_l2;
-      const genreMeta = extractRobloxGenreMetadata(rawGenre, genreL1, genreL2);
-      if (genre && genre !== "All" && (genreMeta.genre === "Variety" || !genreMeta.genre)) {
-        genreMeta.genre = genre;
-        if (!genreMeta.subgenre) genreMeta.subgenre = genre;
-        if (!genreMeta.tags.includes(genre.toLowerCase())) {
-          genreMeta.tags.push(genre.toLowerCase());
-        }
-      }
-      return {
-        id: `roblox-${item.universeId}`,
-        universeId: item.universeId,
-        rootPlaceId: details?.rootPlaceId || item.rootPlaceId || 0,
-        name: details?.name || item.name,
-        description: details?.description || item.description || `Popular Roblox experience with over ${(details?.playing || item.playerCount || 0).toLocaleString()} active players.`,
-        creatorName: details?.creator?.name || item.creatorName || "Roblox Creator",
-        creatorType: details?.creator?.hasVerifiedBadge || item.creatorHasVerifiedBadge ? "Verified" : "Group",
-        iconUrl,
-        genre: genreMeta.genre,
-        subgenre: genreMeta.subgenre,
-        genre_l1: genreMeta.genre_l1,
-        genre_l2: genreMeta.genre_l2,
-        playerCount: details?.playing ?? (item.playerCount || 0),
-        totalVisits: rawVisits ? Number(rawVisits).toLocaleString() : "10,000+",
-        rawVisits,
-        favoritedCount: upVotes,
-        upVotes,
-        downVotes,
-        releaseYear: details?.created ? new Date(details.created).getFullYear() : (/* @__PURE__ */ new Date()).getFullYear(),
-        ratingAverage,
-        ratingCount,
-        ratingHistogram,
-        tags: ["roblox", "live-feed", ...genreMeta.tags]
-      };
-    });
-    if (formattedGames.length > 0) {
-      bulkUpsertGames(formattedGames).catch((e) => console.warn("[Database] Failed to background upsert discovered games:", e));
-    }
-    return res.json({
-      games: formattedGames,
-      page,
-      total: formattedGames.length,
-      hasMore: Boolean(nextPageToken) || formattedGames.length >= 10,
-      nextPageToken
-    });
-  } catch (err) {
-    console.error("Error in /api/roblox/discover:", err);
-    return res.status(500).json({ error: "Failed to discover Roblox games" });
-  }
-});
-app.get("/api/roblox/search", async (req, res) => {
-  try {
-    const rawQuery = (req.query.q || req.query.query || "").trim();
-    if (!rawQuery) {
-      return res.json({ results: [], total: 0 });
-    }
-    const placeId = extractPlaceId(rawQuery);
-    let catalog = [];
-    try {
-      catalog = await getCachedDbCatalog();
-    } catch (e) {
-      console.error("Failed to fetch catalog from database cache:", e);
-    }
-    if (placeId) {
-      const existing = catalog.find((g) => g.rootPlaceId === placeId || g.universeId === placeId);
-      if (existing) {
-        return res.json({ results: [existing], total: 1 });
-      }
-      try {
-        const uRes = await fetch(`https://apis.roblox.com/universes/v1/places/${placeId}/universe`, {
-          headers: { "User-Agent": "Bloxboxd/1.0" }
-        });
-        if (uRes.ok) {
-          const uData = await uRes.json();
-          if (uData.universeId) {
-            const liveGame = await fetchUniverseDetails(uData.universeId, placeId);
-            upsertGame(liveGame).catch((e) => console.warn("[Database] Failed to upsert resolved liveGame:", e));
-            return res.json({ results: [liveGame], total: 1 });
-          }
-        }
-      } catch (err) {
-      }
-    }
-    const qLower = rawQuery.toLowerCase();
-    const queryTokens = qLower.split(/\s+/).filter(Boolean);
-    const matches = [];
-    const seenUniverses = /* @__PURE__ */ new Set();
-    try {
-      const liveResults = await searchRobloxLiveOnline(rawQuery);
-      if (liveResults.length > 0) {
-        bulkUpsertGames(liveResults).catch((e) => console.warn("[Database] Failed to upsert search liveResults:", e));
-      }
-      for (const lr of liveResults) {
-        if (!seenUniverses.has(lr.universeId)) {
-          seenUniverses.add(lr.universeId);
-          matches.push(lr);
-        }
-      }
-    } catch (e) {
-      console.error("Error fetching live online results during search:", e);
-    }
-    for (const g of catalog) {
-      if (seenUniverses.has(g.universeId)) continue;
-      const gName = g.name.toLowerCase();
-      const gCreator = (g.creatorName || "").toLowerCase();
-      const gGenre = (g.genre || "").toLowerCase();
-      const gTags = Array.isArray(g.tags) ? g.tags.join(" ").toLowerCase() : "";
-      const gPlace = (g.rootPlaceId || "").toString();
-      if (gName.includes(qLower) || gCreator.includes(qLower) || gGenre.includes(qLower) || gTags.includes(qLower) || gPlace.includes(rawQuery)) {
-        seenUniverses.add(g.universeId);
-        matches.push(g);
-      } else if (queryTokens.every((tok) => gName.includes(tok) || gCreator.includes(tok) || gGenre.includes(tok) || gTags.includes(tok))) {
-        seenUniverses.add(g.universeId);
-        matches.push(g);
-      }
-    }
-    matches.sort((a, b) => {
-      const aName = a.name.toLowerCase();
-      const bName = b.name.toLowerCase();
-      const aExact = aName === qLower ? 4 : aName.startsWith(qLower) ? 3 : aName.includes(qLower) ? 2 : 1;
-      const bExact = bName === qLower ? 4 : bName.startsWith(qLower) ? 3 : bName.includes(qLower) ? 2 : 1;
-      if (aExact !== bExact) return bExact - aExact;
-      return (b.playerCount || 0) - (a.playerCount || 0);
-    });
-    return res.json({ results: matches.slice(0, 40), total: matches.length });
-  } catch (error) {
-    console.error("Error in /api/roblox/search:", error);
-    return res.status(500).json({ error: "Search failed" });
-  }
-});
-app.get("/api/roblox/user/lookup", async (req, res) => {
-  try {
-    const rawQuery = (req.query.q || req.query.username || "").trim();
-    if (!rawQuery) {
-      return res.status(400).json({ error: "Username, User ID, or profile URL is required" });
-    }
-    let userId = null;
-    let fallbackUsername = rawQuery;
-    const urlMatch = rawQuery.match(/roblox\.com\/users\/(\d+)/i);
-    if (urlMatch && urlMatch[1]) {
-      userId = parseInt(urlMatch[1], 10);
-    } else if (/^\d+$/.test(rawQuery)) {
-      userId = parseInt(rawQuery, 10);
-    } else {
-      const lookupRes = await fetch("https://users.roblox.com/v1/usernames/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "User-Agent": "Bloxboxd/1.0" },
-        body: JSON.stringify({ usernames: [rawQuery], excludeBannedUsers: false })
+        return {
+          id: `roblox-${item.universeId}`,
+          universeId: item.universeId,
+          rootPlaceId: details?.rootPlaceId || item.rootPlaceId || 0,
+          name: details?.name || item.name,
+          description: details?.description || item.description || `Popular Roblox experience with over ${(details?.playing || item.playerCount || 0).toLocaleString()} active players.`,
+          creatorName: details?.creator?.name || item.creatorName || "Roblox Creator",
+          creatorType: details?.creator?.hasVerifiedBadge || item.creatorHasVerifiedBadge ? "Verified" : "Group",
+          iconUrl,
+          genre: genreMeta.genre,
+          subgenre: genreMeta.subgenre,
+          genre_l1: genreMeta.genre_l1,
+          genre_l2: genreMeta.genre_l2,
+          playerCount: details?.playing ?? (item.playerCount || 0),
+          totalVisits: rawVisits ? Number(rawVisits).toLocaleString() : "10,000+",
+          rawVisits,
+          favoritedCount: upVotes,
+          upVotes,
+          downVotes,
+          releaseYear: details?.created ? new Date(details.created).getFullYear() : (/* @__PURE__ */ new Date()).getFullYear(),
+          ratingAverage,
+          ratingCount,
+          ratingHistogram,
+          tags: ["roblox", "live-feed", ...genreMeta.tags]
+        };
       });
-      if (lookupRes.ok) {
-        const lookupData = await lookupRes.json();
-        if (lookupData.data && lookupData.data.length > 0) {
-          userId = lookupData.data[0].id;
-          fallbackUsername = lookupData.data[0].name;
-        }
+      if (formattedGames.length > 0) {
+        bulkUpsertGames(formattedGames).catch((e) => console.warn("[Database] Failed to background upsert discovered games:", e));
       }
-    }
-    if (!userId) {
-      return res.status(404).json({ error: `Akun Roblox "${rawQuery}" tidak ditemukan. Pastikan username atau ID sudah benar.` });
-    }
-    const [userRes, headshotRes, bustRes, friendsRes] = await Promise.all([
-      fetch(`https://users.roblox.com/v1/users/${userId}`, {
-        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
-      }),
-      fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      }),
-      fetch(`https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${userId}&size=420x420&format=Png&isCircular=false`, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      }),
-      fetch(`https://friends.roblox.com/v1/users/${userId}/friends/count`, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      })
-    ]);
-    const uData = userRes.ok ? await userRes.json() : {};
-    const hData = headshotRes.ok ? await headshotRes.json() : {};
-    const bData = bustRes.ok ? await bustRes.json() : {};
-    const fData = friendsRes.ok ? await friendsRes.json() : {};
-    const username = uData.name || fallbackUsername;
-    const displayName = uData.displayName || username;
-    const hasVerifiedBadge = !!uData.hasVerifiedBadge;
-    const description = uData.description || "";
-    const created = uData.created || "";
-    const friendsCount = fData.count || 0;
-    const headshotUrl = hData.data?.[0]?.imageUrl || "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-310966282D3529E36976BF6B07B1DC90-Png/420/420/AvatarHeadshot/Png/noFilter";
-    const bustUrl = bData.data?.[0]?.imageUrl || headshotUrl;
-    return res.json({
-      success: true,
-      user: {
-        userId,
-        username,
-        displayName,
-        hasVerifiedBadge,
-        description,
-        created,
-        joinedYear: created ? new Date(created).getFullYear() : void 0,
-        friendsCount,
-        avatarHeadshotUrl: headshotUrl,
-        avatarBustUrl: bustUrl
-      }
-    });
-  } catch (err) {
-    console.error("Error looking up Roblox user:", err);
-    return res.status(500).json({ error: "Gagal mengambil data akun Roblox." });
-  }
-});
-function hashPin(pin, salt) {
-  return crypto2.pbkdf2Sync(pin, salt, 1e3, 32, "sha256").toString("hex");
-}
-var ROBLOX_FILTER_SAFE_WORDS = [
-  "silver",
-  "golden",
-  "dragon",
-  "falcon",
-  "rabbit",
-  "apple",
-  "banana",
-  "orange",
-  "star",
-  "moon",
-  "river",
-  "cloud",
-  "castle",
-  "island",
-  "crystal",
-  "guitar",
-  "sunny",
-  "brave",
-  "swift",
-  "green",
-  "blue",
-  "winter",
-  "summer",
-  "panda",
-  "diamond",
-  "ocean",
-  "forest",
-  "knight",
-  "spark",
-  "breeze",
-  "planet",
-  "beacon",
-  "timber",
-  "feather",
-  "glacier",
-  "whisper",
-  "shadow",
-  "meadow",
-  "harbor",
-  "amber",
-  "copper",
-  "valley",
-  "canyon",
-  "stream",
-  "pebble",
-  "marble",
-  "galaxy",
-  "meteor",
-  "compass",
-  "anchor",
-  "canvas",
-  "velvet",
-  "lantern",
-  "candle",
-  "shield",
-  "banner",
-  "tower",
-  "bridge",
-  "garden",
-  "blossom",
-  "clover",
-  "tulip",
-  "spruce",
-  "willow",
-  "cedar",
-  "branch",
-  "autumn",
-  "spring",
-  "sunrise",
-  "sunset",
-  "horizon",
-  "zenith",
-  "echo",
-  "riddle",
-  "fable",
-  "legend",
-  "voyage",
-  "journey",
-  "passage",
-  "harbor",
-  "summit",
-  "peak",
-  "crag",
-  "cliff",
-  "aurora",
-  "comet",
-  "stellar",
-  "lunar",
-  "solar",
-  "marine",
-  "coral",
-  "lagoon",
-  "tide",
-  "wave",
-  "drift",
-  "current",
-  "frost",
-  "ember",
-  "blaze",
-  "torch",
-  "hearth",
-  "quiver",
-  "arrow",
-  "saber",
-  "armor",
-  "helm",
-  "crown",
-  "scepter",
-  "throne",
-  "palace",
-  "spire",
-  "portal",
-  "haven",
-  "sanctuary",
-  "oasis",
-  "temple",
-  "shrine",
-  "cairn",
-  "grove",
-  "thicket",
-  "orchard",
-  "prairie",
-  "tundra",
-  "steppe",
-  "savanna",
-  "dune",
-  "delta",
-  "badger",
-  "otter",
-  "beaver",
-  "walrus",
-  "dolphin",
-  "whale",
-  "eagle",
-  "hawk",
-  "heron",
-  "crane",
-  "sparrow",
-  "finch",
-  "robin",
-  "raven",
-  "parrot",
-  "canary"
-];
-var activeChallenges = /* @__PURE__ */ new Map();
-setInterval(() => {
-  const now = Date.now();
-  for (const [id, c] of activeChallenges.entries()) {
-    if (now > c.expiresAt) {
-      activeChallenges.delete(id);
-    }
-  }
-}, 6e4);
-app.get("/api/roblox/account/status", async (req, res) => {
-  const userIdStr = req.query.userId?.toString();
-  if (!userIdStr) {
-    return res.status(400).json({ error: "userId is required" });
-  }
-  const userId = parseInt(userIdStr, 10);
-  if (isNaN(userId)) {
-    return res.status(400).json({ error: "Invalid userId" });
-  }
-  try {
-    const account = await getAccountByUserId(userId);
-    if (account) {
       return res.json({
-        registered: true,
-        hasPin: Boolean(account.pinHash),
-        username: account.username,
-        verifiedAt: account.verifiedAt
+        games: formattedGames,
+        page,
+        total: formattedGames.length,
+        hasMore: Boolean(nextPageToken) || formattedGames.length >= 10,
+        nextPageToken
       });
+    } catch (err) {
+      console.error("Error in /api/roblox/discover:", err);
+      return res.status(500).json({ error: "Failed to discover Roblox games" });
     }
-    return res.json({
-      registered: false,
-      hasPin: false
-    });
-  } catch (err) {
-    console.error("Error fetching account status:", err);
-    return res.status(500).json({ error: "Gagal memeriksa status akun" });
-  }
-});
-app.post("/api/roblox/account/challenge/start", async (req, res) => {
-  try {
-    const { userId, type = "bio" } = req.body;
-    if (!userId) {
-      return res.status(400).json({ error: "userId is required" });
-    }
-    const userRes = await fetch(`https://users.roblox.com/v1/users/${userId}?_t=${Date.now()}`, {
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
-    });
-    if (!userRes.ok) {
-      return res.status(404).json({ error: "Akun Roblox tidak ditemukan di server resmi Roblox." });
-    }
-    const userData = await userRes.json();
-    const currentBio = (userData.description || "").toLowerCase();
-    const challengeId = crypto2.randomBytes(16).toString("hex");
-    const expiresAt = Date.now() + 4 * 60 * 1e3;
-    if (type === "avatar") {
-      const officialFreeItems = [
-        {
-          id: 417457461,
-          name: "ROBLOX 'R' Baseball Cap",
-          catalogUrl: "https://www.roblox.com/catalog/417457461/ROBLOX-R-Baseball-Cap"
-        },
-        {
-          id: 607702162,
-          name: "Roblox Baseball Cap",
-          catalogUrl: "https://www.roblox.com/catalog/607702162/Roblox-Baseball-Cap"
-        }
-      ];
-      let assetIds = [];
+  });
+  app2.get("/api/roblox/search", async (req, res) => {
+    try {
+      const rawQuery = (req.query.q || req.query.query || "").trim();
+      if (!rawQuery) {
+        return res.json({ results: [], total: 0 });
+      }
+      const placeId = extractPlaceId(rawQuery);
+      let catalog = [];
       try {
-        const avatarRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/avatar?_t=${Date.now()}`, {
-          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
-        });
-        if (avatarRes.ok) {
-          const aData = await avatarRes.json();
-          if (Array.isArray(aData.assets)) {
-            assetIds = aData.assets.map((a) => Number(a.id)).filter((id) => !isNaN(id));
+        catalog = await getCachedDbCatalog();
+      } catch (e) {
+        console.error("Failed to fetch catalog from database cache:", e);
+      }
+      if (placeId) {
+        const existing = catalog.find((g) => g.rootPlaceId === placeId || g.universeId === placeId);
+        if (existing) {
+          return res.json({ results: [existing], total: 1 });
+        }
+        try {
+          const uRes = await fetch(`https://apis.roblox.com/universes/v1/places/${placeId}/universe`, {
+            headers: { "User-Agent": "Bloxboxd/1.0" }
+          });
+          if (uRes.ok) {
+            const uData = await uRes.json();
+            if (uData.universeId) {
+              const liveGame = await fetchUniverseDetails(uData.universeId, placeId);
+              upsertGame(liveGame).catch((e) => console.warn("[Database] Failed to upsert resolved liveGame:", e));
+              return res.json({ results: [liveGame], total: 1 });
+            }
+          }
+        } catch (err) {
+        }
+      }
+      const qLower = rawQuery.toLowerCase();
+      const queryTokens = qLower.split(/\s+/).filter(Boolean);
+      const matches = [];
+      const seenUniverses = /* @__PURE__ */ new Set();
+      try {
+        const liveResults = await searchRobloxLiveOnline(rawQuery);
+        if (liveResults.length > 0) {
+          bulkUpsertGames(liveResults).catch((e) => console.warn("[Database] Failed to upsert search liveResults:", e));
+        }
+        for (const lr of liveResults) {
+          if (!seenUniverses.has(lr.universeId)) {
+            seenUniverses.add(lr.universeId);
+            matches.push(lr);
           }
         }
       } catch (e) {
-        console.warn("Failed to fetch avatar endpoint, falling back to wearing endpoint", e);
+        console.error("Error fetching live online results during search:", e);
       }
-      if (assetIds.length === 0) {
+      for (const g of catalog) {
+        if (seenUniverses.has(g.universeId)) continue;
+        const gName = g.name.toLowerCase();
+        const gCreator = (g.creatorName || "").toLowerCase();
+        const gGenre = (g.genre || "").toLowerCase();
+        const gTags = Array.isArray(g.tags) ? g.tags.join(" ").toLowerCase() : "";
+        const gPlace = (g.rootPlaceId || "").toString();
+        if (gName.includes(qLower) || gCreator.includes(qLower) || gGenre.includes(qLower) || gTags.includes(qLower) || gPlace.includes(rawQuery)) {
+          seenUniverses.add(g.universeId);
+          matches.push(g);
+        } else if (queryTokens.every((tok) => gName.includes(tok) || gCreator.includes(tok) || gGenre.includes(tok) || gTags.includes(tok))) {
+          seenUniverses.add(g.universeId);
+          matches.push(g);
+        }
+      }
+      matches.sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const aExact = aName === qLower ? 4 : aName.startsWith(qLower) ? 3 : aName.includes(qLower) ? 2 : 1;
+        const bExact = bName === qLower ? 4 : bName.startsWith(qLower) ? 3 : bName.includes(qLower) ? 2 : 1;
+        if (aExact !== bExact) return bExact - aExact;
+        return (b.playerCount || 0) - (a.playerCount || 0);
+      });
+      return res.json({ results: matches.slice(0, 40), total: matches.length });
+    } catch (error) {
+      console.error("Error in /api/roblox/search:", error);
+      return res.status(500).json({ error: "Search failed" });
+    }
+  });
+  app2.get("/api/roblox/user/lookup", async (req, res) => {
+    try {
+      const rawQuery = (req.query.q || req.query.username || "").trim();
+      if (!rawQuery) {
+        return res.status(400).json({ error: "Username, User ID, or profile URL is required" });
+      }
+      let userId = null;
+      let fallbackUsername = rawQuery;
+      const urlMatch = rawQuery.match(/roblox\.com\/users\/(\d+)/i);
+      if (urlMatch && urlMatch[1]) {
+        userId = parseInt(urlMatch[1], 10);
+      } else if (/^\d+$/.test(rawQuery)) {
+        userId = parseInt(rawQuery, 10);
+      } else {
+        const lookupRes = await fetch("https://users.roblox.com/v1/usernames/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "User-Agent": "Bloxboxd/1.0" },
+          body: JSON.stringify({ usernames: [rawQuery], excludeBannedUsers: false })
+        });
+        if (lookupRes.ok) {
+          const lookupData = await lookupRes.json();
+          if (lookupData.data && lookupData.data.length > 0) {
+            userId = lookupData.data[0].id;
+            fallbackUsername = lookupData.data[0].name;
+          }
+        }
+      }
+      if (!userId) {
+        return res.status(404).json({ error: `Akun Roblox "${rawQuery}" tidak ditemukan. Pastikan username atau ID sudah benar.` });
+      }
+      const [userRes, headshotRes, bustRes, friendsRes] = await Promise.all([
+        fetch(`https://users.roblox.com/v1/users/${userId}`, {
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+        }),
+        fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`, {
+          headers: { "User-Agent": "Mozilla/5.0" }
+        }),
+        fetch(`https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${userId}&size=420x420&format=Png&isCircular=false`, {
+          headers: { "User-Agent": "Mozilla/5.0" }
+        }),
+        fetch(`https://friends.roblox.com/v1/users/${userId}/friends/count`, {
+          headers: { "User-Agent": "Mozilla/5.0" }
+        })
+      ]);
+      const uData = userRes.ok ? await userRes.json() : {};
+      const hData = headshotRes.ok ? await headshotRes.json() : {};
+      const bData = bustRes.ok ? await bustRes.json() : {};
+      const fData = friendsRes.ok ? await friendsRes.json() : {};
+      const username = uData.name || fallbackUsername;
+      const displayName = uData.displayName || username;
+      const hasVerifiedBadge = !!uData.hasVerifiedBadge;
+      const description = uData.description || "";
+      const created = uData.created || "";
+      const friendsCount = fData.count || 0;
+      const headshotUrl = hData.data?.[0]?.imageUrl || "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-310966282D3529E36976BF6B07B1DC90-Png/420/420/AvatarHeadshot/Png/noFilter";
+      const bustUrl = bData.data?.[0]?.imageUrl || headshotUrl;
+      return res.json({
+        success: true,
+        user: {
+          userId,
+          username,
+          displayName,
+          hasVerifiedBadge,
+          description,
+          created,
+          joinedYear: created ? new Date(created).getFullYear() : void 0,
+          friendsCount,
+          avatarHeadshotUrl: headshotUrl,
+          avatarBustUrl: bustUrl
+        }
+      });
+    } catch (err) {
+      console.error("Error looking up Roblox user:", err);
+      return res.status(500).json({ error: "Gagal mengambil data akun Roblox." });
+    }
+  });
+  app2.get("/api/roblox/avatar", async (req, res) => {
+    try {
+      const username = req.query.username?.trim();
+      if (!username) {
+        return res.status(400).json({ error: "Username is required" });
+      }
+      const userLookupRes = await fetch("https://users.roblox.com/v1/usernames/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usernames: [username], excludeBannedUsers: false })
+      });
+      if (userLookupRes.ok) {
+        const lookupData = await userLookupRes.json();
+        if (lookupData.data && lookupData.data.length > 0) {
+          const userId = lookupData.data[0].id;
+          const displayName = lookupData.data[0].displayName;
+          const thumbRes = await fetch(
+            `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=false`
+          );
+          if (thumbRes.ok) {
+            const thumbData = await thumbRes.json();
+            if (thumbData.data && thumbData.data[0]?.imageUrl) {
+              return res.json({
+                userId,
+                displayName,
+                avatarUrl: thumbData.data[0].imageUrl
+              });
+            }
+          }
+          return res.json({ userId, displayName, avatarUrl: null });
+        }
+      }
+      return res.json({ avatarUrl: null });
+    } catch (err) {
+      return res.status(500).json({ error: "Failed to lookup avatar" });
+    }
+  });
+}
+
+// src/routes/account.ts
+import crypto4 from "crypto";
+
+// src/lib/security.ts
+import crypto3 from "crypto";
+var PIN_ITERATIONS = 6e5;
+var PIN_KEY_LEN = 32;
+var PIN_DIGEST = "sha256";
+function hashPin(pin, salt) {
+  const derived = crypto3.pbkdf2Sync(pin, salt, PIN_ITERATIONS, PIN_KEY_LEN, PIN_DIGEST);
+  return `pbkdf2$${PIN_ITERATIONS}$${derived.toString("hex")}`;
+}
+function verifyPin(pin, stored, salt) {
+  if (!stored || !salt) return false;
+  try {
+    if (stored.startsWith("pbkdf2$")) {
+      const [, iterStr, hex] = stored.split("$");
+      const iterations = Number(iterStr);
+      if (!iterations || !hex) return false;
+      const expected2 = Buffer.from(hex, "hex");
+      const actual2 = crypto3.pbkdf2Sync(pin, salt, iterations, expected2.length, PIN_DIGEST);
+      return actual2.length === expected2.length && crypto3.timingSafeEqual(actual2, expected2);
+    }
+    const expected = Buffer.from(stored, "hex");
+    if (expected.length === 0) return false;
+    const actual = crypto3.pbkdf2Sync(pin, salt, 1e3, expected.length, PIN_DIGEST);
+    return actual.length === expected.length && crypto3.timingSafeEqual(actual, expected);
+  } catch {
+    return false;
+  }
+}
+function needsPinRehash(stored) {
+  return Boolean(stored) && !stored.startsWith("pbkdf2$");
+}
+function sanitizeText(input, maxLength = 2e3) {
+  if (!input || typeof input !== "string") return "";
+  return input.trim().replace(/[<>]/g, "").slice(0, maxLength);
+}
+
+// src/routes/account.ts
+function registerAccountRoutes(app2) {
+  const ROBLOX_FILTER_SAFE_WORDS = [
+    "silver",
+    "golden",
+    "dragon",
+    "falcon",
+    "rabbit",
+    "apple",
+    "banana",
+    "orange",
+    "star",
+    "moon",
+    "river",
+    "cloud",
+    "castle",
+    "island",
+    "crystal",
+    "guitar",
+    "sunny",
+    "brave",
+    "swift",
+    "green",
+    "blue",
+    "winter",
+    "summer",
+    "panda",
+    "diamond",
+    "ocean",
+    "forest",
+    "knight",
+    "spark",
+    "breeze",
+    "planet",
+    "beacon",
+    "timber",
+    "feather",
+    "glacier",
+    "whisper",
+    "shadow",
+    "meadow",
+    "harbor",
+    "amber",
+    "copper",
+    "valley",
+    "canyon",
+    "stream",
+    "pebble",
+    "marble",
+    "galaxy",
+    "meteor",
+    "compass",
+    "anchor",
+    "canvas",
+    "velvet",
+    "lantern",
+    "candle",
+    "shield",
+    "banner",
+    "tower",
+    "bridge",
+    "garden",
+    "blossom",
+    "clover",
+    "tulip",
+    "spruce",
+    "willow",
+    "cedar",
+    "branch",
+    "autumn",
+    "spring",
+    "sunrise",
+    "sunset",
+    "horizon",
+    "zenith",
+    "echo",
+    "riddle",
+    "fable",
+    "legend",
+    "voyage",
+    "journey",
+    "passage",
+    "harbor",
+    "summit",
+    "peak",
+    "crag",
+    "cliff",
+    "aurora",
+    "comet",
+    "stellar",
+    "lunar",
+    "solar",
+    "marine",
+    "coral",
+    "lagoon",
+    "tide",
+    "wave",
+    "drift",
+    "current",
+    "frost",
+    "ember",
+    "blaze",
+    "torch",
+    "hearth",
+    "quiver",
+    "arrow",
+    "saber",
+    "armor",
+    "helm",
+    "crown",
+    "scepter",
+    "throne",
+    "palace",
+    "spire",
+    "portal",
+    "haven",
+    "sanctuary",
+    "oasis",
+    "temple",
+    "shrine",
+    "cairn",
+    "grove",
+    "thicket",
+    "orchard",
+    "prairie",
+    "tundra",
+    "steppe",
+    "savanna",
+    "dune",
+    "delta",
+    "badger",
+    "otter",
+    "beaver",
+    "walrus",
+    "dolphin",
+    "whale",
+    "eagle",
+    "hawk",
+    "heron",
+    "crane",
+    "sparrow",
+    "finch",
+    "robin",
+    "raven",
+    "parrot",
+    "canary"
+  ];
+  app2.get("/api/roblox/account/status", async (req, res) => {
+    const userIdStr = req.query.userId?.toString();
+    if (!userIdStr) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+    const userId = parseInt(userIdStr, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid userId" });
+    }
+    try {
+      const account = await getAccountByUserId(userId);
+      if (account) {
+        return res.json({
+          registered: true,
+          hasPin: Boolean(account.pinHash),
+          username: account.username,
+          verifiedAt: account.verifiedAt
+        });
+      }
+      return res.json({
+        registered: false,
+        hasPin: false
+      });
+    } catch (err) {
+      console.error("Error fetching account status:", err);
+      return res.status(500).json({ error: "Gagal memeriksa status akun" });
+    }
+  });
+  app2.post("/api/roblox/account/challenge/start", async (req, res) => {
+    try {
+      const { userId, type = "bio" } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      const userRes = await fetch(`https://users.roblox.com/v1/users/${userId}?_t=${Date.now()}`, {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+      });
+      if (!userRes.ok) {
+        return res.status(404).json({ error: "Akun Roblox tidak ditemukan di server resmi Roblox." });
+      }
+      const userData = await userRes.json();
+      const currentBio = (userData.description || "").toLowerCase();
+      void purgeExpiredChallenges().catch(() => {
+      });
+      const challengeId = crypto4.randomBytes(16).toString("hex");
+      const expiresAt = Date.now() + 4 * 60 * 1e3;
+      if (type === "avatar") {
+        const officialFreeItems = [
+          {
+            id: 417457461,
+            name: "ROBLOX 'R' Baseball Cap",
+            catalogUrl: "https://www.roblox.com/catalog/417457461/ROBLOX-R-Baseball-Cap"
+          },
+          {
+            id: 607702162,
+            name: "Roblox Baseball Cap",
+            catalogUrl: "https://www.roblox.com/catalog/607702162/Roblox-Baseball-Cap"
+          }
+        ];
+        let assetIds = [];
         try {
-          const wearingRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/currently-wearing?_t=${Date.now()}`, {
+          const avatarRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/avatar?_t=${Date.now()}`, {
             headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
           });
-          if (wearingRes.ok) {
-            const wData = await wearingRes.json();
-            if (Array.isArray(wData.assetIds)) {
-              assetIds = wData.assetIds.map((id) => Number(id)).filter((id) => !isNaN(id));
+          if (avatarRes.ok) {
+            const aData = await avatarRes.json();
+            if (Array.isArray(aData.assets)) {
+              assetIds = aData.assets.map((a) => Number(a.id)).filter((id) => !isNaN(id));
             }
           }
         } catch (e) {
-          console.warn("Failed to fetch currently-wearing endpoint", e);
+          console.warn("Failed to fetch avatar endpoint, falling back to wearing endpoint", e);
+        }
+        if (assetIds.length === 0) {
+          try {
+            const wearingRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/currently-wearing?_t=${Date.now()}`, {
+              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+            });
+            if (wearingRes.ok) {
+              const wData = await wearingRes.json();
+              if (Array.isArray(wData.assetIds)) {
+                assetIds = wData.assetIds.map((id) => Number(id)).filter((id) => !isNaN(id));
+              }
+            }
+          } catch (e) {
+            console.warn("Failed to fetch currently-wearing endpoint", e);
+          }
+        }
+        const preferredId = Number(req.body.preferredItemId);
+        const selectedItem = officialFreeItems.find((i) => i.id === preferredId) || officialFreeItems[0];
+        const targetAssetId = selectedItem.id;
+        const targetAssetName = selectedItem.name;
+        const isCurrentlyWearing = assetIds.includes(targetAssetId);
+        const expectedWearing = !isCurrentlyWearing;
+        const challenge2 = {
+          id: challengeId,
+          userId: Number(userId),
+          username: userData.name,
+          type: "avatar",
+          assetId: targetAssetId,
+          assetName: targetAssetName,
+          expectedWearing,
+          createdAt: Date.now(),
+          expiresAt
+        };
+        await saveChallenge(challenge2);
+        return res.json({
+          success: true,
+          challengeId,
+          type: "avatar",
+          assetId: targetAssetId,
+          assetName: targetAssetName,
+          catalogUrl: selectedItem.catalogUrl,
+          avatarEditorUrl: "https://www.roblox.com/my/avatar",
+          availableItems: officialFreeItems,
+          action: expectedWearing ? "equip" : "unequip",
+          actionInstruction: expectedWearing ? `Buka Avatar Editor di roblox.com/my/avatar. Pakai topi resmi gratis "${targetAssetName}" (0 Robux di Catalog), lalu klik tombol verifikasi di bawah.` : `Buka Avatar Editor di roblox.com/my/avatar. Lepaskan sementara topi "${targetAssetName}", lalu klik tombol verifikasi di bawah.`,
+          expiresInSeconds: 240
+        });
+      }
+      const shuffled = [...ROBLOX_FILTER_SAFE_WORDS].sort(() => 0.5 - Math.random());
+      const selectedWords = [];
+      for (const word of shuffled) {
+        if (!currentBio.includes(word.toLowerCase())) {
+          selectedWords.push(word);
+          if (selectedWords.length === 4) break;
         }
       }
-      const preferredId = Number(req.body.preferredItemId);
-      const selectedItem = officialFreeItems.find((i) => i.id === preferredId) || officialFreeItems[0];
-      const targetAssetId = selectedItem.id;
-      const targetAssetName = selectedItem.name;
-      const isCurrentlyWearing = assetIds.includes(targetAssetId);
-      const expectedWearing = !isCurrentlyWearing;
-      const challenge2 = {
+      const phrase = selectedWords.join(" ");
+      const challenge = {
         id: challengeId,
         userId: Number(userId),
         username: userData.name,
-        type: "avatar",
-        assetId: targetAssetId,
-        assetName: targetAssetName,
-        expectedWearing,
+        type: "bio",
+        words: selectedWords,
+        phrase,
         createdAt: Date.now(),
         expiresAt
       };
-      activeChallenges.set(challengeId, challenge2);
+      await saveChallenge(challenge);
       return res.json({
         success: true,
         challengeId,
-        type: "avatar",
-        assetId: targetAssetId,
-        assetName: targetAssetName,
-        catalogUrl: selectedItem.catalogUrl,
-        avatarEditorUrl: "https://www.roblox.com/my/avatar",
-        availableItems: officialFreeItems,
-        action: expectedWearing ? "equip" : "unequip",
-        actionInstruction: expectedWearing ? `Buka Avatar Editor di roblox.com/my/avatar. Pakai topi resmi gratis "${targetAssetName}" (0 Robux di Catalog), lalu klik tombol verifikasi di bawah.` : `Buka Avatar Editor di roblox.com/my/avatar. Lepaskan sementara topi "${targetAssetName}", lalu klik tombol verifikasi di bawah.`,
+        type: "bio",
+        phrase,
+        words: selectedWords,
         expiresInSeconds: 240
       });
+    } catch (err) {
+      console.error("Start challenge error:", err);
+      return res.status(500).json({ error: "Gagal membuat sesi verifikasi aman." });
     }
-    const shuffled = [...ROBLOX_FILTER_SAFE_WORDS].sort(() => 0.5 - Math.random());
-    const selectedWords = [];
-    for (const word of shuffled) {
-      if (!currentBio.includes(word.toLowerCase())) {
-        selectedWords.push(word);
-        if (selectedWords.length === 4) break;
+  });
+  app2.post("/api/roblox/account/challenge/verify", async (req, res) => {
+    try {
+      const { challengeId, userId, pin } = req.body;
+      if (!challengeId || !userId) {
+        return res.status(400).json({ error: "challengeId dan userId diperlukan." });
       }
-    }
-    const phrase = selectedWords.join(" ");
-    const challenge = {
-      id: challengeId,
-      userId: Number(userId),
-      username: userData.name,
-      type: "bio",
-      words: selectedWords,
-      phrase,
-      initialBio: currentBio,
-      createdAt: Date.now(),
-      expiresAt
-    };
-    activeChallenges.set(challengeId, challenge);
-    return res.json({
-      success: true,
-      challengeId,
-      type: "bio",
-      phrase,
-      words: selectedWords,
-      expiresInSeconds: 240
-    });
-  } catch (err) {
-    console.error("Start challenge error:", err);
-    return res.status(500).json({ error: "Gagal membuat sesi verifikasi aman." });
-  }
-});
-app.post("/api/roblox/account/challenge/verify", async (req, res) => {
-  try {
-    const { challengeId, userId, pin, username } = req.body;
-    if (!challengeId || !userId) {
-      return res.status(400).json({ error: "challengeId dan userId diperlukan." });
-    }
-    if (!pin || pin.toString().trim().length < 4) {
-      return res.status(400).json({ error: "PIN Keamanan minimal 4 angka untuk melindungi akun kamu." });
-    }
-    const challenge = activeChallenges.get(challengeId);
-    if (!challenge || challenge.userId !== Number(userId)) {
-      return res.status(403).json({
-        success: false,
-        error: "Sesi verifikasi tidak valid atau telah kedaluwarsa. Silakan mulai sesi verifikasi baru."
-      });
-    }
-    if (Date.now() > challenge.expiresAt) {
-      activeChallenges.delete(challengeId);
-      return res.status(403).json({
-        success: false,
-        error: "Waktu sesi verifikasi (4 menit) telah habis. Silakan klik buat sesi baru."
-      });
-    }
-    if (challenge.type === "avatar") {
-      let currentAssetIds = [];
-      try {
-        const avatarRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/avatar?_t=${Date.now()}`, {
-          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+      if (!pin || pin.toString().trim().length < 4) {
+        return res.status(400).json({ error: "PIN Keamanan minimal 4 angka untuk melindungi akun kamu." });
+      }
+      const challenge = await getChallenge(challengeId);
+      if (!challenge || challenge.userId !== Number(userId)) {
+        return res.status(403).json({
+          success: false,
+          error: "Sesi verifikasi tidak valid atau telah kedaluwarsa. Silakan mulai sesi verifikasi baru."
         });
-        if (avatarRes.ok) {
-          const aData = await avatarRes.json();
-          if (Array.isArray(aData.assets)) {
-            currentAssetIds = aData.assets.map((a) => Number(a.id)).filter((id) => !isNaN(id));
-          }
-        }
-      } catch (e) {
-        console.warn("Avatar verify fetch error:", e);
       }
-      if (currentAssetIds.length === 0) {
+      if (Date.now() > challenge.expiresAt) {
+        await deleteChallenge(challengeId);
+        return res.status(403).json({
+          success: false,
+          error: "Waktu sesi verifikasi (4 menit) telah habis. Silakan klik buat sesi baru."
+        });
+      }
+      if (challenge.type === "avatar") {
+        let currentAssetIds = [];
         try {
-          const wearingRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/currently-wearing?_t=${Date.now()}`, {
+          const avatarRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/avatar?_t=${Date.now()}`, {
             headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
           });
-          if (wearingRes.ok) {
-            const wData = await wearingRes.json();
-            if (Array.isArray(wData.assetIds)) {
-              currentAssetIds = wData.assetIds.map((id) => Number(id)).filter((id) => !isNaN(id));
+          if (avatarRes.ok) {
+            const aData = await avatarRes.json();
+            if (Array.isArray(aData.assets)) {
+              currentAssetIds = aData.assets.map((a) => Number(a.id)).filter((id) => !isNaN(id));
             }
           }
         } catch (e) {
-          console.warn("Currently-wearing verify fetch error:", e);
+          console.warn("Avatar verify fetch error:", e);
         }
-      }
-      const isNowWearing = currentAssetIds.includes(challenge.assetId);
-      if (isNowWearing !== challenge.expectedWearing) {
-        const actionMsg = challenge.expectedWearing ? `Topi "${challenge.assetName}" (ID: ${challenge.assetId}) belum terpasang di avatar kamu. Silakan pakai di Avatar Editor roblox.com/my/avatar, simpan perubahan, lalu klik tombol verifikasi lagi.` : `Topi "${challenge.assetName}" (ID: ${challenge.assetId}) masih terpasang di avatar kamu. Silakan lepas di Avatar Editor roblox.com/my/avatar, simpan perubahan, lalu klik tombol verifikasi lagi.`;
-        return res.status(400).json({
-          success: false,
-          verified: false,
-          message: actionMsg,
-          error: actionMsg
-        });
-      }
-    } else {
-      const userRes = await fetch(`https://users.roblox.com/v1/users/${userId}?_t=${Date.now()}`, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      });
-      if (!userRes.ok) {
-        return res.status(500).json({ error: "Gagal menghubungi server Roblox untuk memeriksa profil." });
-      }
-      const uData = await userRes.json();
-      const liveBio = (uData.description || "").toLowerCase();
-      const allWordsPresent = challenge.words.every((w) => liveBio.includes(w.toLowerCase()));
-      if (!allWordsPresent) {
-        return res.status(403).json({
-          success: false,
-          verified: false,
-          message: `Frasa unik "${challenge.phrase}" belum ditemukan di kolom About / Bio akun Roblox kamu. Pastikan sudah disimpan di profil Roblox.`
-        });
-      }
-    }
-    activeChallenges.delete(challengeId);
-    const salt = crypto2.randomBytes(16).toString("hex");
-    const pinHash = hashPin(pin.toString().trim(), salt);
-    const sessionToken = await createSession(userId);
-    const finalUsername = username || challenge.username || "RobloxPlayer";
-    await saveAccount({
-      userId: Number(userId),
-      username: finalUsername,
-      pinHash,
-      salt,
-      verifiedAt: (/* @__PURE__ */ new Date()).toISOString()
-    });
-    const existingProfile = await getUserProfile(`user-roblox-${userId}`);
-    if (!existingProfile) {
-      await upsertUserProfile({
-        id: `user-roblox-${userId}`,
-        robloxUserId: Number(userId),
-        username: finalUsername,
-        handle: `@${finalUsername}`,
-        joinedDate: (/* @__PURE__ */ new Date()).toISOString()
-      });
-    }
-    return res.json({
-      success: true,
-      verified: true,
-      sessionToken,
-      message: "Akun Roblox berhasil diverifikasi dan dilindungi dengan PIN Keamanan! Orang lain tidak akan bisa masuk tanpa PIN kamu."
-    });
-  } catch (err) {
-    console.error("Challenge verify error:", err);
-    return res.status(500).json({ error: "Terjadi kesalahan sistem saat memverifikasi akun." });
-  }
-});
-app.post("/api/roblox/account/login-with-pin", async (req, res) => {
-  try {
-    const { userId, pin } = req.body;
-    if (!userId || !pin) {
-      return res.status(400).json({ error: "userId and pin are required" });
-    }
-    const rateLimitKey = `pin_${userId}_${req.ip || "ip"}`;
-    const rateStatus = checkPinRateLimit(rateLimitKey);
-    if (!rateStatus.allowed) {
-      return res.status(429).json({
-        success: false,
-        error: `Terlalu banyak percobaan PIN salah. Akun dikunci sementara selama ${rateStatus.waitMinutes} menit demi keamanan.`,
-        locked: true,
-        waitMinutes: rateStatus.waitMinutes
-      });
-    }
-    const account = await getAccountByUserId(Number(userId));
-    if (!account) {
-      return res.status(404).json({
-        success: false,
-        message: "Akun Roblox ini belum didaftarkan di Bloxboxd. Harap lakukan verifikasi kepemilikan terlebih dahulu."
-      });
-    }
-    const testHash = hashPin(pin.toString().trim(), account.salt);
-    if (testHash !== account.pinHash) {
-      const remaining = recordFailedPinAttempt(rateLimitKey);
-      if (remaining === 0) {
-        return res.status(429).json({
-          success: false,
-          error: "PIN salah! Akun telah dikunci selama 15 menit karena mencapai 5 kali kegagalan berturut-turut demi melindungi akun Roblox kamu.",
-          locked: true,
-          remainingAttempts: 0
-        });
-      }
-      return res.status(401).json({
-        success: false,
-        message: `PIN Keamanan salah! Sisa percobaan: ${remaining} kali sebelum akun dikunci 15 menit.`,
-        remainingAttempts: remaining
-      });
-    }
-    resetPinAttempts(rateLimitKey);
-    const sessionToken = await createSession(userId);
-    return res.json({
-      success: true,
-      sessionToken,
-      username: account.username,
-      message: "Login berhasil!"
-    });
-  } catch (err) {
-    console.error("PIN Login error:", err);
-    return res.status(500).json({ error: "Gagal memproses login PIN" });
-  }
-});
-app.post("/api/roblox/account/reset-pin", async (req, res) => {
-  try {
-    const { challengeId, userId, newPin } = req.body;
-    if (!challengeId || !userId || !newPin) {
-      return res.status(400).json({ error: "challengeId, userId, dan newPin diperlukan." });
-    }
-    if (newPin.toString().trim().length < 4) {
-      return res.status(400).json({ error: "PIN baru minimal 4 angka." });
-    }
-    const challenge = activeChallenges.get(challengeId);
-    if (!challenge || challenge.userId !== Number(userId)) {
-      return res.status(403).json({
-        success: false,
-        error: "Sesi verifikasi reset PIN tidak valid atau telah kedaluwarsa."
-      });
-    }
-    if (Date.now() > challenge.expiresAt) {
-      activeChallenges.delete(challengeId);
-      return res.status(403).json({
-        success: false,
-        error: "Sesi verifikasi reset PIN telah kedaluwarsa. Silakan mulai sesi baru."
-      });
-    }
-    if (challenge.type === "avatar") {
-      const wearingRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/currently-wearing?_t=${Date.now()}`, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      });
-      if (!wearingRes.ok) {
-        return res.status(500).json({ error: "Gagal memeriksa avatar Roblox kamu." });
-      }
-      const wData = await wearingRes.json();
-      const currentAssetIds = Array.isArray(wData.assetIds) ? wData.assetIds : [];
-      const isNowWearing = currentAssetIds.includes(challenge.assetId);
-      if (isNowWearing !== challenge.expectedWearing) {
-        return res.status(403).json({
-          success: false,
-          verified: false,
-          message: "Perubahan avatar belum terdeteksi di server Roblox."
-        });
-      }
-    } else {
-      const userRes = await fetch(`https://users.roblox.com/v1/users/${userId}?_t=${Date.now()}`, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      });
-      if (!userRes.ok) {
-        return res.status(500).json({ error: "Gagal memeriksa profil Roblox." });
-      }
-      const uData = await userRes.json();
-      const liveBio = (uData.description || "").toLowerCase();
-      const allWordsPresent = challenge.words.every((w) => liveBio.includes(w.toLowerCase()));
-      if (!allWordsPresent) {
-        return res.status(403).json({
-          success: false,
-          verified: false,
-          message: `Frasa "${challenge.phrase}" belum ditemukan di bio profil Roblox kamu.`
-        });
-      }
-    }
-    activeChallenges.delete(challengeId);
-    const salt = crypto2.randomBytes(16).toString("hex");
-    const pinHash = hashPin(newPin.toString().trim(), salt);
-    const sessionToken = await createSession(userId);
-    await saveAccount({
-      userId: Number(userId),
-      username: challenge.username || "RobloxPlayer",
-      pinHash,
-      salt,
-      verifiedAt: (/* @__PURE__ */ new Date()).toISOString()
-    });
-    return res.json({
-      success: true,
-      sessionToken,
-      message: "PIN Keamanan berhasil diatur ulang dan akun berhasil diverifikasi!"
-    });
-  } catch (err) {
-    console.error("Reset PIN error:", err);
-    return res.status(500).json({ error: "Gagal mengatur ulang PIN" });
-  }
-});
-app.get("/api/roblox/avatar", async (req, res) => {
-  try {
-    const username = req.query.username?.trim();
-    if (!username) {
-      return res.status(400).json({ error: "Username is required" });
-    }
-    const userLookupRes = await fetch("https://users.roblox.com/v1/usernames/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usernames: [username], excludeBannedUsers: false })
-    });
-    if (userLookupRes.ok) {
-      const lookupData = await userLookupRes.json();
-      if (lookupData.data && lookupData.data.length > 0) {
-        const userId = lookupData.data[0].id;
-        const displayName = lookupData.data[0].displayName;
-        const thumbRes = await fetch(
-          `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=false`
-        );
-        if (thumbRes.ok) {
-          const thumbData = await thumbRes.json();
-          if (thumbData.data && thumbData.data[0]?.imageUrl) {
-            return res.json({
-              userId,
-              displayName,
-              avatarUrl: thumbData.data[0].imageUrl
+        if (currentAssetIds.length === 0) {
+          try {
+            const wearingRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/currently-wearing?_t=${Date.now()}`, {
+              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
             });
+            if (wearingRes.ok) {
+              const wData = await wearingRes.json();
+              if (Array.isArray(wData.assetIds)) {
+                currentAssetIds = wData.assetIds.map((id) => Number(id)).filter((id) => !isNaN(id));
+              }
+            }
+          } catch (e) {
+            console.warn("Currently-wearing verify fetch error:", e);
           }
         }
-        return res.json({ userId, displayName, avatarUrl: null });
+        const isNowWearing = currentAssetIds.includes(challenge.assetId);
+        if (isNowWearing !== challenge.expectedWearing) {
+          const actionMsg = challenge.expectedWearing ? `Topi "${challenge.assetName}" (ID: ${challenge.assetId}) belum terpasang di avatar kamu. Silakan pakai di Avatar Editor roblox.com/my/avatar, simpan perubahan, lalu klik tombol verifikasi lagi.` : `Topi "${challenge.assetName}" (ID: ${challenge.assetId}) masih terpasang di avatar kamu. Silakan lepas di Avatar Editor roblox.com/my/avatar, simpan perubahan, lalu klik tombol verifikasi lagi.`;
+          return res.status(400).json({
+            success: false,
+            verified: false,
+            message: actionMsg,
+            error: actionMsg
+          });
+        }
+      } else {
+        const userRes = await fetch(`https://users.roblox.com/v1/users/${userId}?_t=${Date.now()}`, {
+          headers: { "User-Agent": "Mozilla/5.0" }
+        });
+        if (!userRes.ok) {
+          return res.status(500).json({ error: "Gagal menghubungi server Roblox untuk memeriksa profil." });
+        }
+        const uData = await userRes.json();
+        const liveBio = (uData.description || "").toLowerCase();
+        const allWordsPresent = challenge.words.every((w) => liveBio.includes(w.toLowerCase()));
+        if (!allWordsPresent) {
+          return res.status(403).json({
+            success: false,
+            verified: false,
+            message: `Frasa unik "${challenge.phrase}" belum ditemukan di kolom About / Bio akun Roblox kamu. Pastikan sudah disimpan di profil Roblox.`
+          });
+        }
       }
+      await deleteChallenge(challengeId);
+      const salt = crypto4.randomBytes(16).toString("hex");
+      const pinHash = hashPin(pin.toString().trim(), salt);
+      const sessionToken = await createSession(userId);
+      const finalUsername = challenge.username || "RobloxPlayer";
+      await saveAccount({
+        userId: Number(userId),
+        username: finalUsername,
+        pinHash,
+        salt,
+        verifiedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      const existingProfile = await getUserProfile(`user-roblox-${userId}`);
+      if (!existingProfile) {
+        await upsertUserProfile({
+          id: `user-roblox-${userId}`,
+          robloxUserId: Number(userId),
+          username: finalUsername,
+          handle: `@${finalUsername}`,
+          joinedDate: (/* @__PURE__ */ new Date()).toISOString()
+        });
+      }
+      return res.json({
+        success: true,
+        verified: true,
+        sessionToken,
+        message: "Akun Roblox berhasil diverifikasi dan dilindungi dengan PIN Keamanan! Orang lain tidak akan bisa masuk tanpa PIN kamu."
+      });
+    } catch (err) {
+      console.error("Challenge verify error:", err);
+      return res.status(500).json({ error: "Terjadi kesalahan sistem saat memverifikasi akun." });
     }
-    return res.json({ avatarUrl: null });
-  } catch (err) {
-    return res.status(500).json({ error: "Failed to lookup avatar" });
-  }
-});
-app.get("/api/games", async (req, res) => {
-  try {
-    const limit = Math.max(1, Math.min(1e3, parseInt(req.query.limit || "500", 10)));
-    const games = await getAllGames(limit);
-    return res.json({ games, count: games.length });
-  } catch (err) {
-    console.error("Error fetching games from database:", err);
-    return res.status(500).json({ error: "Failed to fetch games" });
-  }
-});
-app.get("/api/games/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const game = await getGameById(id);
-    if (!game) {
-      return res.status(404).json({ error: "Game not found in database" });
+  });
+  app2.post("/api/roblox/account/login-with-pin", async (req, res) => {
+    try {
+      const { userId, pin } = req.body;
+      if (!userId || !pin) {
+        return res.status(400).json({ error: "userId and pin are required" });
+      }
+      const rateLimitKey = `pin_${userId}`;
+      const rateStatus = await checkLoginRateLimit(rateLimitKey);
+      if (!rateStatus.allowed) {
+        return res.status(429).json({
+          success: false,
+          error: `Terlalu banyak percobaan PIN salah. Akun dikunci sementara selama ${rateStatus.waitMinutes} menit demi keamanan.`,
+          locked: true,
+          waitMinutes: rateStatus.waitMinutes
+        });
+      }
+      const account = await getAccountByUserId(Number(userId));
+      if (!account) {
+        return res.status(404).json({
+          success: false,
+          message: "Akun Roblox ini belum didaftarkan di Bloxboxd. Harap lakukan verifikasi kepemilikan terlebih dahulu."
+        });
+      }
+      if (!verifyPin(pin.toString().trim(), account.pinHash, account.salt)) {
+        const remaining = await recordFailedLogin(rateLimitKey);
+        if (remaining === 0) {
+          return res.status(429).json({
+            success: false,
+            error: "PIN salah! Akun telah dikunci selama 15 menit karena mencapai 5 kali kegagalan berturut-turut demi melindungi akun Roblox kamu.",
+            locked: true,
+            remainingAttempts: 0
+          });
+        }
+        return res.status(401).json({
+          success: false,
+          message: `PIN Keamanan salah! Sisa percobaan: ${remaining} kali sebelum akun dikunci 15 menit.`,
+          remainingAttempts: remaining
+        });
+      }
+      await resetLoginAttempts(rateLimitKey);
+      if (needsPinRehash(account.pinHash)) {
+        try {
+          const salt = crypto4.randomBytes(16).toString("hex");
+          await saveAccount({
+            userId: Number(userId),
+            username: account.username,
+            pinHash: hashPin(pin.toString().trim(), salt),
+            salt,
+            verifiedAt: (/* @__PURE__ */ new Date()).toISOString()
+          });
+        } catch (e) {
+          console.warn("[Auth] PIN rehash failed (non-fatal):", e);
+        }
+      }
+      const sessionToken = await createSession(userId);
+      return res.json({
+        success: true,
+        sessionToken,
+        username: account.username,
+        message: "Login berhasil!"
+      });
+    } catch (err) {
+      console.error("PIN Login error:", err);
+      return res.status(500).json({ error: "Gagal memproses login PIN" });
     }
-    return res.json({ game });
-  } catch (err) {
-    console.error("Error fetching game by id:", err);
-    return res.status(500).json({ error: "Failed to fetch game" });
-  }
-});
-app.post("/api/games", async (req, res) => {
-  try {
-    const body = req.body;
-    const actingUser = Array.isArray(body) ? (req.query.userId || "").trim() : (body?.userId || "").trim();
-    if (!await requireAuth(req, res, actingUser)) return;
-    if (Array.isArray(body)) {
-      await bulkUpsertGames(body);
-      return res.json({ success: true, count: body.length });
-    } else if (body && (body.id || body.universeId)) {
-      await upsertGame(body);
-      return res.json({ success: true, game: body });
+  });
+  app2.post("/api/roblox/account/reset-pin", async (req, res) => {
+    try {
+      const { challengeId, userId, newPin } = req.body;
+      if (!challengeId || !userId || !newPin) {
+        return res.status(400).json({ error: "challengeId, userId, dan newPin diperlukan." });
+      }
+      if (newPin.toString().trim().length < 4) {
+        return res.status(400).json({ error: "PIN baru minimal 4 angka." });
+      }
+      const challenge = await getChallenge(challengeId);
+      if (!challenge || challenge.userId !== Number(userId)) {
+        return res.status(403).json({
+          success: false,
+          error: "Sesi verifikasi reset PIN tidak valid atau telah kedaluwarsa."
+        });
+      }
+      if (Date.now() > challenge.expiresAt) {
+        await deleteChallenge(challengeId);
+        return res.status(403).json({
+          success: false,
+          error: "Sesi verifikasi reset PIN telah kedaluwarsa. Silakan mulai sesi baru."
+        });
+      }
+      if (challenge.type === "avatar") {
+        const wearingRes = await fetch(`https://avatar.roblox.com/v1/users/${userId}/currently-wearing?_t=${Date.now()}`, {
+          headers: { "User-Agent": "Mozilla/5.0" }
+        });
+        if (!wearingRes.ok) {
+          return res.status(500).json({ error: "Gagal memeriksa avatar Roblox kamu." });
+        }
+        const wData = await wearingRes.json();
+        const currentAssetIds = Array.isArray(wData.assetIds) ? wData.assetIds : [];
+        const isNowWearing = currentAssetIds.includes(challenge.assetId);
+        if (isNowWearing !== challenge.expectedWearing) {
+          return res.status(403).json({
+            success: false,
+            verified: false,
+            message: "Perubahan avatar belum terdeteksi di server Roblox."
+          });
+        }
+      } else {
+        const userRes = await fetch(`https://users.roblox.com/v1/users/${userId}?_t=${Date.now()}`, {
+          headers: { "User-Agent": "Mozilla/5.0" }
+        });
+        if (!userRes.ok) {
+          return res.status(500).json({ error: "Gagal memeriksa profil Roblox." });
+        }
+        const uData = await userRes.json();
+        const liveBio = (uData.description || "").toLowerCase();
+        const allWordsPresent = challenge.words.every((w) => liveBio.includes(w.toLowerCase()));
+        if (!allWordsPresent) {
+          return res.status(403).json({
+            success: false,
+            verified: false,
+            message: `Frasa "${challenge.phrase}" belum ditemukan di bio profil Roblox kamu.`
+          });
+        }
+      }
+      await deleteChallenge(challengeId);
+      const salt = crypto4.randomBytes(16).toString("hex");
+      const pinHash = hashPin(newPin.toString().trim(), salt);
+      const sessionToken = await createSession(userId);
+      await saveAccount({
+        userId: Number(userId),
+        username: challenge.username || "RobloxPlayer",
+        pinHash,
+        salt,
+        verifiedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      return res.json({
+        success: true,
+        sessionToken,
+        message: "PIN Keamanan berhasil diatur ulang dan akun berhasil diverifikasi!"
+      });
+    } catch (err) {
+      console.error("Reset PIN error:", err);
+      return res.status(500).json({ error: "Gagal mengatur ulang PIN" });
     }
-    return res.status(400).json({ error: "Valid game object or array of games is required" });
-  } catch (err) {
-    console.error("Error upserting game:", err);
-    return res.status(500).json({ error: "Failed to save game to database" });
-  }
-});
-app.get("/api/user/data", async (req, res) => {
-  try {
-    const userId = req.query.userId?.trim();
-    if (!userId) {
-      return res.status(400).json({ error: "userId is required" });
-    }
-    const profile = await getUserProfile(userId);
-    const logs = await getUserGameLogs(userId);
-    const reviews = await getUserReviews(userId);
-    return res.json({ profile, logs, reviews });
-  } catch (err) {
-    console.error("Error fetching user data:", err);
-    return res.status(500).json({ error: "Failed to fetch user data" });
-  }
-});
-app.get("/api/users/search", async (req, res) => {
-  try {
-    const q = (req.query.q || "").trim();
-    if (!q) {
-      return res.json({ users: [] });
-    }
-    const users = await searchUserProfiles(q, 8);
-    return res.json({ users });
-  } catch (err) {
-    console.error("Error searching users:", err);
-    return res.status(500).json({ error: "Failed to search users" });
-  }
-});
+  });
+}
+
+// src/lib/auth.ts
 function extractSessionToken(req) {
   const header = req.headers["authorization"] || "";
   if (typeof header === "string" && header.startsWith("Bearer ")) {
@@ -5273,243 +5302,380 @@ async function requireAuth(req, res, userId) {
   }
   return true;
 }
-app.post("/api/user/profile", async (req, res) => {
-  try {
-    const profile = req.body;
-    if (!profile || !profile.id) {
-      return res.status(400).json({ error: "Valid profile object is required" });
+
+// src/routes/catalog.ts
+function registerCatalogRoutes(app2) {
+  app2.get("/api/games", async (req, res) => {
+    try {
+      const limit = Math.max(1, Math.min(1e3, parseInt(req.query.limit || "500", 10)));
+      const games = await getAllGames(limit);
+      return res.json({ games, count: games.length });
+    } catch (err) {
+      console.error("Error fetching games from database:", err);
+      return res.status(500).json({ error: "Failed to fetch games" });
     }
-    if (!await requireAuth(req, res, profile.id)) return;
-    profile.bio = sanitizeText(profile.bio, 500);
-    profile.displayName = sanitizeText(profile.displayName, 80);
-    profile.username = sanitizeText(profile.username, 50);
-    await upsertUserProfile(profile);
-    return res.json({ success: true, message: "Profile updated" });
-  } catch (err) {
-    console.error("Error saving user profile:", err);
-    return res.status(500).json({ error: "Failed to update user profile" });
-  }
-});
-app.post("/api/logs", async (req, res) => {
-  try {
-    const log = req.body;
-    if (!log || !log.userId || !log.gameId) {
-      return res.status(400).json({ error: "userId and gameId are required" });
+  });
+  app2.get("/api/games/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const game = await getGameById(id);
+      if (!game) {
+        return res.status(404).json({ error: "Game not found in database" });
+      }
+      return res.json({ game });
+    } catch (err) {
+      console.error("Error fetching game by id:", err);
+      return res.status(500).json({ error: "Failed to fetch game" });
     }
-    if (!await requireAuth(req, res, log.userId)) return;
-    log.reviewText = sanitizeText(log.reviewText, 2500);
-    await upsertGameLog(log);
-    return res.json({ success: true, message: "Log saved" });
-  } catch (err) {
-    console.error("Error saving log:", err);
-    return res.status(500).json({ error: "Failed to save log" });
-  }
-});
-app.delete("/api/logs/:id", async (req, res) => {
-  try {
-    const logId = req.params.id;
-    const userId = req.query.userId?.trim();
-    if (!logId || !userId) {
-      return res.status(400).json({ error: "logId and userId query are required" });
+  });
+  app2.post("/api/games", async (req, res) => {
+    try {
+      const body = req.body;
+      const actingUser = Array.isArray(body) ? (req.query.userId || "").trim() : (body?.userId || "").trim();
+      if (!await requireAuth(req, res, actingUser)) return;
+      if (Array.isArray(body)) {
+        await bulkUpsertGames(body);
+        return res.json({ success: true, count: body.length });
+      } else if (body && (body.id || body.universeId)) {
+        await upsertGame(body);
+        return res.json({ success: true, game: body });
+      }
+      return res.status(400).json({ error: "Valid game object or array of games is required" });
+    } catch (err) {
+      console.error("Error upserting game:", err);
+      return res.status(500).json({ error: "Failed to save game to database" });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const deleted = await deleteGameLog(userId, logId);
-    if (!deleted) {
-      return res.status(404).json({ error: "Log not found" });
+  });
+}
+
+// src/routes/user.ts
+function registerUserRoutes(app2) {
+  app2.get("/api/user/data", async (req, res) => {
+    try {
+      const userId = req.query.userId?.trim();
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+      const profile = await getUserProfile(userId);
+      const logs = await getUserGameLogs(userId);
+      const reviews = await getUserReviews(userId);
+      return res.json({ profile, logs, reviews });
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+      return res.status(500).json({ error: "Failed to fetch user data" });
     }
-    return res.json({ success: true, message: "Log deleted" });
-  } catch (err) {
-    console.error("Error deleting log:", err);
-    return res.status(500).json({ error: "Failed to delete log" });
-  }
-});
-app.get("/api/reviews", async (req, res) => {
-  try {
-    const gameId = req.query.gameId?.trim();
-    const reviews = await getAllReviews(gameId);
-    return res.json({ reviews });
-  } catch (err) {
-    console.error("Error fetching reviews:", err);
-    return res.status(500).json({ error: "Failed to fetch reviews" });
-  }
-});
-app.post("/api/reviews", async (req, res) => {
-  try {
-    const review = req.body;
-    if (!review || !review.userId || !review.gameId || !review.reviewText?.trim()) {
-      return res.status(400).json({ error: "Invalid review payload" });
+  });
+  app2.get("/api/users/search", async (req, res) => {
+    try {
+      const q = (req.query.q || "").trim();
+      if (!q) {
+        return res.json({ users: [] });
+      }
+      const users = await searchUserProfiles(q, 8);
+      return res.json({ users });
+    } catch (err) {
+      console.error("Error searching users:", err);
+      return res.status(500).json({ error: "Failed to search users" });
     }
-    if (!await requireAuth(req, res, review.userId)) return;
-    review.reviewText = sanitizeText(review.reviewText, 3e3);
-    review.username = sanitizeText(review.username, 50);
-    await upsertReview(review);
-    return res.json({ success: true, message: "Review saved" });
-  } catch (err) {
-    console.error("Error saving review:", err);
-    return res.status(500).json({ error: "Failed to save review" });
-  }
-});
-app.post("/api/reviews/:id/like", async (req, res) => {
-  try {
-    const reviewId = req.params.id;
-    const { userId } = req.body;
-    if (!reviewId || !userId) {
-      return res.status(400).json({ error: "reviewId and userId are required" });
+  });
+  app2.post("/api/user/profile", async (req, res) => {
+    try {
+      const profile = req.body;
+      if (!profile || !profile.id) {
+        return res.status(400).json({ error: "Valid profile object is required" });
+      }
+      if (!await requireAuth(req, res, profile.id)) return;
+      profile.bio = sanitizeText(profile.bio, 500);
+      profile.displayName = sanitizeText(profile.displayName, 80);
+      profile.username = sanitizeText(profile.username, 50);
+      await upsertUserProfile(profile);
+      return res.json({ success: true, message: "Profile updated" });
+    } catch (err) {
+      console.error("Error saving user profile:", err);
+      return res.status(500).json({ error: "Failed to update user profile" });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const result = await toggleReviewLike(userId, reviewId);
-    return res.json({ success: true, ...result });
-  } catch (err) {
-    console.error("Error liking review:", err);
-    return res.status(500).json({ error: "Failed to like review" });
-  }
-});
-app.get("/api/lists", async (req, res) => {
-  try {
-    const lists = await getAllCustomLists();
-    return res.json({ lists });
-  } catch (err) {
-    console.error("Error fetching lists:", err);
-    return res.status(500).json({ error: "Failed to fetch lists" });
-  }
-});
-app.post("/api/lists", async (req, res) => {
-  try {
-    const list = req.body;
-    if (!list || !list.userId || !list.title?.trim()) {
-      return res.status(400).json({ error: "userId and title are required" });
+  });
+  app2.post("/api/logs", async (req, res) => {
+    try {
+      const log = req.body;
+      if (!log || !log.userId || !log.gameId) {
+        return res.status(400).json({ error: "userId and gameId are required" });
+      }
+      if (!await requireAuth(req, res, log.userId)) return;
+      log.reviewText = sanitizeText(log.reviewText, 2500);
+      await upsertGameLog(log);
+      return res.json({ success: true, message: "Log saved" });
+    } catch (err) {
+      console.error("Error saving log:", err);
+      return res.status(500).json({ error: "Failed to save log" });
     }
-    list.title = sanitizeText(list.title, 120);
-    list.description = sanitizeText(list.description, 1e3);
-    list.userName = sanitizeText(list.userName, 50);
-    if (!await requireAuth(req, res, list.userId)) return;
-    await upsertCustomList(list);
-    return res.json({ success: true, message: "List saved" });
-  } catch (err) {
-    console.error("Error saving list:", err);
-    return res.status(500).json({ error: "Failed to save list" });
-  }
-});
-app.delete("/api/lists/:id", async (req, res) => {
-  try {
-    const listId = req.params.id;
-    const userId = req.query.userId?.trim();
-    if (!listId || !userId) {
-      return res.status(400).json({ error: "listId and userId query are required" });
+  });
+  app2.delete("/api/logs/:id", async (req, res) => {
+    try {
+      const logId = req.params.id;
+      const userId = req.query.userId?.trim();
+      if (!logId || !userId) {
+        return res.status(400).json({ error: "logId and userId query are required" });
+      }
+      if (!await requireAuth(req, res, userId)) return;
+      const deleted = await deleteGameLog(userId, logId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Log not found" });
+      }
+      return res.json({ success: true, message: "Log deleted" });
+    } catch (err) {
+      console.error("Error deleting log:", err);
+      return res.status(500).json({ error: "Failed to delete log" });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const deleted = await deleteCustomList(userId, listId);
-    if (!deleted) {
-      return res.status(404).json({ error: "List not found" });
+  });
+}
+
+// src/routes/social.ts
+function registerSocialRoutes(app2) {
+  app2.get("/api/reviews", async (req, res) => {
+    try {
+      const gameId = req.query.gameId?.trim();
+      const reviews = await getAllReviews(gameId);
+      return res.json({ reviews });
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+      return res.status(500).json({ error: "Failed to fetch reviews" });
     }
-    return res.json({ success: true, message: "List deleted" });
-  } catch (err) {
-    console.error("Error deleting list:", err);
-    return res.status(500).json({ error: "Failed to delete list" });
-  }
-});
-app.post("/api/lists/:id/like", async (req, res) => {
-  try {
-    const listId = req.params.id;
-    const { userId } = req.body;
-    if (!listId || !userId) {
-      return res.status(400).json({ error: "listId and userId are required" });
+  });
+  app2.post("/api/reviews", async (req, res) => {
+    try {
+      const review = req.body;
+      if (!review || !review.userId || !review.gameId || !review.reviewText?.trim()) {
+        return res.status(400).json({ error: "Invalid review payload" });
+      }
+      if (!await requireAuth(req, res, review.userId)) return;
+      review.reviewText = sanitizeText(review.reviewText, 3e3);
+      review.username = sanitizeText(review.username, 50);
+      await upsertReview(review);
+      return res.json({ success: true, message: "Review saved" });
+    } catch (err) {
+      console.error("Error saving review:", err);
+      return res.status(500).json({ error: "Failed to save review" });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const result = await toggleListLike(userId, listId);
-    return res.json({ success: true, ...result });
-  } catch (err) {
-    console.error("Error liking list:", err);
-    return res.status(500).json({ error: "Failed to like list" });
-  }
-});
-app.post("/api/users/:id/follow", async (req, res) => {
-  try {
-    const targetUserId = req.params.id;
-    const { followerId } = req.body;
-    if (!targetUserId || !followerId) {
-      return res.status(400).json({ error: "targetUserId and followerId are required" });
+  });
+  app2.post("/api/reviews/:id/like", async (req, res) => {
+    try {
+      const reviewId = req.params.id;
+      const { userId } = req.body;
+      if (!reviewId || !userId) {
+        return res.status(400).json({ error: "reviewId and userId are required" });
+      }
+      if (!await requireAuth(req, res, userId)) return;
+      const result = await toggleReviewLike(userId, reviewId);
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      console.error("Error liking review:", err);
+      return res.status(500).json({ error: "Failed to like review" });
     }
-    if (targetUserId === followerId) {
-      return res.status(400).json({ error: "Cannot follow yourself" });
+  });
+  app2.get("/api/lists", async (req, res) => {
+    try {
+      const lists = await getAllCustomLists();
+      return res.json({ lists });
+    } catch (err) {
+      console.error("Error fetching lists:", err);
+      return res.status(500).json({ error: "Failed to fetch lists" });
     }
-    if (!await requireAuth(req, res, followerId)) return;
-    const result = await toggleFollowUser(followerId, targetUserId);
-    return res.json({ success: true, ...result });
-  } catch (err) {
-    console.error("Error toggling follow:", err);
-    return res.status(500).json({ error: "Failed to toggle follow" });
-  }
-});
-app.get("/api/users/:id/follow-status", async (req, res) => {
-  try {
-    const targetUserId = req.params.id;
-    const currentUserId = req.query.currentUserId?.trim() || "";
-    if (!targetUserId) {
-      return res.status(400).json({ error: "User ID is required" });
+  });
+  app2.post("/api/lists", async (req, res) => {
+    try {
+      const list = req.body;
+      if (!list || !list.userId || !list.title?.trim()) {
+        return res.status(400).json({ error: "userId and title are required" });
+      }
+      list.title = sanitizeText(list.title, 120);
+      list.description = sanitizeText(list.description, 1e3);
+      list.userName = sanitizeText(list.userName, 50);
+      if (!await requireAuth(req, res, list.userId)) return;
+      await upsertCustomList(list);
+      return res.json({ success: true, message: "List saved" });
+    } catch (err) {
+      console.error("Error saving list:", err);
+      return res.status(500).json({ error: "Failed to save list" });
     }
-    const status = await getFollowStatus(currentUserId, targetUserId);
-    return res.json(status);
-  } catch (err) {
-    console.error("Error fetching follow status:", err);
-    return res.status(500).json({ error: "Failed to fetch follow status" });
-  }
-});
-app.get("/api/community/feed", async (req, res) => {
-  try {
-    const userId = req.query.userId?.trim();
-    const feed = await getCommunityFeed(userId);
-    return res.json({ feed });
-  } catch (err) {
-    console.error("Error fetching community feed:", err);
-    return res.status(500).json({ error: "Failed to fetch community feed" });
-  }
-});
-app.get("/api/community/trending", async (req, res) => {
-  try {
-    const data = await getTrendingReviewsAndLeaderboard();
-    return res.json(data);
-  } catch (err) {
-    console.error("Error fetching trending and leaderboard:", err);
-    return res.status(500).json({ error: "Failed to fetch trending and leaderboard" });
-  }
-});
-app.get("/api/reviews/:id/comments", async (req, res) => {
-  try {
-    const reviewId = req.params.id;
-    if (!reviewId) {
-      return res.status(400).json({ error: "reviewId is required" });
+  });
+  app2.delete("/api/lists/:id", async (req, res) => {
+    try {
+      const listId = req.params.id;
+      const userId = req.query.userId?.trim();
+      if (!listId || !userId) {
+        return res.status(400).json({ error: "listId and userId query are required" });
+      }
+      if (!await requireAuth(req, res, userId)) return;
+      const deleted = await deleteCustomList(userId, listId);
+      if (!deleted) {
+        return res.status(404).json({ error: "List not found" });
+      }
+      return res.json({ success: true, message: "List deleted" });
+    } catch (err) {
+      console.error("Error deleting list:", err);
+      return res.status(500).json({ error: "Failed to delete list" });
     }
-    const comments = await getReviewComments(reviewId);
-    return res.json({ comments });
-  } catch (err) {
-    console.error("Error fetching review comments:", err);
-    return res.status(500).json({ error: "Failed to fetch review comments" });
-  }
-});
-app.post("/api/reviews/:id/comments", async (req, res) => {
-  try {
-    const reviewId = req.params.id;
-    const { userId, username, userAvatar, commentText } = req.body;
-    if (!reviewId || !userId || !commentText?.trim()) {
-      return res.status(400).json({ error: "reviewId, userId, and non-empty commentText are required" });
+  });
+  app2.post("/api/lists/:id/like", async (req, res) => {
+    try {
+      const listId = req.params.id;
+      const { userId } = req.body;
+      if (!listId || !userId) {
+        return res.status(400).json({ error: "listId and userId are required" });
+      }
+      if (!await requireAuth(req, res, userId)) return;
+      const result = await toggleListLike(userId, listId);
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      console.error("Error liking list:", err);
+      return res.status(500).json({ error: "Failed to like list" });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const cleanComment = sanitizeText(commentText, 600);
-    const cleanUsername = sanitizeText(username, 50) || "RobloxPlayer";
-    const comment = await addReviewComment({
-      reviewId,
-      userId,
-      username: cleanUsername,
-      userAvatar,
-      commentText: cleanComment
-    });
-    return res.json({ success: true, comment });
-  } catch (err) {
-    console.error("Error adding review comment:", err);
-    return res.status(500).json({ error: "Failed to add review comment" });
+  });
+  app2.post("/api/users/:id/follow", async (req, res) => {
+    try {
+      const targetUserId = req.params.id;
+      const { followerId } = req.body;
+      if (!targetUserId || !followerId) {
+        return res.status(400).json({ error: "targetUserId and followerId are required" });
+      }
+      if (targetUserId === followerId) {
+        return res.status(400).json({ error: "Cannot follow yourself" });
+      }
+      if (!await requireAuth(req, res, followerId)) return;
+      const result = await toggleFollowUser(followerId, targetUserId);
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      console.error("Error toggling follow:", err);
+      return res.status(500).json({ error: "Failed to toggle follow" });
+    }
+  });
+  app2.get("/api/users/:id/follow-status", async (req, res) => {
+    try {
+      const targetUserId = req.params.id;
+      const currentUserId = req.query.currentUserId?.trim() || "";
+      if (!targetUserId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      const status = await getFollowStatus(currentUserId, targetUserId);
+      return res.json(status);
+    } catch (err) {
+      console.error("Error fetching follow status:", err);
+      return res.status(500).json({ error: "Failed to fetch follow status" });
+    }
+  });
+  app2.get("/api/community/feed", async (req, res) => {
+    try {
+      const userId = req.query.userId?.trim();
+      const feed = await getCommunityFeed(userId);
+      return res.json({ feed });
+    } catch (err) {
+      console.error("Error fetching community feed:", err);
+      return res.status(500).json({ error: "Failed to fetch community feed" });
+    }
+  });
+  app2.get("/api/community/trending", async (req, res) => {
+    try {
+      const data = await getTrendingReviewsAndLeaderboard();
+      return res.json(data);
+    } catch (err) {
+      console.error("Error fetching trending and leaderboard:", err);
+      return res.status(500).json({ error: "Failed to fetch trending and leaderboard" });
+    }
+  });
+  app2.get("/api/reviews/:id/comments", async (req, res) => {
+    try {
+      const reviewId = req.params.id;
+      if (!reviewId) {
+        return res.status(400).json({ error: "reviewId is required" });
+      }
+      const comments = await getReviewComments(reviewId);
+      return res.json({ comments });
+    } catch (err) {
+      console.error("Error fetching review comments:", err);
+      return res.status(500).json({ error: "Failed to fetch review comments" });
+    }
+  });
+  app2.post("/api/reviews/:id/comments", async (req, res) => {
+    try {
+      const reviewId = req.params.id;
+      const { userId, username, userAvatar, commentText } = req.body;
+      if (!reviewId || !userId || !commentText?.trim()) {
+        return res.status(400).json({ error: "reviewId, userId, and non-empty commentText are required" });
+      }
+      if (!await requireAuth(req, res, userId)) return;
+      const cleanComment = sanitizeText(commentText, 600);
+      const cleanUsername = sanitizeText(username, 50) || "RobloxPlayer";
+      const comment = await addReviewComment({
+        reviewId,
+        userId,
+        username: cleanUsername,
+        userAvatar,
+        commentText: cleanComment
+      });
+      return res.json({ success: true, comment });
+    } catch (err) {
+      console.error("Error adding review comment:", err);
+      return res.status(500).json({ error: "Failed to add review comment" });
+    }
+  });
+}
+
+// server.ts
+var app = express();
+var PORT = 3e3;
+installRobloxFetchFailover();
+app.disable("x-powered-by");
+app.use(express.json({ limit: "1mb" }));
+if (!process.env.VERCEL) {
+  app.use((req, res, next) => {
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()");
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.roblox.com https://*.rbxcdn.com; connect-src 'self' https://apis.roblox.com https://apis.roproxy.com https://avatar.roblox.com https://friends.roblox.com https://friends.roproxy.com https://games.roblox.com https://games.roproxy.com https://thumbnails.roblox.com https://thumbnails.roproxy.com https://users.roblox.com https://users.roproxy.com https://www.roblox.com https://*.rbxcdn.com https://*.roproxy.com; media-src 'self' https:; worker-src 'self' blob:; manifest-src 'self'; frame-src 'none'; upgrade-insecure-requests"
+    );
+    next();
+  });
+}
+var isDbInitialized = false;
+var dbInitPromise = null;
+app.use(async (req, res, next) => {
+  const rawUrl = req.headers["x-matched-path"] || req.headers["x-vercel-matched-path"] || req.originalUrl;
+  if (typeof rawUrl === "string" && rawUrl.startsWith("/api")) {
+    req.url = rawUrl;
   }
+  if (!isDbInitialized) {
+    if (!dbInitPromise) {
+      dbInitPromise = initDatabase().then(() => {
+        isDbInitialized = true;
+      }).catch((err) => {
+        console.error("[Database Init Error]:", err);
+        isDbInitialized = true;
+      });
+    }
+    await dbInitPromise;
+  }
+  next();
 });
+app.get("/favicon.ico", (req, res) => {
+  const iconPath = path2.join(process.cwd(), "public/favicon.svg");
+  if (fs2.existsSync(iconPath)) {
+    res.setHeader("Content-Type", "image/svg+xml");
+    return res.sendFile(iconPath);
+  }
+  return res.status(404).end();
+});
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", service: "Bloxboxd API" });
+});
+registerRobloxRoutes(app);
+registerAccountRoutes(app);
+registerCatalogRoutes(app);
+registerUserRoutes(app);
+registerSocialRoutes(app);
 async function startServer() {
   try {
     await initDatabase();
@@ -5544,7 +5710,3 @@ async function startServer() {
 if (!process.env.VERCEL) {
   startServer();
 }
-var server_default = app;
-export {
-  server_default as default
-};
