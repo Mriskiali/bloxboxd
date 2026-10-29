@@ -65,7 +65,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
   const pageTokensRef = useRef<Record<string, string | undefined>>({});
   const lastFetchedCatRef = useRef<string | null>(null);
 
-  // Fetch fresh batch of live Roblox games from the official Omni-Search / Discover API
+  // Fetch live batch from Roblox Discover/Omni-Search API
   const fetchLiveCategoryBatch = useCallback(async (cat: FocusedCategory) => {
     let apiGenre = 'All';
     if (cat === 'horror') apiGenre = 'Survival';
@@ -76,7 +76,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
     const currentToken = pageTokensRef.current[cat];
     setIsLoadingLive(true);
     try {
-      const url = `/api/roblox/discover?genre=${encodeURIComponent(apiGenre)}&limit=30${currentToken ? `&pageToken=${encodeURIComponent(currentToken)}` : ''}`;
+      const url = `/api/roblox/discover?genre=${encodeURIComponent(apiGenre)}&limit=35${currentToken ? `&pageToken=${encodeURIComponent(currentToken)}` : ''}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -94,7 +94,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
     }
   }, [addGamesToCatalog]);
 
-  // When category changes, pull a fresh live batch from Roblox if category has not been fetched yet
+  // Pull fresh batch when modal opens or category changes
   useEffect(() => {
     if (!isOpen) return;
     if (lastFetchedCatRef.current !== selectedCategory) {
@@ -107,31 +107,35 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
     return games.filter(g => isGameMatchingFocus(g, selectedStyle, selectedCategory));
   }, [games, selectedStyle, selectedCategory]);
 
+  // True diverse shuffle: picks 3 distinct games from the entire pool
+  // Gives small, indie, and 0-player games a fair chance to appear alongside popular ones
   const showcaseGames = useMemo(() => {
     if (matchingGames.length === 0) return [];
-    
-    // Sort by balanced score of rating and active player volume
-    const sorted = [...matchingGames].sort((a, b) => {
-      const scoreA = (a.ratingAverage * 10) + Math.min(10, Math.log10(Math.max(1, a.playerCount || 0)) * 2);
-      const scoreB = (b.ratingAverage * 10) + Math.min(10, Math.log10(Math.max(1, b.playerCount || 0)) * 2);
-      return scoreB - scoreA;
-    });
+    if (matchingGames.length <= 3) return matchingGames;
 
-    if (sorted.length <= 3) return sorted;
+    const pool = [...matchingGames];
+    const picked: Game[] = [];
+    const usedIndices = new Set<number>();
 
-    const offset = (shuffleSeed * 3) % sorted.length;
-    const batch = [];
     for (let i = 0; i < 3; i++) {
-      batch.push(sorted[(offset + i) % sorted.length]);
+      let idx = Math.abs((shuffleSeed * 7 + i * 11 + 3)) % pool.length;
+      let attempts = 0;
+      while (usedIndices.has(idx) && attempts < pool.length) {
+        idx = (idx + 1) % pool.length;
+        attempts++;
+      }
+      usedIndices.add(idx);
+      picked.push(pool[idx]);
     }
-    return batch;
+
+    return picked;
   }, [matchingGames, shuffleSeed]);
 
   if (!isOpen) return null;
 
   const handleShuffle = () => {
     setShuffleSeed(prev => prev + 1);
-    // If approaching the end of current local matches, fetch another batch live from Roblox
+    // Continuously pull next page from Roblox live API
     if (matchingGames.length < (shuffleSeed + 2) * 3) {
       fetchLiveCategoryBatch(selectedCategory);
     }
@@ -268,7 +272,8 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
             showcaseGames.map((game, index) => {
               const isBacklog = getUserLogForGame(game.id)?.status === 'backlog';
               const totalVotes = (game.upVotes || 0) + (game.downVotes || 0);
-              const likePct = totalVotes > 0 ? Math.round(((game.upVotes || 0) / totalVotes) * 100) : 90;
+              const likePct = totalVotes > 0 ? Math.round(((game.upVotes || 0) / totalVotes) * 100) : null;
+              const onlineCount = game.playerCount ?? 0;
 
               return (
                 <div 
@@ -298,24 +303,28 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
                         {game.creatorName} · <span className="text-ink">{game.genre}</span>
                       </p>
 
-                      <div className="flex items-center gap-2.5 text-[11px]">
+                      <div className="flex items-center gap-2 text-[11px] flex-wrap">
                         <span className="flex items-center gap-1 text-orange font-bold">
                           <Star className="w-3 h-3 fill-orange" />
-                          <span>{game.ratingAverage.toFixed(1)}</span>
+                          <span>{game.ratingAverage > 0 ? game.ratingAverage.toFixed(1) : (language === 'id' ? 'Baru' : 'New')}</span>
                         </span>
-                        <span className="text-faint">·</span>
-                        <span className="text-green font-medium">
-                          {likePct}% suka
-                        </span>
-                        {game.playerCount !== undefined && game.playerCount > 0 && (
+                        {likePct !== null && (
                           <>
                             <span className="text-faint">·</span>
-                            <span className="text-muted flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              <span>{game.playerCount.toLocaleString()}</span>
+                            <span className="text-green font-medium">
+                              {likePct}% suka
                             </span>
                           </>
                         )}
+                        <span className="text-faint">·</span>
+                        <span className="text-muted flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          <span>
+                            {onlineCount > 0 
+                              ? `${onlineCount.toLocaleString()} online`
+                              : (language === 'id' ? '0 online' : '0 online')}
+                          </span>
+                        </span>
                       </div>
                     </div>
                   </div>
