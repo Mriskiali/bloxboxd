@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { 
   X, 
   Play, 
@@ -16,7 +16,8 @@ import {
   Ghost,
   Crosshair,
   Coffee,
-  Gem
+  Gem,
+  Loader2
 } from 'lucide-react';
 import { Game, safeImgSrc } from '../types';
 import { useApp } from '../context/AppContext';
@@ -55,11 +56,52 @@ const renderCategoryIcon = (name: string) => {
 };
 
 export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClose }) => {
-  const { games, viewGame, toggleGameStatus, getUserLogForGame, user, language, showToast } = useApp();
+  const { games, viewGame, toggleGameStatus, getUserLogForGame, user, language, showToast, addGamesToCatalog } = useApp();
 
   const [selectedStyle, setSelectedStyle] = useState<PlayStyle>('coop');
   const [selectedCategory, setSelectedCategory] = useState<FocusedCategory>('horror');
   const [shuffleSeed, setShuffleSeed] = useState(0);
+  const [isLoadingLive, setIsLoadingLive] = useState(false);
+  const pageTokensRef = useRef<Record<string, string | undefined>>({});
+  const lastFetchedCatRef = useRef<string | null>(null);
+
+  // Fetch fresh batch of live Roblox games from the official Omni-Search / Discover API
+  const fetchLiveCategoryBatch = useCallback(async (cat: FocusedCategory) => {
+    let apiGenre = 'All';
+    if (cat === 'horror') apiGenre = 'Survival';
+    else if (cat === 'fps') apiGenre = 'Shooter';
+    else if (cat === 'cozy') apiGenre = 'Roleplay & Avatar Sim';
+    else if (cat === 'story') apiGenre = 'RPG';
+
+    const currentToken = pageTokensRef.current[cat];
+    setIsLoadingLive(true);
+    try {
+      const url = `/api/roblox/discover?genre=${encodeURIComponent(apiGenre)}&limit=30${currentToken ? `&pageToken=${encodeURIComponent(currentToken)}` : ''}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.games) && data.games.length > 0) {
+          addGamesToCatalog(data.games);
+          if (data.nextPageToken) {
+            pageTokensRef.current[cat] = data.nextPageToken;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Live discover fetch error in finder:', e);
+    } finally {
+      setIsLoadingLive(false);
+    }
+  }, [addGamesToCatalog]);
+
+  // When category changes, pull a fresh live batch from Roblox if category has not been fetched yet
+  useEffect(() => {
+    if (!isOpen) return;
+    if (lastFetchedCatRef.current !== selectedCategory) {
+      lastFetchedCatRef.current = selectedCategory;
+      fetchLiveCategoryBatch(selectedCategory);
+    }
+  }, [isOpen, selectedCategory, fetchLiveCategoryBatch]);
 
   const matchingGames = useMemo(() => {
     return games.filter(g => isGameMatchingFocus(g, selectedStyle, selectedCategory));
@@ -68,6 +110,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
   const showcaseGames = useMemo(() => {
     if (matchingGames.length === 0) return [];
     
+    // Sort by balanced score of rating and active player volume
     const sorted = [...matchingGames].sort((a, b) => {
       const scoreA = (a.ratingAverage * 10) + Math.min(10, Math.log10(Math.max(1, a.playerCount || 0)) * 2);
       const scoreB = (b.ratingAverage * 10) + Math.min(10, Math.log10(Math.max(1, b.playerCount || 0)) * 2);
@@ -88,6 +131,10 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
 
   const handleShuffle = () => {
     setShuffleSeed(prev => prev + 1);
+    // If approaching the end of current local matches, fetch another batch live from Roblox
+    if (matchingGames.length < (shuffleSeed + 2) * 3) {
+      fetchLiveCategoryBatch(selectedCategory);
+    }
   };
 
   const handleSaveBacklog = (e: React.MouseEvent, game: Game) => {
@@ -184,8 +231,9 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
               <span className="text-[10px] font-bold uppercase tracking-wider text-green">
                 {language === 'id' ? '2. Mau tema apa?' : '2. Pick a mood'}
               </span>
-              <span className="text-[10px] text-faint">
-                {matchingGames.length} {language === 'id' ? 'game cocok' : 'games'}
+              <span className="text-[10px] text-faint flex items-center gap-1.5">
+                {isLoadingLive && <Loader2 className="w-3 h-3 animate-spin text-green" />}
+                <span>{matchingGames.length} {language === 'id' ? 'game cocok' : 'games'}</span>
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -302,20 +350,22 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
           ) : (
             <div className="text-center py-8 space-y-2.5 bg-bg rounded-[3px] border border-line">
               <p className="text-xs text-muted">
-                {language === 'id'
-                  ? 'Belum ada game yang cocok dengan pilihan ini.'
-                  : 'No games match this combination yet.'}
+                {isLoadingLive 
+                  ? (language === 'id' ? 'Sedang mencari game dari server Roblox...' : 'Fetching live experiences from Roblox...')
+                  : (language === 'id' ? 'Belum ada game yang cocok dengan pilihan ini.' : 'No games match this combination yet.')}
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedStyle('all');
-                  setSelectedCategory('all');
-                }}
-                className="bb-btn bb-btn-primary text-xs"
-              >
-                {language === 'id' ? 'Tampilkan Semua' : 'Reset All'}
-              </button>
+              {!isLoadingLive && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedStyle('all');
+                    setSelectedCategory('all');
+                  }}
+                  className="bb-btn bb-btn-primary text-xs"
+                >
+                  {language === 'id' ? 'Tampilkan Semua' : 'Reset All'}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -326,16 +376,15 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
             {language === 'id' ? 'Klik Mainkan untuk langsung buka game di Roblox.' : 'Click Play to launch directly in Roblox.'}
           </p>
 
-          {matchingGames.length > 3 && (
-            <button
-              type="button"
-              onClick={handleShuffle}
-              className="flex items-center gap-1.5 text-xs font-semibold text-ink hover:text-green transition-colors cursor-pointer"
-            >
-              <RotateCw className="w-3.5 h-3.5" />
-              <span>{language === 'id' ? 'Ganti Pilihan' : 'Show Others'}</span>
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={isLoadingLive}
+            onClick={handleShuffle}
+            className="flex items-center gap-1.5 text-xs font-semibold text-ink hover:text-green disabled:opacity-50 transition-colors cursor-pointer"
+          >
+            <RotateCw className={`w-3.5 h-3.5 ${isLoadingLive ? 'animate-spin text-green' : ''}`} />
+            <span>{language === 'id' ? 'Ganti Pilihan' : 'Show Others'}</span>
+          </button>
         </div>
       </div>
     </div>
