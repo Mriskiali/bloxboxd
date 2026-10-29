@@ -78,7 +78,7 @@ export const RobloxLoginModal: React.FC = () => {
                 {t('login_modal_title')}
               </h3>
               <p className="text-[11px] text-muted">
-                {language === 'id' ? 'Otentikasi Resmi Roblox' : 'Official Roblox Authentication'}
+                {language === 'id' ? 'Masuk via Roblox resmi' : 'Official Roblox sign in'}
               </p>
             </div>
           </div>
@@ -135,11 +135,11 @@ export const RobloxLoginModal: React.FC = () => {
         ) : (
           /* Logged out state: 1-Click Roblox OAuth */
           <div className="space-y-5">
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-1">
               <p className="text-xs text-ink leading-relaxed">
                 {language === 'id'
-                  ? 'Masuk menggunakan akun Roblox aslimu dalam 1 klik. Tanpa password, tanpa PIN, dan tanpa perlu verifikasi bio manual.'
-                  : 'Sign in using your real Roblox account in 1 click. Zero passwords, no PINs, and no manual bio verification needed.'}
+                  ? 'Masuk pakai akun Roblox kamu. Cukup satu klik tanpa perlu password atau repot ubah bio.'
+                  : 'Sign in with your Roblox account in one click. No passwords, no PINs, no hassle.'}
               </p>
             </div>
 
@@ -153,7 +153,7 @@ export const RobloxLoginModal: React.FC = () => {
               {isAuthenticating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{language === 'id' ? 'Menghubungkan ke Roblox...' : 'Connecting to Roblox...'}</span>
+                  <span>{language === 'id' ? 'Menghubungkan...' : 'Connecting...'}</span>
                 </>
               ) : (
                 <>
@@ -164,26 +164,26 @@ export const RobloxLoginModal: React.FC = () => {
             </button>
 
             {/* Perks / Security guarantees */}
-            <div className="pt-3 border-t border-line space-y-2.5 text-xs text-muted">
+            <div className="pt-3 border-t border-line space-y-2 text-xs text-muted">
               <div className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-green flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-white font-medium">100% Aman & Resmi:</strong>{' '}
-                  {language === 'id' ? 'Otorisasi langsung lewat domain resmi Roblox (apis.roblox.com).' : 'Authorized directly on Roblox domains.'}
+                  <strong className="text-white font-medium">{language === 'id' ? 'Resmi:' : 'Official:'}</strong>{' '}
+                  {language === 'id' ? 'Otorisasi langsung lewat server Roblox (apis.roblox.com).' : 'Handled directly by official Roblox servers.'}
                 </span>
               </div>
               <div className="flex items-start gap-2.5">
                 <Lock className="w-4 h-4 text-green flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-white font-medium">Zero-Credential:</strong>{' '}
-                  {language === 'id' ? 'Bloxboxd tidak pernah meminta atau menyimpan kredensial Roblox kamu.' : 'Bloxboxd never sees or stores your Roblox credentials.'}
+                  <strong className="text-white font-medium">{language === 'id' ? 'Tanpa Password:' : 'Password-Free:'}</strong>{' '}
+                  {language === 'id' ? 'Password dan akun kamu tetap aman di pihak Roblox.' : 'Your credentials stay strictly with Roblox.'}
                 </span>
               </div>
               <div className="flex items-start gap-2.5">
                 <Sparkles className="w-4 h-4 text-green flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-white font-medium">Sinkron Otomatis:</strong>{' '}
-                  {language === 'id' ? 'Avatar 3D, nama pengguna, dan status terverifikasi langsung aktif.' : 'Avatar, username, and badge sync instantly.'}
+                  <strong className="text-white font-medium">{language === 'id' ? 'Otomatis:' : 'Automatic:'}</strong>{' '}
+                  {language === 'id' ? 'Avatar, username, dan koleksi game langsung terhubung.' : 'Avatar, username, and diary sync right away.'}
                 </span>
               </div>
             </div>

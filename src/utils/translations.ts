@@ -314,7 +314,7 @@ export const translations = {
     filter_modal_apply: 'Terapkan Filter',
 
     login_modal_title: 'Login Akun Roblox',
-    login_modal_oauth_btn: 'Masuk Cepat dengan Roblox (Resmi)',
+    login_modal_oauth_btn: 'Masuk lewat Roblox',
     login_modal_or_manual: 'atau login manual / bio Roblox',
     login_modal_step1: 'Masukkan Username Roblox Kamu',
     login_modal_username_ph: 'Contoh: Builderman',
@@ -701,7 +701,7 @@ export const translations = {
     filter_modal_apply: 'Apply Filters',
 
     login_modal_title: 'Roblox Account Sign In',
-    login_modal_oauth_btn: 'Sign in with Roblox (Official)',
+    login_modal_oauth_btn: 'Sign in with Roblox',
     login_modal_or_manual: 'or manual verification via bio',
     login_modal_step1: 'Enter Your Roblox Username',
     login_modal_username_ph: 'e.g. Builderman',

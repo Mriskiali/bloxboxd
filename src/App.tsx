@@ -495,19 +495,19 @@ const MainAppContent: React.FC = () => {
               <div className="flex items-center justify-between gap-3 p-4 mb-8 rounded-[3px] bg-panel border border-line flex-wrap shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-[3px] bg-green/15 text-green border border-green/25 flex-shrink-0">
-                    <Dices className="w-5 h-5" />
+                    <Compass className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="text-xs font-bold text-white tracking-tight flex items-center gap-2">
-                      <span>{language === 'id' ? 'Bingung Mau Main Apa Hari Ini?' : 'Not Sure What to Play Today?'}</span>
+                      <span>{language === 'id' ? 'Lagi Mau Main Apa?' : 'What Should We Play?'}</span>
                       <span className="text-[10px] font-semibold text-green bg-green/10 border border-green/20 px-1.5 py-0.5 rounded-[2px] uppercase tracking-wider">
-                        Curated
+                        {language === 'id' ? 'Kurasi' : 'Curated'}
                       </span>
                     </p>
                     <p className="text-[11px] text-muted mt-0.5">
                       {language === 'id'
-                        ? 'Dapatkan rekomendasi game terkurasi tanpa scroll feed brainrot di Roblox'
-                        : 'Get hand-picked quality Roblox gems instantly without scrolling clickbait'}
+                        ? 'Cari game bagus tanpa harus scroll feed Roblox yang itu-itu aja.'
+                        : 'Find solid games without digging through bloated Roblox feeds.'}
                     </p>
                   </div>
                 </div>
@@ -518,7 +518,7 @@ const MainAppContent: React.FC = () => {
                   className="flex items-center gap-2 px-4 py-2.5 rounded-[3px] bg-green hover:bg-[#00c94b] text-black font-bold text-xs shadow-[0_2px_12px_rgba(0,224,84,0.3)] transition-all cursor-pointer whitespace-nowrap"
                 >
                   <Sparkles className="w-3.5 h-3.5 fill-current" />
-                  <span>{language === 'id' ? 'Acak Game Berkualitas' : 'Surprise Me'}</span>
+                  <span>{language === 'id' ? 'Pilihkan Game' : 'Find a Game'}</span>
                 </button>
               </div>
 

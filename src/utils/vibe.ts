@@ -7,7 +7,7 @@ export interface PlayStyleOption {
   id: PlayStyle;
   labelId: string;
   labelEn: string;
-  emoji: string;
+  iconName: 'Gamepad2' | 'User' | 'Users' | 'Swords';
   descId: string;
   descEn: string;
 }
@@ -16,7 +16,7 @@ export interface FocusedCategoryOption {
   id: FocusedCategory;
   labelId: string;
   labelEn: string;
-  emoji: string;
+  iconName: 'Sparkles' | 'Ghost' | 'Crosshair' | 'Coffee' | 'Compass' | 'Gem';
   badgeId: string;
   badgeEn: string;
   descId: string;
@@ -26,35 +26,35 @@ export interface FocusedCategoryOption {
 export const PLAY_STYLES: PlayStyleOption[] = [
   {
     id: 'all',
-    labelId: 'Bebas / Siapa Saja',
-    labelEn: 'Any Style',
-    emoji: '🎮',
-    descId: 'Semua tipe permainan',
+    labelId: 'Bebas',
+    labelEn: 'Any',
+    iconName: 'Gamepad2',
+    descId: 'Semua gaya main',
     descEn: 'Any play style'
   },
   {
     id: 'solo',
-    labelId: 'Solo (Fokus Sendiri)',
-    labelEn: 'Solo (Immersive)',
-    emoji: '👤',
-    descId: 'Story, puzzle, obby & pengalaman mendalam',
-    descEn: 'Stories, puzzles, obbies & immersive single player'
+    labelId: 'Sendiri (Solo)',
+    labelEn: 'Solo',
+    iconName: 'User',
+    descId: 'Story, puzzle, obby, dan eksplorasi santai',
+    descEn: 'Stories, puzzles, obbies, and immersive campaigns'
   },
   {
     id: 'coop',
-    labelId: 'Mabar Teman (2–4 Orang)',
-    labelEn: 'Co-op (2–4 Players)',
-    emoji: '👥',
-    descId: 'Horor survival, petualangan bersama, minigames',
-    descEn: 'Survival horror, co-op adventures, fun minigames'
+    labelId: 'Mabar Teman',
+    labelEn: 'With Friends',
+    iconName: 'Users',
+    descId: 'Horor co-op, survival bareng, dan minigame seru',
+    descEn: 'Survival horror, co-op adventures, and party games'
   },
   {
     id: 'pvp',
-    labelId: 'Kompetitif / PvP',
-    labelEn: 'Competitive / PvP',
-    emoji: '⚔️',
-    descId: 'Shooter, duel, battlegrounds & adu mekanik',
-    descEn: 'Shooters, duels, battlegrounds & skill checks'
+    labelId: 'Adu Skill / PvP',
+    labelEn: 'Competitive',
+    iconName: 'Swords',
+    descId: 'Shooter, duel mekanik, dan battleground',
+    descEn: 'Shooters, duels, and battleground arenas'
   }
 ];
 
@@ -63,69 +63,68 @@ export const FOCUSED_CATEGORIES: FocusedCategoryOption[] = [
     id: 'all',
     labelId: 'Semua Genre',
     labelEn: 'All Genres',
-    emoji: '✨',
-    badgeId: 'Kurasi Terbaik',
-    badgeEn: 'Curated Pick',
-    descId: 'Koleksi pilihan game Roblox berkualitas tinggi.',
-    descEn: 'Collection of high quality curated Roblox experiences.'
+    iconName: 'Sparkles',
+    badgeId: 'Pilihan Terbaik',
+    badgeEn: 'Top Pick',
+    descId: 'Koleksi game pilihan dari berbagai genre.',
+    descEn: 'Curated mix of solid experiences across all genres.'
   },
   {
     id: 'horror',
-    labelId: 'Horor & Survival Asli',
-    labelEn: 'True Horror & Survival',
-    emoji: '👻',
-    badgeId: 'Atmosfer Mencekam',
-    badgeEn: 'Atmospheric Horror',
-    descId: 'Hanya game horor atmosferik & escape survival resmi (bukan obby murahan).',
-    descEn: 'Authentic atmospheric horror and escape survival (no spam/fake games).'
+    labelId: 'Horor & Survival',
+    labelEn: 'Horror & Survival',
+    iconName: 'Ghost',
+    badgeId: 'Horor Asli',
+    badgeEn: 'True Horror',
+    descId: 'Game horor atmosferik dan escape survival murni.',
+    descEn: 'Atmospheric horror and escape survival without spam.'
   },
   {
     id: 'fps',
-    labelId: 'FPS & Tembak-tembakan',
-    labelEn: 'FPS & Shooters',
-    emoji: '🔫',
-    badgeId: 'Mekanik Senjata Top',
-    badgeEn: 'Tactical Gunplay',
-    descId: 'Shooter taktis dan adu aim dengan mekanik senjata responsif.',
-    descEn: 'Tactical shooters and precision aim games with responsive mechanics.'
+    labelId: 'Tembak-tembakan / FPS',
+    labelEn: 'Shooters / FPS',
+    iconName: 'Crosshair',
+    badgeId: 'Mekanik Senjata',
+    badgeEn: 'Gunplay',
+    descId: 'Shooter taktis dengan aim dan recoil responsif.',
+    descEn: 'Tactical shooters with tight gunplay and responsive aim.'
   },
   {
     id: 'cozy',
-    labelId: 'Cozy, Hangout & Relax',
-    labelEn: 'Cozy, Hangout & Chill',
-    emoji: '☕',
-    badgeId: 'Santai & Estetik',
-    badgeEn: 'Relaxing & Aesthetic',
-    descId: 'Eksplorasi estetis, hangout sosial, dress up & simulasi santai.',
-    descEn: 'Aesthetic exploration, social hangouts, dress up & calm sims.'
+    labelId: 'Santai & Hangout',
+    labelEn: 'Chill & Hangout',
+    iconName: 'Coffee',
+    badgeId: 'Santai',
+    badgeEn: 'Relaxing',
+    descId: 'Eksplorasi estetik, hangout bareng, dan roleplay santai.',
+    descEn: 'Aesthetic worlds, social spots, and relaxed sims.'
   },
   {
     id: 'story',
-    labelId: 'Petualangan & Story Tamat',
-    labelEn: 'Adventure & RPG Story',
-    emoji: '🗺️',
-    badgeId: 'Alur Cerita & Progresi',
-    badgeEn: 'Narrative & Progression',
-    descId: 'Game dengan progresi dunia, lore, atau alur cerita yang bisa diselesaikan.',
-    descEn: 'Worlds with lore, exploration, or complete story campaigns.'
+    labelId: 'Story & Petualangan',
+    labelEn: 'Adventure & Story',
+    iconName: 'Compass',
+    badgeId: 'Alur Cerita',
+    badgeEn: 'Story Campaign',
+    descId: 'Game yang punya dunia luas, misi, atau bisa ditamatkan.',
+    descEn: 'Rich worlds with quests, exploration, or clear endings.'
   },
   {
     id: 'hidden-gem',
-    labelId: 'Hidden Gems (Underrated)',
-    labelEn: 'Hidden Gems (Underrated)',
-    emoji: '💎',
-    badgeId: 'Rasio Like > 85%',
-    badgeEn: '85%+ Like Ratio',
-    descId: 'Rating komunitas sangat tinggi tapi pemain aktif masih di bawah 10.000.',
-    descEn: 'Very high positive rating, modest player count, no corporate cash-grabs.'
+    labelId: 'Hidden Gems',
+    labelEn: 'Hidden Gems',
+    iconName: 'Gem',
+    badgeId: 'Rating Tinggi',
+    badgeEn: 'High Rating',
+    descId: 'Rating komunitas tinggi tapi belum terlalu ramai pemain.',
+    descEn: 'High community ratings without being crowded or overhyped.'
   }
 ];
 
 /**
- * STRICT filtering based on canonical Roblox API taxonomy:
+ * Strict filtering based on canonical Roblox API taxonomy:
  * Evaluates genre_l1, genre_l2, subgenre, genre, and verified tags.
- * Deliberately excludes loose keyword searches on game description/title
- * to eliminate keyword-stuffed simulator spam.
+ * Excludes user description keyword stuffing.
  */
 export function isGameMatchingFocus(
   game: Game,
@@ -193,11 +192,9 @@ export function isGameMatchingFocus(
 
   // 2. Play Style Matching
   if (style === 'solo') {
-    // Solo favors story, horror, obbies, single-player friendly
     const isMultiplayerOnly = g1 === 'party & casual' && sub === 'minigame';
     if (isMultiplayerOnly) return false;
   } else if (style === 'coop') {
-    // Co-op favors horror survival, adventure, party, casual
     const isCoopFriendly = 
       g1 === 'survival' || 
       g1 === 'party & casual' || 
@@ -207,7 +204,6 @@ export function isGameMatchingFocus(
       cat === 'cozy';
     if (!isCoopFriendly) return false;
   } else if (style === 'pvp') {
-    // PvP strictly requires shooter, fighting, battleground, competitive action
     const isPvp = 
       g1 === 'shooter' || 
       g1 === 'action' || 
@@ -230,10 +226,8 @@ export function launchRobloxExperience(rootPlaceId: number): void {
   const protocolUrl = `roblox://experiences/start?placeId=${rootPlaceId}`;
   const webUrl = `https://www.roblox.com/games/${rootPlaceId}`;
 
-  // 1. Try launching native Roblox client
   window.location.href = protocolUrl;
 
-  // 2. Fallback to web link if window remains focused after 1.2s
   setTimeout(() => {
     if (!document.hidden) {
       window.open(webUrl, '_blank', 'noopener,noreferrer');
