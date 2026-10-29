@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Send, MessageSquare, Loader2, User } from 'lucide-react';
 import { Review, safeAvatarSrc } from '../types';
-import { useApp } from '../context/AppContext';
+import { useApp, authHeaders } from '../context/AppContext';
 
 interface CommentItem {
   id: string;
@@ -63,7 +63,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
     try {
       const res = await fetch(`/api/reviews/${encodeURIComponent(review.id)}/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({
           userId: user.id,
           username: user.username,

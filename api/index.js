@@ -2,10 +2,11 @@
 import express from "express";
 import path2 from "path";
 import fs2 from "fs";
-import crypto from "crypto";
+import crypto2 from "crypto";
 
 // src/db/index.ts
 import { createClient } from "@libsql/client";
+import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 import dotenv from "dotenv";
@@ -2586,6 +2587,14 @@ async function initDatabase() {
     )
   `);
   await db.execute(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    )
+  `);
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS user_profiles (
       id TEXT PRIMARY KEY,
       roblox_user_id INTEGER UNIQUE,
@@ -2780,6 +2789,29 @@ async function saveAccount(data) {
     args: [data.userId, data.username, data.pinHash, data.salt, data.verifiedAt]
   });
 }
+var SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1e3;
+function canonicalUserId(id) {
+  const raw = String(id).trim();
+  const num = raw.replace(/^user-roblox-/, "");
+  return `user-roblox-${num}`;
+}
+async function createSession(userId) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const now = /* @__PURE__ */ new Date();
+  await db.execute({
+    sql: `INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)`,
+    args: [token, canonicalUserId(userId), now.toISOString(), new Date(now.getTime() + SESSION_TTL_MS).toISOString()]
+  });
+  return token;
+}
+async function isValidSession(token, userId) {
+  if (!token) return false;
+  const result = await db.execute({
+    sql: `SELECT 1 FROM sessions WHERE token = ? AND user_id = ? AND expires_at > ?`,
+    args: [token, canonicalUserId(userId), (/* @__PURE__ */ new Date()).toISOString()]
+  });
+  return result.rows.length > 0;
+}
 async function getUserProfile(userId) {
   const result = await db.execute({
     sql: `SELECT * FROM user_profiles WHERE id = ? OR roblox_user_id = ?`,
@@ -2946,10 +2978,11 @@ async function deleteGameLog(userId, logId) {
   const cleanId = (userId || "").trim();
   const rawNumId = cleanId.replace("user-roblox-", "");
   const prefixedId = cleanId.startsWith("user-roblox-") ? cleanId : `user-roblox-${cleanId}`;
-  await db.execute({
+  const result = await db.execute({
     sql: `DELETE FROM game_logs WHERE id = ? AND (user_id = ? OR user_id = ? OR user_id = ?)`,
     args: [logId, cleanId, rawNumId, prefixedId]
   });
+  return result.rowsAffected > 0;
 }
 async function getAllReviews(gameId) {
   const sql = gameId ? `SELECT r.*, 
@@ -3141,10 +3174,11 @@ async function upsertCustomList(list) {
   });
 }
 async function deleteCustomList(userId, listId) {
-  await db.execute({
+  const result = await db.execute({
     sql: `DELETE FROM custom_lists WHERE id = ? AND user_id = ?`,
     args: [listId, userId]
   });
+  return result.rowsAffected > 0;
 }
 async function toggleListLike(userId, listId) {
   const existing = await db.execute({
@@ -3942,7 +3976,7 @@ async function searchRobloxLiveOnline(rawQuery) {
   if (cached && Date.now() - cached.timestamp < SEARCH_CACHE_TTL) {
     return cached.results;
   }
-  const sessionId = crypto.randomUUID();
+  const sessionId = crypto2.randomUUID();
   const searchEndpoints = [
     `https://apis.roproxy.com/search-api/omni-search?searchQuery=${encodeURIComponent(query)}&sessionId=${sessionId}`,
     `https://apis.roblox.com/search-api/omni-search?searchQuery=${encodeURIComponent(query)}&sessionId=${sessionId}`
@@ -4172,7 +4206,7 @@ async function fetchLiveDiscoverGames() {
   if (cachedDiscoverGames.length > 50 && Date.now() - lastDiscoverFetchTime < DISCOVER_CACHE_TTL) {
     return cachedDiscoverGames;
   }
-  const sessionId = crypto.randomUUID();
+  const sessionId = crypto2.randomUUID();
   const sorts = ["CCU_Based_V1", "Top_Trending_V6", "Up_And_Coming_V6", "Fun_With_Friends_V4", "Top_Revisited_Existing_Users_V4"];
   const gameMap = /* @__PURE__ */ new Map();
   for (const sortId of sorts) {
@@ -4225,7 +4259,7 @@ async function fetchRobloxOmniSearchPage(query, pageToken) {
   if (cached && Date.now() - cached.timestamp < OMNI_SEARCH_CACHE_TTL) {
     return cached.data;
   }
-  const sessionId = crypto.randomUUID();
+  const sessionId = crypto2.randomUUID();
   let url = `https://apis.roproxy.com/search-api/omni-search?searchQuery=${encodeURIComponent(query)}&sessionId=${sessionId}`;
   if (pageToken) {
     url += `&pageToken=${encodeURIComponent(pageToken)}`;
@@ -4558,7 +4592,7 @@ app.get("/api/roblox/user/lookup", async (req, res) => {
   }
 });
 function hashPin(pin, salt) {
-  return crypto.pbkdf2Sync(pin, salt, 1e3, 32, "sha256").toString("hex");
+  return crypto2.pbkdf2Sync(pin, salt, 1e3, 32, "sha256").toString("hex");
 }
 var ROBLOX_FILTER_SAFE_WORDS = [
   "silver",
@@ -4756,7 +4790,7 @@ app.post("/api/roblox/account/challenge/start", async (req, res) => {
     }
     const userData = await userRes.json();
     const currentBio = (userData.description || "").toLowerCase();
-    const challengeId = crypto.randomBytes(16).toString("hex");
+    const challengeId = crypto2.randomBytes(16).toString("hex");
     const expiresAt = Date.now() + 4 * 60 * 1e3;
     if (type === "avatar") {
       const officialFreeItems = [
@@ -4948,9 +4982,9 @@ app.post("/api/roblox/account/challenge/verify", async (req, res) => {
       }
     }
     activeChallenges.delete(challengeId);
-    const salt = crypto.randomBytes(16).toString("hex");
+    const salt = crypto2.randomBytes(16).toString("hex");
     const pinHash = hashPin(pin.toString().trim(), salt);
-    const sessionToken = crypto.randomBytes(24).toString("hex");
+    const sessionToken = await createSession(userId);
     const finalUsername = username || challenge.username || "RobloxPlayer";
     await saveAccount({
       userId: Number(userId),
@@ -5021,7 +5055,7 @@ app.post("/api/roblox/account/login-with-pin", async (req, res) => {
       });
     }
     resetPinAttempts(rateLimitKey);
-    const sessionToken = crypto.randomBytes(24).toString("hex");
+    const sessionToken = await createSession(userId);
     return res.json({
       success: true,
       sessionToken,
@@ -5092,9 +5126,9 @@ app.post("/api/roblox/account/reset-pin", async (req, res) => {
       }
     }
     activeChallenges.delete(challengeId);
-    const salt = crypto.randomBytes(16).toString("hex");
+    const salt = crypto2.randomBytes(16).toString("hex");
     const pinHash = hashPin(newPin.toString().trim(), salt);
-    const sessionToken = crypto.randomBytes(24).toString("hex");
+    const sessionToken = await createSession(userId);
     await saveAccount({
       userId: Number(userId),
       username: challenge.username || "RobloxPlayer",
@@ -5175,6 +5209,8 @@ app.get("/api/games/:id", async (req, res) => {
 app.post("/api/games", async (req, res) => {
   try {
     const body = req.body;
+    const actingUser = Array.isArray(body) ? (req.query.userId || "").trim() : (body?.userId || "").trim();
+    if (!await requireAuth(req, res, actingUser)) return;
     if (Array.isArray(body)) {
       await bulkUpsertGames(body);
       return res.json({ success: true, count: body.length });
@@ -5216,12 +5252,34 @@ app.get("/api/users/search", async (req, res) => {
     return res.status(500).json({ error: "Failed to search users" });
   }
 });
+function extractSessionToken(req) {
+  const header = req.headers["authorization"] || "";
+  if (typeof header === "string" && header.startsWith("Bearer ")) {
+    return header.slice(7).trim();
+  }
+  const alt = req.headers["x-session-token"];
+  return typeof alt === "string" && alt.trim() ? alt.trim() : void 0;
+}
+async function requireAuth(req, res, userId) {
+  if (!userId) {
+    res.status(400).json({ error: "userId is required" });
+    return false;
+  }
+  const token = extractSessionToken(req);
+  const ok = await isValidSession(token, String(userId));
+  if (!ok) {
+    res.status(401).json({ error: "Authentication required. Please log in again.", code: "SESSION_INVALID" });
+    return false;
+  }
+  return true;
+}
 app.post("/api/user/profile", async (req, res) => {
   try {
     const profile = req.body;
     if (!profile || !profile.id) {
       return res.status(400).json({ error: "Valid profile object is required" });
     }
+    if (!await requireAuth(req, res, profile.id)) return;
     profile.bio = sanitizeText(profile.bio, 500);
     profile.displayName = sanitizeText(profile.displayName, 80);
     profile.username = sanitizeText(profile.username, 50);
@@ -5238,6 +5296,7 @@ app.post("/api/logs", async (req, res) => {
     if (!log || !log.userId || !log.gameId) {
       return res.status(400).json({ error: "userId and gameId are required" });
     }
+    if (!await requireAuth(req, res, log.userId)) return;
     log.reviewText = sanitizeText(log.reviewText, 2500);
     await upsertGameLog(log);
     return res.json({ success: true, message: "Log saved" });
@@ -5253,7 +5312,11 @@ app.delete("/api/logs/:id", async (req, res) => {
     if (!logId || !userId) {
       return res.status(400).json({ error: "logId and userId query are required" });
     }
-    await deleteGameLog(userId, logId);
+    if (!await requireAuth(req, res, userId)) return;
+    const deleted = await deleteGameLog(userId, logId);
+    if (!deleted) {
+      return res.status(404).json({ error: "Log not found" });
+    }
     return res.json({ success: true, message: "Log deleted" });
   } catch (err) {
     console.error("Error deleting log:", err);
@@ -5276,6 +5339,7 @@ app.post("/api/reviews", async (req, res) => {
     if (!review || !review.userId || !review.gameId || !review.reviewText?.trim()) {
       return res.status(400).json({ error: "Invalid review payload" });
     }
+    if (!await requireAuth(req, res, review.userId)) return;
     review.reviewText = sanitizeText(review.reviewText, 3e3);
     review.username = sanitizeText(review.username, 50);
     await upsertReview(review);
@@ -5292,6 +5356,7 @@ app.post("/api/reviews/:id/like", async (req, res) => {
     if (!reviewId || !userId) {
       return res.status(400).json({ error: "reviewId and userId are required" });
     }
+    if (!await requireAuth(req, res, userId)) return;
     const result = await toggleReviewLike(userId, reviewId);
     return res.json({ success: true, ...result });
   } catch (err) {
@@ -5317,6 +5382,7 @@ app.post("/api/lists", async (req, res) => {
     list.title = sanitizeText(list.title, 120);
     list.description = sanitizeText(list.description, 1e3);
     list.userName = sanitizeText(list.userName, 50);
+    if (!await requireAuth(req, res, list.userId)) return;
     await upsertCustomList(list);
     return res.json({ success: true, message: "List saved" });
   } catch (err) {
@@ -5331,7 +5397,11 @@ app.delete("/api/lists/:id", async (req, res) => {
     if (!listId || !userId) {
       return res.status(400).json({ error: "listId and userId query are required" });
     }
-    await deleteCustomList(userId, listId);
+    if (!await requireAuth(req, res, userId)) return;
+    const deleted = await deleteCustomList(userId, listId);
+    if (!deleted) {
+      return res.status(404).json({ error: "List not found" });
+    }
     return res.json({ success: true, message: "List deleted" });
   } catch (err) {
     console.error("Error deleting list:", err);
@@ -5345,6 +5415,7 @@ app.post("/api/lists/:id/like", async (req, res) => {
     if (!listId || !userId) {
       return res.status(400).json({ error: "listId and userId are required" });
     }
+    if (!await requireAuth(req, res, userId)) return;
     const result = await toggleListLike(userId, listId);
     return res.json({ success: true, ...result });
   } catch (err) {
@@ -5362,6 +5433,7 @@ app.post("/api/users/:id/follow", async (req, res) => {
     if (targetUserId === followerId) {
       return res.status(400).json({ error: "Cannot follow yourself" });
     }
+    if (!await requireAuth(req, res, followerId)) return;
     const result = await toggleFollowUser(followerId, targetUserId);
     return res.json({ success: true, ...result });
   } catch (err) {
@@ -5422,6 +5494,7 @@ app.post("/api/reviews/:id/comments", async (req, res) => {
     if (!reviewId || !userId || !commentText?.trim()) {
       return res.status(400).json({ error: "reviewId, userId, and non-empty commentText are required" });
     }
+    if (!await requireAuth(req, res, userId)) return;
     const cleanComment = sanitizeText(commentText, 600);
     const cleanUsername = sanitizeText(username, 50) || "RobloxPlayer";
     const comment = await addReviewComment({

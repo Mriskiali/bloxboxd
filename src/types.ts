@@ -69,6 +69,8 @@ export interface UserProfile {
   robloxDisplayName?: string;
   robloxUserId?: number;
   isRobloxVerified?: boolean;
+  /** Server-issued session token (opaque). Required for all write API calls. */
+  sessionToken?: string;
   avatarUrl: string;
   avatarBustUrl?: string;
   bio: string;

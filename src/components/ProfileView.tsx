@@ -20,7 +20,7 @@ import {
   Check,
   Loader2
 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useApp, authHeaders } from '../context/AppContext';
 import { GameCard } from './GameCard';
 import { RatingStars } from './RatingStars';
 import { ShelfStatus, safeImgSrc, safeAvatarSrc, UserProfile, GameLog, Review } from '../types';
@@ -119,7 +119,7 @@ export const ProfileView: React.FC = () => {
     try {
       const res = await fetch(`/api/users/${encodeURIComponent(selectedUserId)}/follow`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ followerId: user.id })
       });
       if (res.ok) {

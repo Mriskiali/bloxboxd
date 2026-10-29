@@ -1,4 +1,5 @@
 import { createClient, Client } from '@libsql/client';
+import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -42,6 +43,16 @@ export async function initDatabase(): Promise<void> {
       pin_hash TEXT NOT NULL,
       salt TEXT NOT NULL,
       verified_at TEXT NOT NULL
+    )
+  `);
+
+  // 1b. Sessions table (server-side session tokens for write auth)
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
     )
   `);
 
@@ -276,6 +287,41 @@ export async function saveAccount(data: {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Sessions: server-side tokens issued on verify / PIN login. Every write
+// endpoint must present a valid token bound to the acting userId.
+// ---------------------------------------------------------------------------
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+export function canonicalUserId(id: string | number): string {
+  const raw = String(id).trim();
+  const num = raw.replace(/^user-roblox-/, '');
+  return `user-roblox-${num}`;
+}
+
+export async function createSession(userId: string | number): Promise<string> {
+  const token = crypto.randomBytes(32).toString('hex');
+  const now = new Date();
+  await db.execute({
+    sql: `INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)`,
+    args: [token, canonicalUserId(userId), now.toISOString(), new Date(now.getTime() + SESSION_TTL_MS).toISOString()]
+  });
+  return token;
+}
+
+export async function isValidSession(token: string | undefined, userId: string | number): Promise<boolean> {
+  if (!token) return false;
+  const result = await db.execute({
+    sql: `SELECT 1 FROM sessions WHERE token = ? AND user_id = ? AND expires_at > ?`,
+    args: [token, canonicalUserId(userId), new Date().toISOString()]
+  });
+  return result.rows.length > 0;
+}
+
+export async function deleteSession(token: string): Promise<void> {
+  await db.execute({ sql: `DELETE FROM sessions WHERE token = ?`, args: [token] });
+}
+
 export async function getUserProfile(userId: string): Promise<any | null> {
   const result = await db.execute({
     sql: `SELECT * FROM user_profiles WHERE id = ? OR roblox_user_id = ?`,
@@ -452,15 +498,16 @@ export async function upsertGameLog(log: any): Promise<void> {
   });
 }
 
-export async function deleteGameLog(userId: string, logId: string): Promise<void> {
+export async function deleteGameLog(userId: string, logId: string): Promise<boolean> {
   const cleanId = (userId || '').trim();
   const rawNumId = cleanId.replace('user-roblox-', '');
   const prefixedId = cleanId.startsWith('user-roblox-') ? cleanId : `user-roblox-${cleanId}`;
 
-  await db.execute({
+  const result = await db.execute({
     sql: `DELETE FROM game_logs WHERE id = ? AND (user_id = ? OR user_id = ? OR user_id = ?)`,
     args: [logId, cleanId, rawNumId, prefixedId]
   });
+  return result.rowsAffected > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -674,11 +721,12 @@ export async function upsertCustomList(list: any): Promise<void> {
   });
 }
 
-export async function deleteCustomList(userId: string, listId: string): Promise<void> {
-  await db.execute({
+export async function deleteCustomList(userId: string, listId: string): Promise<boolean> {
+  const result = await db.execute({
     sql: `DELETE FROM custom_lists WHERE id = ? AND user_id = ?`,
     args: [listId, userId]
   });
+  return result.rowsAffected > 0;
 }
 
 export async function toggleListLike(userId: string, listId: string): Promise<{ liked: boolean; likesCount: number }> {

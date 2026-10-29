@@ -25,6 +25,20 @@ export const deduplicateGames = (gameList: Game[]): Game[] => {
   return result;
 };
 
+/**
+ * Auth headers for write API calls. The session token lives inside the
+ * persisted user object; localStorage is read directly so callbacks never
+ * see a stale closure after login.
+ */
+export const authHeaders = (): Record<string, string> => {
+  try {
+    const u = JSON.parse(localStorage.getItem('bloxboxd_user') || 'null');
+    return u?.sessionToken ? { Authorization: `Bearer ${u.sessionToken}` } : {};
+  } catch {
+    return {};
+  }
+};
+
 interface AppContextType {
   games: Game[];
   user: UserProfile | null;
@@ -518,7 +532,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (savedLog) {
       fetch('/api/logs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(savedLog)
       }).catch(e => console.warn('Failed to sync log to database:', e));
     }
@@ -563,7 +577,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Sync review to database in background
       fetch('/api/reviews', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(targetReview)
       }).catch(e => console.warn('Failed to sync review to database:', e));
     }
@@ -603,7 +617,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (updatedFavs) {
       fetch('/api/user/profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ ...user, favoriteGameIds: updatedFavs })
       }).catch(e => console.warn('Failed to sync favorites to database:', e));
     }
@@ -620,13 +634,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setUser(prev => prev ? ({ ...prev, favoriteGameIds: remainingFavs }) : null);
         fetch('/api/user/profile', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify({ ...user, favoriteGameIds: remainingFavs })
         }).catch(() => {});
       }
 
       fetch(`/api/logs/${encodeURIComponent(logId)}?userId=${encodeURIComponent(user.id)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { ...authHeaders() }
       }).catch(e => console.warn('Failed to delete log in database:', e));
     }
   };
@@ -719,7 +734,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUser(updatedUser);
     fetch('/api/user/profile', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(updatedUser)
     }).catch(e => console.warn('Failed to update profile in database:', e));
   };
@@ -734,6 +749,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     created?: string;
     friendsCount?: number;
     isVerifiedOwner?: boolean;
+    sessionToken?: string;
   }) => {
     const newUsername = robloxData.displayName || robloxData.username;
     const newAvatar = robloxData.avatarHeadshotUrl;
@@ -747,6 +763,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       robloxDisplayName: robloxData.displayName,
       robloxUserId: robloxData.userId,
       isRobloxVerified: Boolean(robloxData.isVerifiedOwner),
+      sessionToken: robloxData.sessionToken,
       avatarUrl: newAvatar || DEFAULT_AVATAR_URL,
       avatarBustUrl: robloxData.avatarBustUrl,
       bio: robloxData.description || 'Penggemar game Roblox.',
@@ -780,7 +797,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Sync profile to database
     fetch('/api/user/profile', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(newUser)
     }).catch(e => console.warn('Failed to save profile to database:', e));
 
@@ -828,8 +845,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Persist to Turso database so all users can discover and review it
     fetch('/api/games', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newGame)
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ ...newGame, userId: user?.id })
     }).catch(e => console.warn('Failed to save imported game to database:', e));
 
     viewGame(newGame.id);
@@ -853,8 +870,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     fetch('/api/games', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newGame)
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ ...newGame, userId: user?.id })
     }).catch(e => console.warn('Failed to persist game to database:', e));
   };
 
@@ -923,7 +940,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     fetch('/api/lists', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(newList)
     }).catch(e => console.warn('Failed to save list to database:', e));
 
@@ -938,7 +955,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     if (user) {
       fetch(`/api/lists/${encodeURIComponent(listId)}?userId=${encodeURIComponent(user.id)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { ...authHeaders() }
       }).catch(e => console.warn('Failed to delete list from database:', e));
     }
   };
@@ -966,7 +984,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (user) {
       fetch(`/api/reviews/${encodeURIComponent(reviewId)}/like`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ userId: user.id })
       }).catch(e => console.warn('Failed to like review in database:', e));
     }
@@ -987,7 +1005,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (user) {
       fetch(`/api/lists/${encodeURIComponent(listId)}/like`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ userId: user.id })
       }).catch(e => console.warn('Failed to like list in database:', e));
     }

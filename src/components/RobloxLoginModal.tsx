@@ -236,7 +236,8 @@ export const RobloxLoginModal: React.FC = () => {
             description: foundUser.description,
             created: foundUser.created,
             friendsCount: foundUser.friendsCount,
-            isVerifiedOwner: true
+            isVerifiedOwner: true,
+            sessionToken: data.sessionToken
           });
           setLoginModalOpen(false);
         }, 600);
@@ -300,7 +301,8 @@ export const RobloxLoginModal: React.FC = () => {
             description: foundUser.description,
             created: foundUser.created,
             friendsCount: foundUser.friendsCount,
-            isVerifiedOwner: true
+            isVerifiedOwner: true,
+            sessionToken: data.sessionToken
           });
           setLoginModalOpen(false);
         }, 1000);

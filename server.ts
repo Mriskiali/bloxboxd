@@ -28,6 +28,9 @@ import {
   getGameById,
   upsertGame,
   bulkUpsertGames,
+  createSession,
+  isValidSession,
+  canonicalUserId,
   searchUserProfiles,
   getUserReviews
 } from './src/db/index';
@@ -1587,7 +1590,7 @@ app.post('/api/roblox/account/challenge/verify', async (req, res) => {
     // Save security PIN with salt + PBKDF2 hash
     const salt = crypto.randomBytes(16).toString('hex');
     const pinHash = hashPin(pin.toString().trim(), salt);
-    const sessionToken = crypto.randomBytes(24).toString('hex');
+    const sessionToken = await createSession(userId);
     const finalUsername = username || challenge.username || 'RobloxPlayer';
 
     await saveAccount({
@@ -1672,7 +1675,7 @@ app.post('/api/roblox/account/login-with-pin', async (req, res) => {
     // PIN is correct: reset failure counter
     resetPinAttempts(rateLimitKey);
 
-    const sessionToken = crypto.randomBytes(24).toString('hex');
+    const sessionToken = await createSession(userId);
     return res.json({
       success: true,
       sessionToken,
@@ -1756,7 +1759,7 @@ app.post('/api/roblox/account/reset-pin', async (req, res) => {
 
     const salt = crypto.randomBytes(16).toString('hex');
     const pinHash = hashPin(newPin.toString().trim(), salt);
-    const sessionToken = crypto.randomBytes(24).toString('hex');
+    const sessionToken = await createSession(userId);
 
     await saveAccount({
       userId: Number(userId),
@@ -1857,6 +1860,9 @@ app.get('/api/games/:id', async (req, res) => {
 app.post('/api/games', async (req, res) => {
   try {
     const body = req.body;
+    // Auth: catalog writes are user-contributed; block anonymous spam/overwrite
+    const actingUser = Array.isArray(body) ? ((req.query.userId as string) || '').trim() : (body?.userId || '').trim();
+    if (!await requireAuth(req, res, actingUser)) return;
     if (Array.isArray(body)) {
       await bulkUpsertGames(body);
       return res.json({ success: true, count: body.length });
@@ -1903,6 +1909,34 @@ app.get('/api/users/search', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Write auth: every mutating endpoint must present a session token bound to
+// the acting userId. Tokens are issued by challenge/verify, login-with-pin
+// and reset-pin, stored server-side in the sessions table.
+// ---------------------------------------------------------------------------
+function extractSessionToken(req: express.Request): string | undefined {
+  const header = req.headers['authorization'] || '';
+  if (typeof header === 'string' && header.startsWith('Bearer ')) {
+    return header.slice(7).trim();
+  }
+  const alt = req.headers['x-session-token'];
+  return typeof alt === 'string' && alt.trim() ? alt.trim() : undefined;
+}
+
+async function requireAuth(req: express.Request, res: express.Response, userId: unknown): Promise<boolean> {
+  if (!userId) {
+    res.status(400).json({ error: 'userId is required' });
+    return false;
+  }
+  const token = extractSessionToken(req);
+  const ok = await isValidSession(token, String(userId));
+  if (!ok) {
+    res.status(401).json({ error: 'Authentication required. Please log in again.', code: 'SESSION_INVALID' });
+    return false;
+  }
+  return true;
+}
+
 // Update profile & top 4 favorites
 app.post('/api/user/profile', async (req, res) => {
   try {
@@ -1910,6 +1944,7 @@ app.post('/api/user/profile', async (req, res) => {
     if (!profile || !profile.id) {
       return res.status(400).json({ error: 'Valid profile object is required' });
     }
+    if (!await requireAuth(req, res, profile.id)) return;
     // Security: Sanitize profile fields (OWASP Input Sanitization)
     profile.bio = sanitizeText(profile.bio, 500);
     profile.displayName = sanitizeText(profile.displayName, 80);
@@ -1930,6 +1965,7 @@ app.post('/api/logs', async (req, res) => {
     if (!log || !log.userId || !log.gameId) {
       return res.status(400).json({ error: 'userId and gameId are required' });
     }
+    if (!await requireAuth(req, res, log.userId)) return;
     log.reviewText = sanitizeText(log.reviewText, 2500);
 
     await upsertGameLog(log);
@@ -1948,7 +1984,11 @@ app.delete('/api/logs/:id', async (req, res) => {
     if (!logId || !userId) {
       return res.status(400).json({ error: 'logId and userId query are required' });
     }
-    await deleteGameLog(userId, logId);
+    if (!await requireAuth(req, res, userId)) return;
+    const deleted = await deleteGameLog(userId, logId);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Log not found' });
+    }
     return res.json({ success: true, message: 'Log deleted' });
   } catch (err) {
     console.error('Error deleting log:', err);
@@ -1975,6 +2015,7 @@ app.post('/api/reviews', async (req, res) => {
     if (!review || !review.userId || !review.gameId || !review.reviewText?.trim()) {
       return res.status(400).json({ error: 'Invalid review payload' });
     }
+    if (!await requireAuth(req, res, review.userId)) return;
     // Security: Sanitize review text and bound length (Anti-XSS & Payload Protection)
     review.reviewText = sanitizeText(review.reviewText, 3000);
     review.username = sanitizeText(review.username, 50);
@@ -1995,6 +2036,7 @@ app.post('/api/reviews/:id/like', async (req, res) => {
     if (!reviewId || !userId) {
       return res.status(400).json({ error: 'reviewId and userId are required' });
     }
+    if (!await requireAuth(req, res, userId)) return;
     const result = await toggleReviewLike(userId, reviewId);
     return res.json({ success: true, ...result });
   } catch (err) {
@@ -2026,6 +2068,7 @@ app.post('/api/lists', async (req, res) => {
     list.description = sanitizeText(list.description, 1000);
     list.userName = sanitizeText(list.userName, 50);
 
+    if (!await requireAuth(req, res, list.userId)) return;
     await upsertCustomList(list);
     return res.json({ success: true, message: 'List saved' });
   } catch (err) {
@@ -2042,7 +2085,11 @@ app.delete('/api/lists/:id', async (req, res) => {
     if (!listId || !userId) {
       return res.status(400).json({ error: 'listId and userId query are required' });
     }
-    await deleteCustomList(userId, listId);
+    if (!await requireAuth(req, res, userId)) return;
+    const deleted = await deleteCustomList(userId, listId);
+    if (!deleted) {
+      return res.status(404).json({ error: 'List not found' });
+    }
     return res.json({ success: true, message: 'List deleted' });
   } catch (err) {
     console.error('Error deleting list:', err);
@@ -2058,6 +2105,7 @@ app.post('/api/lists/:id/like', async (req, res) => {
     if (!listId || !userId) {
       return res.status(400).json({ error: 'listId and userId are required' });
     }
+    if (!await requireAuth(req, res, userId)) return;
     const result = await toggleListLike(userId, listId);
     return res.json({ success: true, ...result });
   } catch (err) {
@@ -2081,6 +2129,7 @@ app.post('/api/users/:id/follow', async (req, res) => {
     if (targetUserId === followerId) {
       return res.status(400).json({ error: 'Cannot follow yourself' });
     }
+    if (!await requireAuth(req, res, followerId)) return;
     const result = await toggleFollowUser(followerId, targetUserId);
     return res.json({ success: true, ...result });
   } catch (err) {
@@ -2151,6 +2200,7 @@ app.post('/api/reviews/:id/comments', async (req, res) => {
     if (!reviewId || !userId || !commentText?.trim()) {
       return res.status(400).json({ error: 'reviewId, userId, and non-empty commentText are required' });
     }
+    if (!await requireAuth(req, res, userId)) return;
     const cleanComment = sanitizeText(commentText, 600);
     const cleanUsername = sanitizeText(username, 50) || 'RobloxPlayer';
 
