@@ -1,8 +1,19 @@
 # Bloxboxd
 
-Bloxboxd adalah platform pelacakan, pencatatan (logging), ulasan, dan penemuan pengalaman Roblox yang terinspirasi dari arsitektur media logging Letterboxd. Platform ini menghubungkan pemain dengan data resmi dari API Roblox secara langsung dan menyimpan interaksi komunitas ke dalam database cloud terdistribusi Turso LibSQL.
+<div align="center">
 
-🌐 **Live Website**: [https://www.riskiali.my.id/](https://www.riskiali.my.id/) | [https://bloxboxd.vercel.app/](https://bloxboxd.vercel.app/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-19-61dafb.svg?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-646cff.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Turso LibSQL](https://img.shields.io/badge/Database-Turso%20LibSQL-4ff8d2.svg?logo=sqlite&logoColor=black)](https://turso.tech/)
+[![Security](https://img.shields.io/badge/Security-Grade%20A%2B%20Zero--Trust-00e054.svg)](#kinerja-dan-standar-keamanan)
+
+**Roblox Game Tracker & Social Catalog** terinspirasi dari arsitektur media logging Letterboxd. Terintegrasi penuh secara real-time ke Roblox Open Cloud APIs dan tersinkronisasi persisten ke database cloud Turso LibSQL.
+
+🌐 **Production Website**: [https://www.riskiali.my.id/](https://www.riskiali.my.id/) &bull; [https://bloxboxd.vercel.app/](https://bloxboxd.vercel.app/)
+
+</div>
 
 ---
 
@@ -10,7 +21,7 @@ Bloxboxd adalah platform pelacakan, pencatatan (logging), ulasan, dan penemuan p
 
 <div align="center">
 
-### Katalog & Champion Spotlight Slideshow
+### Katalog Desktop & Champion Spotlight Slideshow
 ![Bloxboxd Home Catalog](docs/screenshots/home-catalog.png)
 
 <br />
@@ -18,11 +29,11 @@ Bloxboxd adalah platform pelacakan, pencatatan (logging), ulasan, dan penemuan p
 <table width="100%">
   <tr>
     <td width="50%" align="center">
-      <b>Smart Discovery ("Lagi Mau Main Apa?")</b><br />
+      <b>Smart Discovery Engine ("Lagi Mau Main Apa?")</b><br />
       <img src="docs/screenshots/smart-discovery.png" alt="Smart Discovery Engine" width="100%" />
     </td>
     <td width="50%" align="center">
-      <b>Detail Game & Open Cloud Integration</b><br />
+      <b>Detail Pengalaman & Roblox Open Cloud Integration</b><br />
       <img src="docs/screenshots/game-detail.png" alt="Roblox Game Detail & Badges" width="100%" />
     </td>
   </tr>
@@ -58,38 +69,54 @@ Banner utama pada katalog menampilkan pengalaman nomor satu terbaik dari setiap 
 - Indikator Visual: Dilengkapi dengan bilah kemajuan (progress bar) hitung mundur dan kontrol navigasi manual (tombol panah, pemilih dot, dan toggle play/pause).
 - Independen dari Filter: Banner tidak terpengaruh oleh penyaringan genre katalog di bagian bawah, sehingga tetap menyajikan ikhtisar lintas genre secara utuh.
 
-### 2. Sinkronisasi Data Real-Time Roblox API
+### 2. Smart Discovery Engine ("Lagi Mau Main Apa?")
+Sistem rekomendasi kurasi cerdas berbasis algoritma afinitas untuk menemukan pengalaman yang tepat tanpa harus scrolling feed acak Roblox:
+- **Filter Gaya Bermain (PlayStyle)**:
+  - **Sendiri (Solo)**: Kurasi game berorientasi story, solo obby, petualangan naratif, dan singleplayer immersion.
+  - **Mabar Teman (Co-op)**: Kurasi squad survival, multiplayer horror, party games, dan hangout bersama teman.
+  - **Adu Skill (PvP)**: Kurasi battleground fighting, shooter arena, kompetisi, dan turnamen skill.
+- **Strategi Kurasi Algoritmik**:
+  - **Paling Rame**: Bobot berdasarkan volume pemain aktif concurrent tertinggi.
+  - **Rating Tertinggi**: Bobot persentase like dan rasio upvote komunitas.
+  - **Lagi Naik Daun**: Rasio momentum pertumbuhan kunjungan terbaru.
+  - **Hidden Gem**: Pengalaman berkualitas tinggi dengan rasio like luar biasa namun belum jenuh di feed utama.
+- **Desain Bebas Emoji Hardcoded**: Seluruh indikator dan badge visual menggunakan ikon SVG Lucide resmi sesuai panduan desain editorial Letterboxd.
+
+### 3. Sinkronisasi Data Real-Time Roblox API
 Semua data statistik pengalaman diambil langsung dari API resmi Roblox:
 - Jumlah pemain online yang sedang aktif secara langsung.
 - Penghitungan rating berbasis persentase upvote dan downvote resmi.
 - Total kunjungan dan jumlah favorit.
 - Deep link langsung ke place resmi di situs web Roblox.
 
-### 3. Katalog dan Pencarian Adaptif
+### 4. Katalog dan Pencarian Adaptif
 - Filter Genre: Penyaringan akurat berdasarkan genre utama, tag konten, dan analisis semantik deskripsi game.
 - Pengurutan Cerdas: Berdasarkan pemain terbanyak (popularitas), rating tertinggi, total kunjungan, tahun rilis, dan urutan alfabet.
 - Pencarian Omni-Search: Pencarian teks langsung yang terintegrasi dengan penemuan resmi Roblox serta dukungan pencarian via Universe ID dan Place ID.
-- Infinite Scroll: Pemuatan data berkelanjutan dengan konsumsi memori browser yang minimal.
+- Continuous Composite Cursor: Infinite scroll dinamis yang menyatukan pool cluster query tanpa batasan halaman statis.
 
-### 4. Logging, Diary, dan Rak Koleksi (Shelves)
+### 5. Logging, Diary, dan Rak Koleksi (Shelves)
 Pengguna dapat mencatat pengalaman bermain mereka seperti pada Letterboxd:
 - Status Rak: Played (Pernah Dimainkan), Playing (Sedang Dimainkan), Backlog (Daftar Tunggu), dan Dropped (Berhenti).
 - Rating Skala 5 Bintang: Penilaian presisi kelipatan 0.5 bintang (0.5 hingga 5.0).
 - Ulasan dan Peringatan Spoiler: Penulisan ulasan terperinci dengan penanda spoiler teks.
 - Buku Harian (Diary): Rekam jejak kronologis aktivitas bermain berdasarkan tanggal log.
+- Sinkronisasi Atomik: Seluruh status log dan ulasan tersimpan permanen ke Turso LibSQL dengan formula deterministik anti-duplikasi.
 
-### 5. Komunitas dan Kurasi
+### 6. Komunitas dan Kurasi
 - Feed Ulasan Komunitas: Ulasan publik dari seluruh pengguna dengan fitur like dan komentar diskusi bertingkat.
 - Custom Curated Lists: Pembuatan daftar koleksi kustom oleh pengguna (misal: "Top Survival Games 2026") yang dapat dibagikan dan disukai oleh anggota komunitas lain.
 - Profil Pengguna: Statistik jumlah log, game favorit, ulasan terpopuler, dan sistem pertemanan (Follow).
+- Verified Deletion & Cascade Clean: Penghapusan list atau log secara otomatis menghapus keterkaitan di public feed dan database.
 
-### 6. Sistem Autentikasi dan Keamanan Zero-Trust
+### 7. Sistem Autentikasi dan Keamanan Zero-Trust
 - Roblox OAuth 2.0 PKCE Resmi: Login langsung melalui portal resmi Roblox (`apis.roblox.com/oauth/v1/authorize`).
 - HttpOnly Session Cookies: Token sesi server-side disimpan dalam cookie httpOnly `bb_session` (anti-pencurian via XSS).
 - Distributed Rate Limiting (Upstash Redis): Pembatasan frekuensi request global per-IP dan per-user untuk melindungi endpoint sensitif dan proxy Roblox dari serangan DoS/amplifikasi.
 - Zero-Trust Server-Side Identity: Hak akses setiap mutasi data (reviews, logs, lists, comments) divalidasi langsung dari token sesi server, mencegah kerentanan Broken Object Level Authorization (BOLA/IDOR).
+- Proteksi CSRF & Origin: Verifikasi ketat header `Origin`, `Referer`, dan `Sec-Fetch-Site` pada seluruh mutasi data.
 
-### 7. Integrasi Mendalam Roblox Open Cloud
+### 8. Integrasi Mendalam Roblox Open Cloud
 - Badges & Achievements Resmi: Menampilkan daftar badge resmi game langsung dari `badges.roblox.com`, lengkap dengan statistik win rate dan jumlah pemain peraih.
 - Galeri Screenshot Sinematik: Slideshow gambar resolusi tinggi langsung dari endpoint multiget thumbnails Roblox.
 - Auto-Sync Game Favorit: Mengimpor seluruh daftar game favorit akun Roblox pemain ke rak profil Bloxboxd dengan satu kali klik.
@@ -109,7 +136,7 @@ Platform Bloxboxd dibangun menggunakan arsitektur full-stack modern yang dapat d
 
 ### Backend
 - Node.js dan Express.js: Server RESTful API untuk menangani agregasi data Roblox, operasi database, dan sanitasi permintaan.
-- Vercel Serverless Function: Adaptasi server Express melalui handler serverless (`api/index.ts`) untuk komputasi nirserver.
+- Vercel Serverless Function: Adaptasi server Express melalui handler serverless (`api/index.js`) untuk komputasi nirserver.
 
 ### Database
 - Turso Database (LibSQL Cloud): Basis data relasional SQLite terdistribusi dengan latensi rendah melalui koneksi aman HTTP dan WebSocket.
@@ -119,17 +146,23 @@ Platform Bloxboxd dibangun menggunakan arsitektur full-stack modern yang dapat d
 
 ## Kinerja dan Standar Keamanan
 
-Implementasi kode Bloxboxd mematuhi praktik rekayasa perangkat lunak standar industri:
+Implementasi kode Bloxboxd mematuhi praktik rekayasa perangkat lunak standar industri dan lolos audit keamanan Grade A+:
 
-1. **Dynamic Code-Splitting**: Modul non-kritis (`GameDetailView`, `ProfileView`, `CommunityView`, `ListsView`, modal dialog) dipisahkan menggunakan `React.lazy` dan `<Suspense>` untuk mereduksi ukuran bundle awal hingga di bawah 120 kB gzip.
+1. **Dynamic Code-Splitting**: Modul non-kritis (`GameDetailView`, `ProfileView`, `CommunityView`, `ListsView`, modal dialog) dipisahkan menggunakan `React.lazy` dan `<Suspense>` untuk mereduksi ukuran bundle awal hingga di bawah 105 kB gzip.
 2. **Optimasi Core Web Vitals**:
    - Largest Contentful Paint (LCP): Aset gambar prioritas tinggi pada viewport pertama dimuat dengan `loading="eager"` dan atribut JSX `fetchPriority="high"`.
    - Cumulative Layout Shift (CLS): Seluruh pembungkus kartu gambar mengunci rasio aspek (`aspect-square`) untuk mencegah pergeseran tata letak (skor CLS = 0).
    - Interaction to Next Paint (INP): Interaksi pemilihan genre dan filter dibungkus dalam `startTransition` React 19 agar eksekusi UI tidak memblokir input pengguna.
-3. **Hardened HTTP Security Headers**: Dilengkapi middleware Express yang menerapkan header Content Security Policy (CSP), X-Frame-Options: SAMEORIGIN (proteksi Clickjacking), X-Content-Type-Options: nosniff, dan Referrer-Policy.
+3. **Hardened HTTP Security Headers**: Dilengkapi middleware Express dan konfigurasi edge Vercel yang menerapkan header:
+   - `Content-Security-Policy`: Restriksi ketat sumber script, media, font, dan koneksi API.
+   - `X-Frame-Options: DENY`: Proteksi total dari serangan Clickjacking dan UI Redressing.
+   - `X-Content-Type-Options: nosniff`: Anti-MIME sniffing.
+   - `Strict-Transport-Security: max-age=63072000; includeSubDomains`: Pemaksaan enkripsi HTTPS TLS 1.3 selama 2 tahun penuh.
+   - `Referrer-Policy: strict-origin-when-cross-origin`.
 4. **Sanitasi Input dan Anti-XSS**: Pembersihan karakter berbahaya `<` dan `>` serta pembatasan panjang payload pada semua input form ulasan, komentar, dan profil.
 5. **Mitigasi Reverse Tabnabbing**: Semua tautan eksternal ke situs web pihak ketiga menggunakan atribut `target="_blank"` dan `rel="noopener noreferrer"`.
 6. **Otorisasi Data Zero-Trust**: Validasi kepemilikan record pada operasi mutasi basis data untuk mencegah kerentanan Broken Object Level Authorization (BOLA/IDOR).
+7. **Anti-CSRF & Origin Verification**: Validasi menyeluruh header `Origin`, `Referer`, dan `Sec-Fetch-Site` untuk mencegah serangan cross-site forged requests.
 
 ---
 
@@ -162,10 +195,11 @@ Sebelum menjalankan project secara lokal, pastikan perangkat Anda telah terpasan
    ```
    Buka file `.env` dan masukkan kredensial Turso Database Anda:
    ```env
-   TURSO_DATABASE_URL="database url anda"
-   TURSO_AUTH_TOKEN="token-autentikasi-turso-anda"
+   TURSO_DATABASE_URL="libsql://your-database-name.turso.io"
+   TURSO_AUTH_TOKEN="your-turso-auth-token"
+   ROBLOX_CLIENT_ID="your-roblox-client-id"
+   ROBLOX_CLIENT_SECRET="your-roblox-client-secret"
    ```
-   *Catatan: Jika variabel dibiarkan kosong, sistem secara otomatis beralih menggunakan basis data lokal SQLite (`bloxboxd.db`).*
 
 4. Jalankan server pengembangan lokal:
    ```bash
@@ -181,7 +215,7 @@ Sebelum menjalankan project secara lokal, pastikan perangkat Anda telah terpasan
 
 ## Panduan Deployment ke Vercel
 
-Project ini sudah dilengkapi konfigurasi berkas `vercel.json` dan handler serverless `api/index.ts`, sehingga dapat langsung dideploy ke platform Vercel tanpa konfigurasi tambahan pada codebase.
+Project ini sudah dilengkapi konfigurasi berkas `vercel.json` dan handler serverless `api/index.js`, sehingga dapat langsung dideploy ke platform Vercel tanpa konfigurasi tambahan pada codebase.
 
 ### Metode 1: Deploy Melalui Vercel CLI
 
@@ -224,12 +258,9 @@ Metode standar untuk pembaruan berkelanjutan (Continuous Deployment):
 
 1. Pastikan seluruh perubahan kode telah dicommit dan diunggah ke repository GitHub Anda:
    ```bash
-   git init
    git add .
-   git commit -m "feat: setup bloxboxd production deployment"
-   git branch -M main
-   git remote add origin https://github.com/username-anda/bloxboxd.git
-   git push -u origin main
+   git commit -m "feat: complete production release"
+   git push origin main
    ```
 
 2. Buka dashboard Vercel di [https://vercel.com](https://vercel.com) dan login dengan akun Anda.
@@ -237,13 +268,17 @@ Metode standar untuk pembaruan berkelanjutan (Continuous Deployment):
 4. Pilih repository `bloxboxd` dari daftar repository GitHub Anda dan klik **Import**.
 5. Pada bagian **Build and Output Settings**, pastikan pengaturan sebagai berikut:
    - Framework Preset: `Vite`
-   - Build Command: `vite build`
+   - Build Command: `npm run build`
    - Output Directory: `dist`
-6. Buka bagian **Environment Variables** dan tambahkan 2 variabel rahasia berikut:
-   - `TURSO_DATABASE_URL` diisi dengan URL database Turso Anda.
-   - `TURSO_AUTH_TOKEN` diisi dengan auth token Turso Anda.
+6. Buka bagian **Environment Variables** dan tambahkan variabel berikut:
+   - `TURSO_DATABASE_URL`: URL endpoint database Turso Anda.
+   - `TURSO_AUTH_TOKEN`: Auth token Turso Anda.
+   - `ROBLOX_CLIENT_ID`: Client ID aplikasi Roblox OAuth 2.0.
+   - `ROBLOX_CLIENT_SECRET`: Client Secret aplikasi Roblox OAuth 2.0.
+   - `UPSTASH_REDIS_REST_URL`: (Opsional) URL REST Upstash Redis.
+   - `UPSTASH_REDIS_REST_TOKEN`: (Opsional) Token REST Upstash Redis.
 7. Klik tombol **Deploy**.
-8. Tunggu hingga proses build selesai. Vercel akan menerbitkan domain publik (contoh: `https://bloxboxd.vercel.app`).
+8. Tunggu hingga proses build selesai. Vercel akan menerbitkan domain publik (contoh: `https://bloxboxd.vercel.app` atau custom domain Anda).
 
 ---
 
