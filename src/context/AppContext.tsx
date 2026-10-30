@@ -897,23 +897,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       userAvatar: newAvatar || l.userAvatar
     } : l));
 
-    // Sync profile to database
-    fetch('/api/user/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify(newUser)
-    }).catch(e => console.warn('Failed to save profile to database:', e));
+    // Sync profile to database FIRST and await it so favoriteGameIds is committed
+    // before we re-read the row back from the DB below.
+    const saveProfile = async () => {
+      try {
+        const res = await fetch('/api/user/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify(newUser)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (e) {
+        console.warn('Failed to save profile to database:', e);
+      }
+    };
 
-    // Fetch user logs & updated profile from database
-    fetch(`/api/user/data?userId=${encodeURIComponent(newUser.id)}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        setUserLogs(Array.isArray(data?.logs) ? data.logs : []);
-        if (data?.profile?.favoriteGameIds) {
-          setUser(prev => prev ? ({ ...prev, favoriteGameIds: data.profile.favoriteGameIds }) : null);
+    // Fetch user logs & updated profile from database AFTER save
+    const fetchUserData = async () => {
+      try {
+        const res = await fetch(`/api/user/data?userId=${encodeURIComponent(newUser.id)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUserLogs(Array.isArray(data?.logs) ? data.logs : []);
+          // Rehydrate favoriteGameIds & bio from DB so logout->login persists them
+          if (data?.profile) {
+            setUser(prev => prev ? ({
+              ...prev,
+              favoriteGameIds: Array.isArray(data.profile.favoriteGameIds) ? data.profile.favoriteGameIds : prev.favoriteGameIds,
+              bio: data.profile.bio || prev.bio
+            }) : prev);
+          }
         }
-      })
-      .catch(() => {});
+      } catch (e) {
+        console.warn('Failed to fetch user data from database:', e);
+      }
+    };
+
+    saveProfile().then(fetchUserData);
 
     showToast(language === 'id' ? `Berhasil masuk sebagai @${robloxData.username}!` : `Signed in as @${robloxData.username}!`, 'success');
   };

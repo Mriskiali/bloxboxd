@@ -435,7 +435,14 @@ export async function getUserProfile(userId: string): Promise<any | null> {
 }
 
 export async function upsertUserProfile(profile: any): Promise<void> {
+  // Canonicalise id so legacy numeric / raw ids never collide on the PK.
+  const profileId = profile.id ? canonicalUserId(profile.id) : profile.id;
+  const robloxUserId = profile.robloxUserId || profile.robloxUserId === 0
+    ? profile.robloxUserId
+    : profileId ? Number(String(profileId).replace('user-roblox-', '')) : null;
   const favJson = JSON.stringify(profile.favoriteGameIds || []);
+  const handle = profile.handle || (profile.username ? `@${profile.username}` : null);
+
   await db.execute({
     sql: `
       INSERT INTO user_profiles (
@@ -444,33 +451,33 @@ export async function upsertUserProfile(profile: any): Promise<void> {
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        roblox_user_id = COALESCE(excluded.roblox_user_id, user_profiles.roblox_user_id),
         username = excluded.username,
-        handle = excluded.handle,
-        display_name = excluded.display_name,
-        avatar_url = excluded.avatar_url,
-        avatar_bust_url = excluded.avatar_bust_url,
-        bio = excluded.bio,
-        friends_count = excluded.friends_count,
+        handle = COALESCE(excluded.handle, user_profiles.handle),
+        display_name = COALESCE(excluded.display_name, user_profiles.display_name),
+        avatar_url = COALESCE(excluded.avatar_url, user_profiles.avatar_url),
+        avatar_bust_url = COALESCE(excluded.avatar_bust_url, user_profiles.avatar_bust_url),
+        bio = COALESCE(excluded.bio, user_profiles.bio),
+        joined_date = COALESCE(excluded.joined_date, user_profiles.joined_date),
+        roblox_joined_date = COALESCE(excluded.roblox_joined_date, user_profiles.roblox_joined_date),
+        friends_count = COALESCE(excluded.friends_count, user_profiles.friends_count),
         favorite_game_ids = excluded.favorite_game_ids
     `,
     args: [
-      profile.id,
-      profile.robloxUserId || null,
+      profileId,
+      robloxUserId ? Number(robloxUserId) : null,
       profile.username,
-      profile.handle || `@${profile.username}`,
+      handle,
       profile.robloxDisplayName || profile.displayName || profile.username,
       profile.avatarUrl || '',
       profile.avatarBustUrl || '',
       profile.bio || '',
       profile.joinedDate || new Date().toISOString(),
       profile.robloxJoinedDate || '',
-      profile.robloxFriendsCount ?? profile.friendsCount ?? 0,
+      profile.friendsCount ?? profile.robloxFriendsCount ?? 0,
       favJson
     ]
   });
-
-  // Reads resolve display name/avatar live from user_profiles via COALESCE,
-  // so no denormalised cascade is needed here (it only burned write quota).
 }
 
 export async function searchUserProfiles(query: string, limit: number = 8): Promise<any[]> {

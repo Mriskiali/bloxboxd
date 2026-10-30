@@ -8,6 +8,7 @@ import {
   recordLoginEvent
 } from '../db/index';
 import { setSessionCookie, parseCookies } from '../lib/auth';
+import { escapeHtml, safeJsonForScript } from '../lib/security';
 
 const OAUTH_COOKIE = 'roblox_oauth_state';
 
@@ -79,7 +80,7 @@ export function registerOAuthRoutes(app: Express): void {
         <html>
           <body style="background:#14181c;color:#fff;font-family:sans-serif;padding:40px;text-align:center;">
             <h2>Login Roblox Dibatalkan atau Gagal</h2>
-            <p style="color:#ff6b6b;">${String(error_description || error)}</p>
+            <p style="color:#ff6b6b;">${escapeHtml(error_description || error)}</p>
             <p><a href="/" style="color:#00e054;">Kembali ke Beranda</a></p>
           </body>
         </html>
@@ -141,7 +142,7 @@ export function registerOAuthRoutes(app: Express): void {
       if (!tokenRes.ok) {
         const errText = await tokenRes.text();
         console.error('[OAuth] Token exchange failed:', errText);
-        return res.status(502).send('Gagal menukarkan token dengan server Roblox: ' + errText);
+        return res.status(502).send('Gagal menukarkan token dengan server Roblox: ' + escapeHtml(errText));
       }
 
       const tokenData = await tokenRes.json();
@@ -280,7 +281,7 @@ export function registerOAuthRoutes(app: Express): void {
             <button id="closeBtn" onclick="window.close(); window.location.href='/';">Tutup Jendela</button>
           </div>
           <script>
-            const user = ${JSON.stringify(clientUserData)};
+            const user = ${safeJsonForScript(clientUserData)};
             
             // 1. Sync directly to localStorage
             try {
