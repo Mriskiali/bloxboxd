@@ -775,39 +775,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const syncFavoritesToDb = useCallback((favs: string[]) => {
+    if (!user) return;
+    // Fire-and-forget persist favorites. Auth headers read from localStorage so
+    // no stale-closure on sessionToken here.
+    fetch('/api/user/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ ...user, favoriteGameIds: favs })
+    }).catch(e => console.warn('[AppContext] Failed to sync favorites to DB:', e));
+  }, [user]);
+
   const toggleFavorite = (gameId: string) => {
     if (!user) {
       setLoginModalOpen(true);
       return;
     }
     const isCurrentlyFav = user.favoriteGameIds.includes(gameId);
+    let newFavs: string[];
     if (isCurrentlyFav) {
-      setUser(prev => prev ? ({
-        ...prev,
-        favoriteGameIds: prev.favoriteGameIds.filter(id => id !== gameId)
-      }) : null);
+      newFavs = user.favoriteGameIds.filter(id => id !== gameId);
+      setUser(prev => prev ? ({ ...prev, favoriteGameIds: newFavs }) : null);
       const log = getUserLogForGame(gameId);
       if (log) {
         saveGameLog({ ...log, isFavorite: false });
+      } else {
+        // No log row: persist favorite state directly so logout keeps it
+        syncFavoritesToDb(newFavs);
       }
     } else {
       if (user.favoriteGameIds.length >= 4) {
-        // Replace last favorite or notify
-        const newFavs = [gameId, ...user.favoriteGameIds.slice(0, 3)];
-        setUser(prev => prev ? ({ ...prev, favoriteGameIds: newFavs }) : null);
+        newFavs = [gameId, ...user.favoriteGameIds.slice(0, 3)];
       } else {
-        setUser(prev => prev ? ({ ...prev, favoriteGameIds: [...prev.favoriteGameIds, gameId] }) : null);
+        newFavs = [...user.favoriteGameIds, gameId];
       }
+      setUser(prev => prev ? ({ ...prev, favoriteGameIds: newFavs }) : null);
       const log = getUserLogForGame(gameId);
       if (log) {
         saveGameLog({ ...log, isFavorite: true });
       } else {
+        // No log row: persist favorite state directly so logout keeps it
         saveGameLog({
           gameId,
           status: 'played',
           isFavorite: true,
           loggedDate: new Date().toISOString().split('T')[0]
         });
+        // Belt-and-suspenders: ensure favoriteGameIds column on user_profiles is synced
+        syncFavoritesToDb(newFavs);
       }
     }
   };
