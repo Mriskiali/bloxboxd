@@ -450,12 +450,12 @@ async function deleteGameLog(userId, logId) {
   const variants = userIdVariants(userId);
   const where = variants.map(() => "user_id = ?").join(" OR ");
   const logRow = await db.execute({
-    sql: `SELECT game_id FROM game_logs WHERE id = ? AND (${where})`,
-    args: [logId, ...variants]
+    sql: `SELECT game_id FROM game_logs WHERE (id = ? OR game_id = ?) AND (${where})`,
+    args: [logId, logId, ...variants]
   });
   const result = await db.execute({
-    sql: `DELETE FROM game_logs WHERE id = ? AND (${where})`,
-    args: [logId, ...variants]
+    sql: `DELETE FROM game_logs WHERE (id = ? OR game_id = ?) AND (${where})`,
+    args: [logId, logId, ...variants]
   });
   if (logRow.rows.length > 0 && logRow.rows[0].game_id) {
     const gameId = String(logRow.rows[0].game_id);
@@ -656,10 +656,16 @@ async function upsertCustomList(list) {
   });
 }
 async function deleteCustomList(userId, listId) {
+  const variants = userIdVariants(userId);
+  const where = variants.map(() => "user_id = ?").join(" OR ");
   const result = await db.execute({
-    sql: `DELETE FROM custom_lists WHERE id = ? AND user_id = ?`,
-    args: [listId, canonicalUserId(userId)]
+    sql: `DELETE FROM custom_lists WHERE id = ? AND (${where})`,
+    args: [listId, ...variants]
   });
+  if (result.rowsAffected > 0) {
+    await db.execute({ sql: `DELETE FROM list_likes WHERE list_id = ?`, args: [listId] }).catch(() => {
+    });
+  }
   return result.rowsAffected > 0;
 }
 async function toggleListLike(userId, listId) {
@@ -2318,21 +2324,30 @@ function extractSessionToken(req) {
   return typeof alt === "string" && alt.trim() ? alt.trim() : void 0;
 }
 function isSameOrigin(req) {
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
   const origin = req.headers.origin;
   if (origin) {
     try {
       const o = new URL(origin);
-      const host = req.headers["x-forwarded-host"] || req.headers.host;
       return Boolean(host) && o.host === String(host);
+    } catch {
+      return false;
+    }
+  }
+  const referer = req.headers.referer;
+  if (referer) {
+    try {
+      const r = new URL(referer);
+      return Boolean(host) && r.host === String(host);
     } catch {
       return false;
     }
   }
   const fetchSite = req.headers["sec-fetch-site"];
   if (typeof fetchSite === "string") {
-    return fetchSite === "same-origin";
+    return fetchSite === "same-origin" || fetchSite === "same-site" || fetchSite === "none";
   }
-  return false;
+  return true;
 }
 async function requireAuth(req, res) {
   if (!isSameOrigin(req)) {

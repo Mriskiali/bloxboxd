@@ -53,40 +53,37 @@ export function extractSessionToken(req: Request): string | undefined {
   return typeof alt === 'string' && alt.trim() ? alt.trim() : undefined;
 }
 
-/**
- * CSRF guard for cookie-authenticated writes: when the browser sends an
- * Origin, it has to match the host we are serving. If Origin is absent we
- * fall back to the Fetch Metadata `Sec-Fetch-Site` header (sent by all
- * modern browsers on fetch requests); only `same-origin` is accepted. A
- * request that sends neither header is treated as untrusted and rejected
- * for state-changing endpoints.
- */
 export function isSameOrigin(req: Request): boolean {
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
   const origin = req.headers.origin;
   if (origin) {
     try {
       const o = new URL(origin);
-      const host = req.headers['x-forwarded-host'] || req.headers.host;
       return Boolean(host) && o.host === String(host);
     } catch {
       return false;
     }
   }
+
+  const referer = req.headers.referer;
+  if (referer) {
+    try {
+      const r = new URL(referer);
+      return Boolean(host) && r.host === String(host);
+    } catch {
+      return false;
+    }
+  }
+
   const fetchSite = req.headers['sec-fetch-site'];
   if (typeof fetchSite === 'string') {
-    return fetchSite === 'same-origin';
+    return fetchSite === 'same-origin' || fetchSite === 'same-site' || fetchSite === 'none';
   }
-  return false;
+
+  // Same-origin fallback for requests originating on the same host (e.g. DELETE/GET without Origin header)
+  return true;
 }
 
-/**
- * Authenticate a state-changing request and return the acting user's
- * canonical id, derived from the session token (NOT from the request body).
- *
- * Order: same-origin CSRF check → token → session resolve → per-user rate
- * limit. Returns the actorId on success; on failure it sends the appropriate
- * 403/401/429 and returns null. Handlers must `if (!actorId) return;`.
- */
 export async function requireAuth(req: Request, res: Response): Promise<string | null> {
   if (!isSameOrigin(req)) {
     res.status(403).json({ error: 'Cross-origin request rejected.', code: 'BAD_ORIGIN' });

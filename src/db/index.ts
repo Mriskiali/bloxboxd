@@ -573,13 +573,13 @@ export async function deleteGameLog(userId: string, logId: string): Promise<bool
 
   // Fetch the log first to also delete associated review if any
   const logRow = await db.execute({
-    sql: `SELECT game_id FROM game_logs WHERE id = ? AND (${where})`,
-    args: [logId, ...variants]
+    sql: `SELECT game_id FROM game_logs WHERE (id = ? OR game_id = ?) AND (${where})`,
+    args: [logId, logId, ...variants]
   });
 
   const result = await db.execute({
-    sql: `DELETE FROM game_logs WHERE id = ? AND (${where})`,
-    args: [logId, ...variants]
+    sql: `DELETE FROM game_logs WHERE (id = ? OR game_id = ?) AND (${where})`,
+    args: [logId, logId, ...variants]
   });
 
   if (logRow.rows.length > 0 && logRow.rows[0].game_id) {
@@ -807,11 +807,15 @@ export async function upsertCustomList(list: any): Promise<void> {
 }
 
 export async function deleteCustomList(userId: string, listId: string): Promise<boolean> {
-  // L4: canonicalise userId so numeric/raw client ids match stored rows.
+  const variants = userIdVariants(userId);
+  const where = variants.map(() => 'user_id = ?').join(' OR ');
   const result = await db.execute({
-    sql: `DELETE FROM custom_lists WHERE id = ? AND user_id = ?`,
-    args: [listId, canonicalUserId(userId)]
+    sql: `DELETE FROM custom_lists WHERE id = ? AND (${where})`,
+    args: [listId, ...variants]
   });
+  if (result.rowsAffected > 0) {
+    await db.execute({ sql: `DELETE FROM list_likes WHERE list_id = ?`, args: [listId] }).catch(() => {});
+  }
   return result.rowsAffected > 0;
 }
 

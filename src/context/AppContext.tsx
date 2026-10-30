@@ -687,7 +687,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       fetch(`/api/logs/${encodeURIComponent(logId)}?userId=${encodeURIComponent(user.id)}`, {
         method: 'DELETE',
-        headers: { ...authHeaders() }
+        headers: { ...authHeaders() },
+        credentials: 'same-origin'
+      }).then(res => {
+        if (!res.ok) {
+          // Re-sync user data from Turso if delete rejected
+          fetch(`/api/user/data?userId=${encodeURIComponent(user.id)}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (Array.isArray(d?.logs)) setUserLogs(d.logs); });
+        }
       }).catch(e => console.warn('Failed to delete log in database:', e));
 
       showToast(language === 'id' ? 'Catatan game telah dihapus.' : 'Game log deleted.', 'info');
@@ -1012,6 +1020,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetch('/api/lists', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      credentials: 'same-origin',
       body: JSON.stringify(newList)
     }).catch(e => console.warn('Failed to save list to database:', e));
 
@@ -1042,25 +1051,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetch('/api/lists', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      credentials: 'same-origin',
       body: JSON.stringify(updatedList)
     }).catch(e => console.warn('Failed to update list in database:', e));
 
     showToast(language === 'id' ? 'Daftar game berhasil diperbarui!' : 'List updated successfully!', 'success');
   };
 
-  const deleteList = (listId: string) => {
+  const deleteList = async (listId: string) => {
     setCustomLists(prev => prev.filter(l => l.id !== listId));
     if (selectedListId === listId) {
       setSelectedListId(null);
       setActiveTab('lists');
     }
     if (user) {
-      fetch(`/api/lists/${encodeURIComponent(listId)}?userId=${encodeURIComponent(user.id)}`, {
-        method: 'DELETE',
-        headers: { ...authHeaders() }
-      }).catch(e => console.warn('Failed to delete list from database:', e));
+      try {
+        const res = await fetch(`/api/lists/${encodeURIComponent(listId)}?userId=${encodeURIComponent(user.id)}`, {
+          method: 'DELETE',
+          headers: { ...authHeaders() },
+          credentials: 'same-origin'
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.warn('Failed to delete list from database:', err);
+          showToast(err.error || 'Gagal menghapus daftar dari server.', 'error');
+          // Re-sync lists from Turso database
+          fetch('/api/lists')
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (Array.isArray(d?.lists)) setCustomLists(d.lists); });
+          return;
+        }
+        showToast(language === 'id' ? 'Daftar game telah dihapus.' : 'List deleted.', 'info');
+      } catch (e) {
+        console.warn('Failed to delete list from database:', e);
+      }
+    } else {
+      showToast(language === 'id' ? 'Daftar game telah dihapus.' : 'List deleted.', 'info');
     }
-    showToast(language === 'id' ? 'Daftar game telah dihapus.' : 'List deleted.', 'info');
   };
 
   const clearAllLists = () => {
