@@ -37,7 +37,8 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
         try {
           const res = await fetch(`/api/reviews/comments/${encodeURIComponent(commentId)}?userId=${encodeURIComponent(user.id)}`, {
             method: 'DELETE',
-            headers: { ...authHeaders() }
+            headers: { ...authHeaders() },
+            credentials: 'same-origin'
           });
           if (res.ok) {
             setComments((prev: CommentItem[]) => prev.filter((c: CommentItem) => c.id !== commentId));
@@ -88,6 +89,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
       const res = await fetch(`/api/reviews/${encodeURIComponent(review.id)}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        credentials: 'same-origin',
         body: JSON.stringify({
           userId: user.id,
           username: user.username,

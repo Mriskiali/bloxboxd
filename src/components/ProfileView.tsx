@@ -176,6 +176,7 @@ export const ProfileView: React.FC = () => {
       const res = await fetch(`/api/users/${encodeURIComponent(selectedUserId)}/follow`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        credentials: 'same-origin',
         body: JSON.stringify({ followerId: user.id })
       });
       if (res.ok) {

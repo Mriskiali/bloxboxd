@@ -42,6 +42,24 @@ const secFetchReq: any = {
 };
 assert.equal(isSameOrigin(secFetchReq), true);
 
+// Origin absent but same-origin referer (e.g. browser DELETE fetch)
+const refererReq: any = {
+  headers: {
+    referer: 'https://bloxboxd.vercel.app/lists',
+    host: 'bloxboxd.vercel.app'
+  }
+};
+assert.equal(isSameOrigin(refererReq), true);
+
+// Cross-site referer rejected
+const crossRefererReq: any = {
+  headers: {
+    referer: 'https://attacker.evil/lists',
+    host: 'bloxboxd.vercel.app'
+  }
+};
+assert.equal(isSameOrigin(crossRefererReq), false);
+
 // Cross-site fetch without origin rejected
 const crossSiteReq: any = {
   headers: {

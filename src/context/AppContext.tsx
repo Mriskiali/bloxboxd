@@ -574,7 +574,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       fetch('/api/logs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        credentials: 'same-origin',
         body: JSON.stringify(savedLog)
+      }).then(res => {
+        if (!res.ok) {
+          console.warn('Log save failed on server:', res.status);
+          showToast(language === 'id' ? 'Gagal menyimpan catatan ke server.' : 'Failed to save log to server.', 'error');
+        }
       }).catch(e => console.warn('Failed to sync log to database:', e));
     }
 
@@ -619,7 +625,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        credentials: 'same-origin',
         body: JSON.stringify(targetReview)
+      }).then(res => {
+        if (!res.ok) {
+          console.warn('Review save failed on server:', res.status);
+          showToast(language === 'id' ? 'Gagal menyimpan ulasan ke server.' : 'Failed to save review to server.', 'error');
+        }
       }).catch(e => console.warn('Failed to sync review to database:', e));
     }
 
@@ -754,6 +766,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetch('/api/user/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      credentials: 'same-origin',
       body: JSON.stringify(updatedUser)
     }).catch(e => console.warn('[AppContext] Failed to sync favorites to DB:', e));
 
@@ -794,6 +807,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const res = await fetch('/api/user/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        credentials: 'same-origin',
         body: JSON.stringify(updatedUser)
       });
       if (!res.ok) {
@@ -1118,8 +1132,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       fetch(`/api/reviews/${encodeURIComponent(reviewId)}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        credentials: 'same-origin',
         body: JSON.stringify({ userId: user.id })
-      }).catch(e => console.warn('Failed to like review in database:', e));
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && typeof data.likesCount === 'number') {
+            setReviews(prev => prev.map(r => r.id === reviewId ? {
+              ...r,
+              isLiked: Boolean(data.liked),
+              likesCount: data.likesCount
+            } : r));
+          }
+        })
+        .catch(e => console.warn('Failed to like review in database:', e));
     }
   };
 
@@ -1148,6 +1174,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetch(`/api/lists/${encodeURIComponent(listId)}/like`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      credentials: 'same-origin',
       body: JSON.stringify({ userId: user.id })
     })
       .then(res => res.ok ? res.json() : null)
