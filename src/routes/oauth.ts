@@ -221,8 +221,10 @@ export function registerOAuthRoutes(app: Express): void {
         robloxJoinedDate: profile?.robloxJoinedDate || '',
         friendsCount: profile?.friendsCount || 0,
         favoriteGameIds: profile?.favoriteGameIds || [],
-        isRobloxVerified: true,
-        sessionToken
+        isRobloxVerified: true
+        // SECURITY: sessionToken is intentionally NOT sent to the client.
+        // Auth rides entirely on the httpOnly `bb_session` cookie set above,
+        // which the browser auto-attaches to same-origin requests.
       };
 
       // 5. Send lightweight HTML to set localStorage and broadcast auth success
@@ -312,9 +314,11 @@ export function registerOAuthRoutes(app: Express): void {
             }
 
             // 3. Post message to window.opener if accessible
+            // SECURITY: restrict targetOrigin to our own origin so the user
+            // object is never delivered to a cross-origin opener.
             try {
               if (window.opener && window.opener !== window) {
-                window.opener.postMessage({ type: 'BLOXBOXD_AUTH_SUCCESS', user: user }, '*');
+                window.opener.postMessage({ type: 'BLOXBOXD_AUTH_SUCCESS', user: user }, window.location.origin);
               }
             } catch (e) {
               console.error(e);

@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
-import { isValidSession } from '../db/index';
+import { resolveSessionUser } from '../db/index';
+import { userWriteRateLimit } from './rateLimit';
 
 /**
  * Session transport.
@@ -54,36 +55,52 @@ export function extractSessionToken(req: Request): string | undefined {
 
 /**
  * CSRF guard for cookie-authenticated writes: when the browser sends an
- * Origin, it has to match the host we are serving.
+ * Origin, it has to match the host we are serving. If Origin is absent we
+ * fall back to the Fetch Metadata `Sec-Fetch-Site` header (sent by all
+ * modern browsers on fetch requests); only `same-origin` is accepted. A
+ * request that sends neither header is treated as untrusted and rejected
+ * for state-changing endpoints.
  */
 export function isSameOrigin(req: Request): boolean {
   const origin = req.headers.origin;
-  if (!origin) return true; // same-origin fetches from older clients omit it
-  try {
-    const o = new URL(origin);
-    const host = req.headers['x-forwarded-host'] || req.headers.host;
-    return Boolean(host) && o.host === String(host);
-  } catch {
-    return false;
+  if (origin) {
+    try {
+      const o = new URL(origin);
+      const host = req.headers['x-forwarded-host'] || req.headers.host;
+      return Boolean(host) && o.host === String(host);
+    } catch {
+      return false;
+    }
   }
+  const fetchSite = req.headers['sec-fetch-site'];
+  if (typeof fetchSite === 'string') {
+    return fetchSite === 'same-origin';
+  }
+  return false;
 }
 
-export async function requireAuth(req: Request, res: Response, userId: unknown): Promise<boolean> {
-  if (!userId) {
-    res.status(400).json({ error: 'userId is required' });
-    return false;
-  }
-
+/**
+ * Authenticate a state-changing request and return the acting user's
+ * canonical id, derived from the session token (NOT from the request body).
+ *
+ * Order: same-origin CSRF check → token → session resolve → per-user rate
+ * limit. Returns the actorId on success; on failure it sends the appropriate
+ * 403/401/429 and returns null. Handlers must `if (!actorId) return;`.
+ */
+export async function requireAuth(req: Request, res: Response): Promise<string | null> {
   if (!isSameOrigin(req)) {
     res.status(403).json({ error: 'Cross-origin request rejected.', code: 'BAD_ORIGIN' });
-    return false;
+    return null;
   }
 
   const token = extractSessionToken(req);
-  const ok = await isValidSession(token, String(userId));
-  if (!ok) {
+  const actorId = await resolveSessionUser(token);
+  if (!actorId) {
     res.status(401).json({ error: 'Authentication required. Please log in again.', code: 'SESSION_INVALID' });
-    return false;
+    return null;
   }
-  return true;
+
+  if (!(await userWriteRateLimit(actorId, res))) return null;
+
+  return actorId;
 }

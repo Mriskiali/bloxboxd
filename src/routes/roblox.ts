@@ -51,7 +51,7 @@ app.get('/api/roblox/resolve', async (req, res) => {
       const onlineResults = await searchRobloxLiveOnline(query);
       if (onlineResults.length > 0) {
         const bestMatch = onlineResults[0];
-        upsertGame(bestMatch).catch(e => console.warn('[Database] Failed to background upsert search result:', e));
+        await upsertGame(bestMatch).catch(e => console.warn('[Database] Failed to upsert search result:', e));
         return res.json({ source: 'roblox-online-search', ...bestMatch });
       }
 
@@ -86,8 +86,8 @@ app.get('/api/roblox/resolve', async (req, res) => {
     const resolvedGame = await fetchUniverseDetails(universeId, placeId);
     gameCache.set(cacheKey, { data: resolvedGame, timestamp: Date.now() });
 
-    // Persist to database in background
-    upsertGame(resolvedGame).catch(e => console.warn('[Database] Failed to background upsert resolved game:', e));
+    // Persist to Turso database
+    await upsertGame(resolvedGame).catch(e => console.warn('[Database] Failed to upsert resolved game:', e));
 
     return res.json({ source: 'roblox_api', ...resolvedGame });
   } catch (error: any) {
@@ -188,6 +188,58 @@ app.get('/api/roblox/batch', async (req, res) => {
   }
 });
 
+const MULTI_PAGE_QUERIES: Record<string, string[]> = {
+  'All': [
+    'popular top multiplayer games',
+    'trending experiences',
+    'anime action fighting battleground',
+    'survival horror escape scary',
+    'tycoon simulator business idle',
+    'tactical shooter fps deathmatch',
+    'open world adventure rpg quest',
+    'obby parkour platformer tower',
+    'tower defense strategy tactical',
+    'roleplay life town city hangout',
+    'racing driving vehicle simulator',
+    'sports football basketball soccer',
+    'simulator pet collecting clicking',
+    'dungeon crawler fantasy mmorpg',
+    'puzzle escape room mystery',
+    'battle royale survival island',
+    'stealth heist cops robbers',
+    'war military army combat',
+    'flight plane aviation simulator',
+    'space sci-fi galaxy exploration',
+    'zombie apocalypse defense',
+    'magic wizard spell combat',
+    'fashion dress up beauty salon',
+    'restaurant cooking cafe culinary',
+    'horror backrooms liminal entity',
+    'superhero powers marvel dc',
+    'naval pirate sea sailing ship',
+    'underrated hidden gem indie',
+    'classic roblox retro nostalgic',
+    'cooperative story campaign quest'
+  ],
+  'Action': ['action fighting battleground', 'anime combat duel', 'boss fighting martial arts', 'sword fight arena'],
+  'Action / Fighting': ['action fighting battleground', 'anime combat duel', 'boss fighting martial arts', 'sword fight arena'],
+  'RPG': ['rpg adventure story quest', 'dungeon crawler fantasy mmorpg', 'open world exploration rpg', 'class leveling rpg'],
+  'Adventure / RPG': ['rpg adventure story quest', 'dungeon crawler fantasy mmorpg', 'open world exploration rpg', 'class leveling rpg'],
+  'Shooter': ['shooter fps deathmatch', 'tactical gun combat sniper', 'pvp war arena shooter', 'team deathmatch gunfight'],
+  'Shooter / FPS': ['shooter fps deathmatch', 'tactical gun combat sniper', 'pvp war arena shooter', 'team deathmatch gunfight'],
+  'Survival': ['survival escape horror', 'apocalypse disaster survive', 'wilderness base building survival', 'island survival craft'],
+  'Horror': ['horror scary creepy', 'doors pressure psychological horror', 'escape killer mystery haunted', 'backrooms anomaly entity'],
+  'Roleplay & Avatar Sim': ['roleplay life dress up avatar', 'town city hangout club', 'school family social life', 'fashion show runway'],
+  'Social / Roleplay': ['roleplay life dress up avatar', 'town city hangout club', 'school family social life', 'fashion show runway'],
+  'Simulation': ['simulation tycoon simulator', 'business factory idle empire', 'pet training collector sim', 'farm trading market'],
+  'Simulator / Tycoon': ['simulation tycoon simulator', 'business factory idle empire', 'pet training collector sim', 'farm trading market'],
+  'Strategy': ['strategy tower defense', 'tactical army conquer base', 'tds unit defense battle', 'war tactics hex grid'],
+  'Tower Defense': ['tower defense strategy', 'tds defense tactical', 'anime defenders tower', 'survival tower defense'],
+  'Obby & Platformer': ['obby platformer parkour', 'tower of hell difficulty chart', 'speed run jump obstacle', 'impossible obby course'],
+  'Obby / Parkour': ['obby platformer parkour', 'tower of hell difficulty chart', 'speed run jump obstacle', 'impossible obby course'],
+  'Party & Casual': ['party minigames casual', 'board game funny physics', 'trivia hide and seek party', 'arcade party games']
+};
+
 app.get('/api/roblox/discover', async (req, res) => {
   try {
     const genre = ((req.query.genre as string) || 'All').trim();
@@ -198,36 +250,70 @@ app.get('/api/roblox/discover', async (req, res) => {
     let rawGames: any[] = [];
     let nextPageToken: string | undefined = undefined;
 
-    // 1. If a specific genre is selected
-    if (genre !== 'All' && GENRE_KEYWORD_MAP[genre]) {
-      const query = GENRE_KEYWORD_MAP[genre];
-      const searchRes = await fetchRobloxOmniSearchPage(query, pageToken || undefined);
-      rawGames = searchRes.games;
-      nextPageToken = searchRes.nextPageToken;
-    } else {
-      // 2. If 'All' is selected:
-      if (pageToken) {
-        const searchRes = await fetchRobloxOmniSearchPage('popular top multiplayer games', pageToken);
-        rawGames = searchRes.games;
-        nextPageToken = searchRes.nextPageToken;
+    const queryList = MULTI_PAGE_QUERIES[genre] || MULTI_PAGE_QUERIES['All'];
+
+    let queryIndex = 0;
+    let actualRobloxToken: string | undefined = undefined;
+
+    if (pageToken) {
+      const colonIdx = pageToken.indexOf(':');
+      if (colonIdx >= 0) {
+        const parsedIdx = parseInt(pageToken.slice(0, colonIdx), 10);
+        if (!isNaN(parsedIdx)) {
+          queryIndex = parsedIdx;
+          actualRobloxToken = pageToken.slice(colonIdx + 1).trim() || undefined;
+        }
       } else {
-        // First page of 'All': combine explore API sorts + first omni-search page
-        const [exploreGames, omniRes] = await Promise.all([
-          fetchLiveDiscoverGames(),
-          fetchRobloxOmniSearchPage('popular top multiplayer games')
-        ]);
-        
-        const combinedMap = new Map<number, any>();
-        for (const g of exploreGames) {
-          if (g.universeId) combinedMap.set(g.universeId, g);
+        actualRobloxToken = pageToken;
+      }
+    }
+
+    let activeQueryIdx = queryIndex % queryList.length;
+
+    // First page of 'All' (without cursor): combine explore API sorts + first omni-search batch
+    if (!pageToken && genre === 'All') {
+      const [exploreGames, omniRes] = await Promise.all([
+        fetchLiveDiscoverGames(),
+        fetchRobloxOmniSearchPage(queryList[0])
+      ]);
+
+      const combinedMap = new Map<number, any>();
+      for (const g of exploreGames) {
+        if (g.universeId) combinedMap.set(g.universeId, g);
+      }
+      for (const g of omniRes.games) {
+        if (g.universeId && !combinedMap.has(g.universeId)) {
+          combinedMap.set(g.universeId, g);
         }
-        for (const g of omniRes.games) {
-          if (g.universeId && !combinedMap.has(g.universeId)) {
-            combinedMap.set(g.universeId, g);
-          }
+      }
+      rawGames = Array.from(combinedMap.values()).slice(0, limit);
+      if (omniRes.nextPageToken) {
+        nextPageToken = `0:${omniRes.nextPageToken}`;
+      } else {
+        nextPageToken = `1:`;
+      }
+    } else {
+      // Paged discover: query current omni-search keyword
+      let searchRes = await fetchRobloxOmniSearchPage(queryList[activeQueryIdx], actualRobloxToken);
+      rawGames = searchRes.games;
+
+      if (searchRes.nextPageToken) {
+        nextPageToken = `${activeQueryIdx}:${searchRes.nextPageToken}`;
+      } else {
+        // Current query pages exhausted -> advance to next query in pool
+        nextPageToken = `${(activeQueryIdx + 1) % queryList.length}:`;
+      }
+
+      // If current query yielded 0 results, advance to next query immediately
+      if (rawGames.length === 0) {
+        activeQueryIdx = (activeQueryIdx + 1) % queryList.length;
+        searchRes = await fetchRobloxOmniSearchPage(queryList[activeQueryIdx]);
+        rawGames = searchRes.games;
+        if (searchRes.nextPageToken) {
+          nextPageToken = `${activeQueryIdx}:${searchRes.nextPageToken}`;
+        } else {
+          nextPageToken = `${(activeQueryIdx + 1) % queryList.length}:`;
         }
-        rawGames = Array.from(combinedMap.values()).slice(0, limit);
-        nextPageToken = omniRes.nextPageToken;
       }
     }
 
@@ -323,9 +409,9 @@ app.get('/api/roblox/discover', async (req, res) => {
       };
     });
 
-    // Persist newly discovered games to Turso in the background
+    // Persist newly discovered games directly into Turso
     if (formattedGames.length > 0) {
-      bulkUpsertGames(formattedGames).catch(e => console.warn('[Database] Failed to background upsert discovered games:', e));
+      await bulkUpsertGames(formattedGames).catch(e => console.warn('[Database] Failed to upsert discovered games:', e));
     }
 
     return res.json({
@@ -373,7 +459,7 @@ app.get('/api/roblox/search', async (req, res) => {
           const uData = await uRes.json();
           if (uData.universeId) {
             const liveGame = await fetchUniverseDetails(uData.universeId, placeId);
-            upsertGame(liveGame).catch(e => console.warn('[Database] Failed to upsert resolved liveGame:', e));
+            await upsertGame(liveGame).catch(e => console.warn('[Database] Failed to upsert resolved liveGame:', e));
             return res.json({ results: [liveGame], total: 1 });
           }
         }
@@ -391,7 +477,7 @@ app.get('/api/roblox/search', async (req, res) => {
     try {
       const liveResults = await searchRobloxLiveOnline(rawQuery);
       if (liveResults.length > 0) {
-        bulkUpsertGames(liveResults).catch(e => console.warn('[Database] Failed to upsert search liveResults:', e));
+        await bulkUpsertGames(liveResults).catch(e => console.warn('[Database] Failed to upsert search liveResults:', e));
       }
       for (const lr of liveResults) {
         if (!seenUniverses.has(lr.universeId)) {
@@ -570,6 +656,158 @@ app.get('/api/roblox/avatar', async (req, res) => {
     return res.json({ avatarUrl: null });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to lookup avatar' });
+  }
+});
+
+// Roblox Game Badges & Achievements API
+app.get('/api/roblox/games/:universeId/badges', async (req, res) => {
+  try {
+    const universeId = parseInt(req.params.universeId, 10);
+    if (!universeId || isNaN(universeId)) {
+      return res.status(400).json({ error: 'Valid universeId is required' });
+    }
+
+    const badgeRes = await fetch(`https://badges.roblox.com/v1/universes/${universeId}/badges?limit=10&sortOrder=Asc`, {
+      headers: { 'User-Agent': 'Bloxboxd/1.0' }
+    });
+
+    if (!badgeRes.ok) {
+      return res.json({ badges: [] });
+    }
+
+    const badgeData = await badgeRes.json();
+    const rawBadges = Array.isArray(badgeData.data) ? badgeData.data : [];
+    if (rawBadges.length === 0) {
+      return res.json({ badges: [] });
+    }
+
+    const badgeIds = rawBadges.map((b: any) => b.id);
+    const iconRes = await fetch(
+      `https://thumbnails.roblox.com/v1/badges/icons?badgeIds=${badgeIds.join(',')}&size=150x150&format=Png`,
+      { headers: { 'User-Agent': 'Bloxboxd/1.0' } }
+    );
+    const iconData = iconRes.ok ? await iconRes.json() : { data: [] };
+    const iconMap = new Map<number, string>();
+    for (const item of (iconData.data || [])) {
+      if (item.targetId && item.imageUrl) {
+        iconMap.set(item.targetId, item.imageUrl);
+      }
+    }
+
+    const badges = rawBadges.map((b: any) => ({
+      id: b.id,
+      name: b.displayName || b.name,
+      description: b.displayDescription || b.description || '',
+      iconUrl: iconMap.get(b.id) || '',
+      awardedCount: b.statistics?.awardedCount || 0,
+      pastDayAwardedCount: b.statistics?.pastDayAwardedCount || 0,
+      winRatePercentage: b.statistics?.winRatePercentage || 0
+    }));
+
+    return res.json({ badges });
+  } catch (err) {
+    console.warn('Error fetching badges:', err);
+    return res.json({ badges: [] });
+  }
+});
+
+// Roblox Game Screenshots & Media Gallery
+app.get('/api/roblox/games/:universeId/screenshots', async (req, res) => {
+  try {
+    const universeId = parseInt(req.params.universeId, 10);
+    if (!universeId || isNaN(universeId)) {
+      return res.status(400).json({ error: 'Valid universeId is required' });
+    }
+
+    const thumbRes = await fetch(
+      `https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=${universeId}&countPerUniverse=6&size=768x432&format=Png&isCircular=false`,
+      { headers: { 'User-Agent': 'Bloxboxd/1.0' } }
+    );
+
+    if (!thumbRes.ok) {
+      return res.json({ screenshots: [] });
+    }
+
+    const thumbData = await thumbRes.json();
+    const rawThumbs = thumbData.data?.[0]?.thumbnails || [];
+    const screenshots = rawThumbs
+      .map((t: any) => t.imageUrl)
+      .filter((url: string | undefined): url is string => Boolean(url));
+
+    return res.json({ screenshots });
+  } catch (err) {
+    console.warn('Error fetching screenshots:', err);
+    return res.json({ screenshots: [] });
+  }
+});
+
+// Auto-Sync User's Roblox Favorite Games
+app.get('/api/roblox/user/:userId/favorites', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: 'Valid userId is required' });
+    }
+
+    const favRes = await fetch(
+      `https://games.roblox.com/v2/users/${userId}/favorite/games?limit=50&sortOrder=Desc`,
+      { headers: { 'User-Agent': 'Bloxboxd/1.0' } }
+    );
+
+    if (!favRes.ok) {
+      return res.json({ games: [] });
+    }
+
+    const favData = await favRes.json();
+    const rawGames = Array.isArray(favData.data) ? favData.data : [];
+    if (rawGames.length === 0) {
+      return res.json({ games: [] });
+    }
+
+    const universeIds = rawGames.map((g: any) => g.id).filter(Boolean);
+    const [iconMap, detailsMap] = await Promise.all([
+      fetchBatchIcons(universeIds),
+      fetchBatchUniverseDetails(universeIds)
+    ]);
+
+    const formattedGames = rawGames.map((item: any) => {
+      const details = detailsMap.get(item.id);
+      const iconUrl = iconMap.get(item.id) || 'https://tr.rbxcdn.com/180DAY-beb40b4f9cda17a98616d85b2c242e68/512/512/Image/Png/noFilter';
+      const rootPlaceId = details?.rootPlaceId || item.rootPlace?.id || 0;
+      const { ratingAverage, ratingCount, ratingHistogram } = computeRatingStats(details?.favoritedCount || 0, 0);
+
+      return {
+        id: `roblox-${item.id}`,
+        universeId: item.id,
+        rootPlaceId,
+        name: details?.name || item.name,
+        description: details?.description || item.description || '',
+        creatorName: details?.creator?.name || item.creator?.name || 'Roblox Creator',
+        creatorType: (details?.creator?.type || item.creator?.type || 'Group') as 'User' | 'Group',
+        iconUrl,
+        bannerUrl: undefined,
+        genre: details?.genre || 'Adventure',
+        playerCount: details?.playing || 0,
+        totalVisits: details?.visits ? Number(details.visits).toLocaleString() : '0',
+        rawVisits: details?.visits || 0,
+        favoritedCount: details?.favoritedCount || 0,
+        upVotes: 0,
+        downVotes: 0,
+        releaseYear: details?.created ? new Date(details.created).getFullYear() : new Date().getFullYear(),
+        ratingAverage: ratingAverage || 4.5,
+        ratingCount: ratingCount || 0,
+        ratingHistogram: ratingHistogram || {},
+        tags: ['favorite', 'roblox']
+      };
+    });
+
+    // Cache directly to Turso database
+    await bulkUpsertGames(formattedGames).catch(() => {});
+
+    return res.json({ games: formattedGames });
+  } catch (err) {
+    console.error('Error fetching user favorite games:', err);
+    return res.status(500).json({ error: 'Failed to fetch user favorite games' });
   }
 });
 }

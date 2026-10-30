@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Game, GameLog, Review, UserProfile, CustomList, ShelfStatus, SortOption, DEFAULT_AVATAR_URL } from '../types';
-import { INITIAL_GAMES } from '../data/initialGames';
-import { DEFAULT_USER, INITIAL_USER_LOGS, INITIAL_REVIEWS, INITIAL_LISTS } from '../data/mockCommunity';
 import { Language, TranslationKey, getTranslation } from '../utils/translations';
 
 export const deduplicateGames = (gameList: Game[]): Game[] => {
@@ -26,18 +24,16 @@ export const deduplicateGames = (gameList: Game[]): Game[] => {
 };
 
 /**
- * Auth headers for write API calls. The session token lives inside the
- * persisted user object; localStorage is read directly so callbacks never
- * see a stale closure after login.
+ * Auth headers for write API calls.
+ *
+ * SECURITY: the session token is transported ONLY via the `bb_session`
+ * httpOnly cookie, which the browser attaches automatically to every
+ * same-origin fetch (fetch default `credentials: 'same-origin'`). The token
+ * is never read by JS and never stored in localStorage, so an XSS payload
+ * cannot exfiltrate it. We therefore send no Authorization header from the
+ * client. Server-side `extractSessionToken` reads the cookie first.
  */
-export const authHeaders = (): Record<string, string> => {
-  try {
-    const u = JSON.parse(localStorage.getItem('bloxboxd_user') || 'null');
-    return u?.sessionToken ? { Authorization: `Bearer ${u.sessionToken}` } : {};
-  } catch {
-    return {};
-  }
-};
+export const authHeaders = (): Record<string, string> => ({});
 
 export interface Toast {
   id: string;
@@ -113,7 +109,6 @@ interface AppContextType {
     friendsCount?: number;
     favoriteGameIds?: string[];
     isVerifiedOwner?: boolean;
-    sessionToken?: string;
   }) => void;
   logoutRobloxAccount: () => void;
   backToCatalog: () => void;
@@ -148,19 +143,16 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load from local storage or defaults with auto-migration of placeholder assets and API stats
+  // Pure live catalog: initial state is empty; populated from Turso cache + live Roblox stream
   const [games, setGames] = useState<Game[]>(() => {
-    // Hanya simpan game kustom hasil import pengguna di localStorage, katalog utama langsung dari INITIAL_GAMES
     const importedSaved = localStorage.getItem('bloxboxd_imported_games');
     if (importedSaved) {
       try {
         const imported: Game[] = JSON.parse(importedSaved);
-        if (Array.isArray(imported) && imported.length > 0) {
-          return deduplicateGames([...imported, ...INITIAL_GAMES]);
-        }
+        if (Array.isArray(imported)) return deduplicateGames(imported);
       } catch (e) {}
     }
-    return deduplicateGames(INITIAL_GAMES);
+    return [];
   });
 
   const [user, setUser] = useState<UserProfile | null>(() => {
@@ -176,74 +168,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return null;
   });
 
-  const [userLogs, setUserLogs] = useState<GameLog[]>(() => {
-    const MIGRATION_KEY = 'bloxboxd_clean_v6';
-    if (!localStorage.getItem(MIGRATION_KEY)) {
+  const [userLogs, setUserLogs] = useState<GameLog[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [customLists, setCustomLists] = useState<CustomList[]>([]);
+
+  // Cleanup legacy offline mirrors once on mount (A2: online-only)
+  useEffect(() => {
+    try {
       localStorage.removeItem('bloxboxd_logs');
-      localStorage.setItem(MIGRATION_KEY, 'true');
-      return [];
-    }
-    const savedUser = localStorage.getItem('bloxboxd_user');
-    let currentUserId: string | null = null;
-    if (savedUser) {
-      try {
-        const u = JSON.parse(savedUser);
-        currentUserId = u?.id || null;
-      } catch (e) {}
-    }
-    if (!currentUserId) return [];
-
-    const saved = localStorage.getItem('bloxboxd_logs');
-    if (saved) {
-      try { 
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(l => l && (l.userId === currentUserId || l.userId === currentUserId.replace('user-roblox-', '')));
-        }
-      } catch (e) { /* ignore */ }
-    }
-    return [];
-  });
-
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    const saved = localStorage.getItem('bloxboxd_reviews');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(r => r && !r.id?.includes('mock') && !r.id?.includes('placeholder') && r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3' && !r.userId?.includes('mock') && r.userId !== 'user-1' && r.userId !== 'user-2');
-        }
-      } catch (e) { /* ignore */ }
-    }
-    return [];
-  });
-
-  const [customLists, setCustomLists] = useState<CustomList[]>(() => {
-    const saved = localStorage.getItem('bloxboxd_lists');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(l => 
-            l && 
-            l.id &&
-            !l.id.includes('mock') && 
-            !l.id.includes('placeholder') && 
-            !l.id.includes('sample') &&
-            !l.title?.toLowerCase().includes('placeholder') &&
-            !l.description?.toLowerCase().includes('placeholder') &&
-            l.id !== 'list-1' && 
-            l.id !== 'list-2' && 
-            !l.userId?.includes('mock') && 
-            l.userId !== 'user-1' && 
-            l.userId !== 'user-2' &&
-            l.userId !== 'placeholder'
-          );
-        }
-      } catch (e) { /* ignore */ }
-    }
-    return [];
-  });
+      localStorage.removeItem('bloxboxd_reviews');
+      localStorage.removeItem('bloxboxd_lists');
+      localStorage.removeItem('bloxboxd_clean_v6');
+    } catch {}
+  }, []);
 
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('bloxboxd_lang');
@@ -316,7 +253,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMinPlayers(0);
   }, []);
 
-  // Sync fast offline-first cache with LocalStorage
+  // Sync profile metadata cache with LocalStorage (display purposes only)
   useEffect(() => {
     if (user) {
       localStorage.setItem('bloxboxd_user', JSON.stringify(user));
@@ -325,41 +262,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [user]);
 
-  useEffect(() => {
-    try {
-      const boundedLogs = userLogs.slice(0, 50);
-      localStorage.setItem('bloxboxd_logs', JSON.stringify(boundedLogs));
-    } catch (e) {
-      console.warn('Failed to sync logs to localStorage:', e);
-    }
-  }, [userLogs]);
-
-  useEffect(() => {
-    try {
-      // Only keep top 20 reviews for offline cache / quick hydration
-      const offlineReviews = reviews.slice(0, 20);
-      localStorage.setItem('bloxboxd_reviews', JSON.stringify(offlineReviews));
-    } catch (e) {
-      console.warn('Failed to sync reviews to localStorage:', e);
-    }
-  }, [reviews]);
-
-  useEffect(() => {
-    try {
-      // Only keep top 15 custom lists for offline cache
-      const offlineLists = customLists.slice(0, 15);
-      localStorage.setItem('bloxboxd_lists', JSON.stringify(offlineLists));
-    } catch (e) {
-      console.warn('Failed to sync custom lists to localStorage:', e);
-    }
-  }, [customLists]);
-
   // 1. Fetch catalog games, community reviews, and public custom lists from Turso database
   useEffect(() => {
     const fetchCommunityData = async () => {
       try {
         const [gamesRes, revRes, listRes] = await Promise.all([
-          fetch('/api/games?limit=500'),
+          fetch('/api/games?limit=2000'),
           fetch('/api/reviews'),
           fetch('/api/lists')
         ]);
@@ -410,8 +318,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 ...data.profile,
                 favoriteGameIds: Array.isArray(data.profile.favoriteGameIds)
                   ? data.profile.favoriteGameIds
-                  : prev.favoriteGameIds,
-                sessionToken: prev.sessionToken
+                  : prev.favoriteGameIds
               };
               localStorage.setItem('bloxboxd_user', JSON.stringify(merged));
               return merged;
@@ -491,7 +398,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const handleUserData = (u: any) => {
       if (!u || !u.robloxUserId) return;
 
-      const authKey = u.sessionToken || String(u.robloxUserId);
+      const authKey = String(u.robloxUserId);
       const now = Date.now();
       if (lastAuthHandledRef.current.key === authKey && now - lastAuthHandledRef.current.timestamp < 4000) {
         return;
@@ -508,13 +415,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         created: u.joinedDate,
         friendsCount: u.friendsCount,
         favoriteGameIds: u.favoriteGameIds,
-        isVerifiedOwner: true,
-        sessionToken: u.sessionToken
+        isVerifiedOwner: true
       });
       setLoginModalOpen(false);
     };
 
     const handleAuthMessage = (e: MessageEvent) => {
+      // SECURITY: only accept auth broadcasts from our own origin.
+      if (e.origin !== window.location.origin) return;
       if (e.data?.type === 'BLOXBOXD_AUTH_SUCCESS' && e.data.user) {
         handleUserData(e.data.user);
       }
@@ -650,7 +558,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updatedLogs[existingIndex] = updated;
     } else {
       const newLog: GameLog = {
-        id: `log-${Date.now()}`,
+        id: `log-${user.id}-${logData.gameId}`,
         userId: user.id,
         ...logData,
         createdAt: now,
@@ -689,7 +597,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setReviews(updatedRevs);
       } else {
         targetReview = {
-          id: `rev-${Date.now()}`,
+          id: `rev-${user.id}-${logData.gameId}`,
           gameId: logData.gameId,
           gameTitle: targetGame.name,
           gameIcon: targetGame.iconUrl,
@@ -904,7 +812,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     friendsCount?: number;
     favoriteGameIds?: string[];
     isVerifiedOwner?: boolean;
-    sessionToken?: string;
   }) => {
     const newUsername = robloxData.displayName || robloxData.username;
     const newAvatar = robloxData.avatarHeadshotUrl;
@@ -918,7 +825,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       robloxDisplayName: robloxData.displayName,
       robloxUserId: robloxData.userId,
       isRobloxVerified: Boolean(robloxData.isVerifiedOwner),
-      sessionToken: robloxData.sessionToken,
       avatarUrl: newAvatar || DEFAULT_AVATAR_URL,
       avatarBustUrl: robloxData.avatarBustUrl,
       bio: robloxData.bio ?? robloxData.description ?? 'Penggemar game Roblox.',
@@ -932,7 +838,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUserLogs([]);
     setUser(newUser);
     localStorage.setItem('bloxboxd_user', JSON.stringify(newUser));
-    localStorage.removeItem('bloxboxd_logs');
 
     // Seamlessly update active user author fields on reviews & custom lists
     setReviews(prev => prev.map(r => r.userId === newUser.id ? {
@@ -962,8 +867,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               ...data.profile,
               favoriteGameIds: Array.isArray(data.profile.favoriteGameIds)
                 ? data.profile.favoriteGameIds
-                : prev.favoriteGameIds,
-              sessionToken: prev.sessionToken
+                : prev.favoriteGameIds
             };
             localStorage.setItem('bloxboxd_user', JSON.stringify(merged));
             return merged;
@@ -984,7 +888,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUser(null);
     setUserLogs([]);
     localStorage.removeItem('bloxboxd_user');
-    localStorage.removeItem('bloxboxd_logs');
     showToast(language === 'id' ? 'Berhasil keluar.' : 'Signed out.', 'info');
   };
 
@@ -1162,7 +1065,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearAllLists = () => {
     setCustomLists([]);
-    localStorage.removeItem('bloxboxd_lists');
     setSelectedListId(null);
     setActiveTab('lists');
     showToast(language === 'id' ? 'Semua daftar lokal dibersihkan.' : 'All local lists cleared.', 'info');

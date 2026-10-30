@@ -36,10 +36,13 @@ app.get('/api/reviews', async (req, res) => {
 app.post('/api/reviews', async (req, res) => {
   try {
     const review = req.body;
-    if (!review || !review.userId || !review.gameId || !review.reviewText?.trim()) {
+    if (!review || !review.gameId || !review.reviewText?.trim()) {
       return res.status(400).json({ error: 'Invalid review payload' });
     }
-    if (!await requireAuth(req, res, review.userId)) return;
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    // RLS: userId is server-derived.
+    review.userId = actorId;
     // Security: Sanitize review text and bound length (Anti-XSS & Payload Protection)
     review.reviewText = sanitizeText(review.reviewText, 3000);
     review.username = sanitizeText(review.username, 50);
@@ -56,12 +59,12 @@ app.post('/api/reviews', async (req, res) => {
 app.post('/api/reviews/:id/like', async (req, res) => {
   try {
     const reviewId = req.params.id;
-    const { userId } = req.body;
-    if (!reviewId || !userId) {
-      return res.status(400).json({ error: 'reviewId and userId are required' });
+    if (!reviewId) {
+      return res.status(400).json({ error: 'reviewId is required' });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const result = await toggleReviewLike(userId, reviewId);
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    const result = await toggleReviewLike(actorId, reviewId);
     return res.json({ success: true, ...result });
   } catch (err) {
     console.error('Error liking review:', err);
@@ -85,15 +88,18 @@ app.get('/api/lists', async (req, res) => {
 app.post('/api/lists', async (req, res) => {
   try {
     const list = req.body;
-    if (!list || !list.userId || !list.title?.trim()) {
-      return res.status(400).json({ error: 'userId and title are required' });
+    if (!list || !list.title?.trim()) {
+      return res.status(400).json({ error: 'title is required' });
     }
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    // RLS: userId is server-derived.
+    list.userId = actorId;
     // Security: Sanitize list fields (Anti-XSS & length bounding)
     list.title = sanitizeText(list.title, 120);
     list.description = sanitizeText(list.description, 1000);
     list.userName = sanitizeText(list.userName, 50);
 
-    if (!await requireAuth(req, res, list.userId)) return;
     await upsertCustomList(list);
     return res.json({ success: true, message: 'List saved' });
   } catch (err) {
@@ -106,12 +112,12 @@ app.post('/api/lists', async (req, res) => {
 app.delete('/api/lists/:id', async (req, res) => {
   try {
     const listId = req.params.id;
-    const userId = (req.query.userId as string)?.trim();
-    if (!listId || !userId) {
-      return res.status(400).json({ error: 'listId and userId query are required' });
+    if (!listId) {
+      return res.status(400).json({ error: 'listId is required' });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const deleted = await deleteCustomList(userId, listId);
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    const deleted = await deleteCustomList(actorId, listId);
     if (!deleted) {
       return res.status(404).json({ error: 'List not found' });
     }
@@ -126,12 +132,12 @@ app.delete('/api/lists/:id', async (req, res) => {
 app.post('/api/lists/:id/like', async (req, res) => {
   try {
     const listId = req.params.id;
-    const { userId } = req.body;
-    if (!listId || !userId) {
-      return res.status(400).json({ error: 'listId and userId are required' });
+    if (!listId) {
+      return res.status(400).json({ error: 'listId is required' });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const result = await toggleListLike(userId, listId);
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    const result = await toggleListLike(actorId, listId);
     return res.json({ success: true, ...result });
   } catch (err) {
     console.error('Error liking list:', err);
@@ -147,15 +153,16 @@ app.post('/api/lists/:id/like', async (req, res) => {
 app.post('/api/users/:id/follow', async (req, res) => {
   try {
     const targetUserId = req.params.id;
-    const { followerId } = req.body;
-    if (!targetUserId || !followerId) {
-      return res.status(400).json({ error: 'targetUserId and followerId are required' });
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'targetUserId is required' });
     }
-    if (targetUserId === followerId) {
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    // RLS: follower is the authenticated actor, server-derived.
+    if (targetUserId === actorId) {
       return res.status(400).json({ error: 'Cannot follow yourself' });
     }
-    if (!await requireAuth(req, res, followerId)) return;
-    const result = await toggleFollowUser(followerId, targetUserId);
+    const result = await toggleFollowUser(actorId, targetUserId);
     return res.json({ success: true, ...result });
   } catch (err) {
     console.error('Error toggling follow:', err);
@@ -221,17 +228,18 @@ app.get('/api/reviews/:id/comments', async (req, res) => {
 app.post('/api/reviews/:id/comments', async (req, res) => {
   try {
     const reviewId = req.params.id;
-    const { userId, username, userAvatar, commentText } = req.body;
-    if (!reviewId || !userId || !commentText?.trim()) {
-      return res.status(400).json({ error: 'reviewId, userId, and non-empty commentText are required' });
+    const { username, userAvatar, commentText } = req.body;
+    if (!reviewId || !commentText?.trim()) {
+      return res.status(400).json({ error: 'reviewId and non-empty commentText are required' });
     }
-    if (!await requireAuth(req, res, userId)) return;
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
     const cleanComment = sanitizeText(commentText, 600);
     const cleanUsername = sanitizeText(username, 50) || 'RobloxPlayer';
 
     const comment = await addReviewComment({
       reviewId,
-      userId,
+      userId: actorId,
       username: cleanUsername,
       userAvatar,
       commentText: cleanComment
@@ -247,12 +255,12 @@ app.post('/api/reviews/:id/comments', async (req, res) => {
 app.delete('/api/reviews/comments/:id', async (req, res) => {
   try {
     const commentId = req.params.id;
-    const userId = (req.query.userId as string)?.trim();
-    if (!commentId || !userId) {
-      return res.status(400).json({ error: 'commentId and userId query are required' });
+    if (!commentId) {
+      return res.status(400).json({ error: 'commentId is required' });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const deleted = await deleteReviewComment(userId, commentId);
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    const deleted = await deleteReviewComment(actorId, commentId);
     if (!deleted) {
       return res.status(404).json({ error: 'Comment not found or unauthorized' });
     }

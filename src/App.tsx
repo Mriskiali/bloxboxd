@@ -129,11 +129,9 @@ const MainAppContent: React.FC = () => {
     return (b.playerCount || 0) - (a.playerCount || 0);
   });
 
-  // Auto-fetch fresh live Roblox games on startup if catalog has few games
+  // Continuously fetch fresh live Roblox games on startup & initialize live cursor
   useEffect(() => {
-    if (!searchQuery.trim() && uniqueGames.length < 20) {
-      fetchNextDiscoverBatch('All', undefined, uniqueGames.length === 0);
-    }
+    fetchNextDiscoverBatch('All', undefined, uniqueGames.length === 0);
   }, []);
 
   // Reset pagination on search query or sort changes
@@ -211,28 +209,36 @@ const MainAppContent: React.FC = () => {
         if (Array.isArray(data.games) && data.games.length > 0) {
           addGamesToCatalog(data.games);
           setNextPageToken(data.nextPageToken || undefined);
-          setHasMoreLive(Boolean(data.hasMore) && Boolean(data.nextPageToken));
+          setHasMoreLive(Boolean(data.nextPageToken));
           if (isInitial) {
             setVisibleCount(INITIAL_VISIBLE_COUNT);
           } else {
-            // Naikkan visibleCount agar langsung menampilkan batch game yang baru saja ditarik
             setVisibleCount(prev => prev + BATCH_SIZE);
           }
+        } else if (data.nextPageToken) {
+          // Current batch returned games already deduplicated; advance token for next cycle
+          setNextPageToken(data.nextPageToken);
+          setHasMoreLive(true);
         } else {
           setHasMoreLive(false);
         }
       } else {
-        // Jika server Roblox atau RoProxy rate limit (429) atau error, stop live stream agar tidak looping
-        setHasMoreLive(false);
+        // Temporary upstream hiccup; don't permanently kill infinite scroll
+        setIsFetchingLiveBatch(false);
       }
     } catch (e) {
-      console.error('Failed to fetch next discover batch:', e);
-      setHasMoreLive(false);
+      console.warn('Failed to fetch next discover batch:', e);
     } finally {
       setIsFetchingLiveBatch(false);
       if (isInitial) setInitialGenreLoading(false);
     }
   };
+
+  // Keep ref of nextPageToken to eliminate stale closures in intersection observers
+  const nextPageTokenRef = useRef(nextPageToken);
+  useEffect(() => {
+    nextPageTokenRef.current = nextPageToken;
+  }, [nextPageToken]);
 
   // Lazy render: ONLY games visible in current slice are loaded into the DOM
   const visibleGames = sortedGames.slice(0, visibleCount);
@@ -253,14 +259,13 @@ const MainAppContent: React.FC = () => {
               setIsLoadingMore(false);
             }, 100);
           } else if (!searchQuery.trim() && hasMoreLive) {
-            // Hanya panggil live batch berikutnya jika semua game lokal sudah tampil
-            fetchNextDiscoverBatch();
+            fetchNextDiscoverBatch('All', nextPageTokenRef.current);
           }
         }
       },
       {
         root: null,
-        rootMargin: '300px',
+        rootMargin: '400px',
         threshold: 0.05
       }
     );
@@ -601,7 +606,7 @@ const MainAppContent: React.FC = () => {
                       : hasMoreLive && !searchQuery.trim() ? (language === 'id' ? ' · live stream' : ' · live stream') : ''}
                   </p>
 
-                  {hasMore ? (
+                  {hasMore || !searchQuery.trim() ? (
                     <button
                       onClick={() => {
                         if (visibleCount < sortedGames.length) {
@@ -610,8 +615,9 @@ const MainAppContent: React.FC = () => {
                             setVisibleCount(prev => Math.min(prev + BATCH_SIZE, sortedGames.length));
                             setIsLoadingMore(false);
                           }, 100);
-                        } else if (!searchQuery.trim() && hasMoreLive) {
-                          fetchNextDiscoverBatch('All', nextPageToken);
+                        } else if (!searchQuery.trim()) {
+                          setHasMoreLive(true);
+                          fetchNextDiscoverBatch('All', nextPageTokenRef.current);
                         }
                       }}
                       disabled={isLoadingMore || isFetchingLiveBatch}
@@ -626,7 +632,7 @@ const MainAppContent: React.FC = () => {
                         <>
                           {visibleGames.length < sortedGames.length
                             ? (language === 'id' ? 'Muat lebih banyak' : 'Load more')
-                            : t('catalog_explore_more_all')}
+                            : (language === 'id' ? 'Tarik Game Lain dari Roblox' : 'Stream More from Roblox')}
                           <ChevronDown className="h-3.5 w-3.5" />
                         </>
                       )}
@@ -634,7 +640,7 @@ const MainAppContent: React.FC = () => {
                   ) : (
                     <span className="flex items-center gap-1.5 text-[11px] text-faint">
                       <CheckCircle2 className="h-3 w-3 text-green" />
-                      {language === 'id' ? 'Semua game telah dimuat' : 'All games loaded'}
+                      {language === 'id' ? 'Semua hasil pencarian dimuat' : 'All search results loaded'}
                     </span>
                   )}
                 </div>

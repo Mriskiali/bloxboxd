@@ -54,9 +54,16 @@ Pengguna dapat mencatat pengalaman bermain mereka seperti pada Letterboxd:
 - Custom Curated Lists: Pembuatan daftar koleksi kustom oleh pengguna (misal: "Top Survival Games 2026") yang dapat dibagikan dan disukai oleh anggota komunitas lain.
 - Profil Pengguna: Statistik jumlah log, game favorit, ulasan terpopuler, dan sistem pertemanan (Follow).
 
-### 6. Sistem Akun dan Keamanan PIN
-- Login Cepat: Otentikasi berbasis Username atau User ID Roblox yang dilengkapi dengan PIN keamanan 4 digit.
-- Rate Limiting: Proteksi sliding window anti brute-force pada verifikasi PIN (maksimal 5 kali percobaan gagal per 15 menit).
+### 6. Sistem Autentikasi dan Keamanan Zero-Trust
+- Roblox OAuth 2.0 PKCE Resmi: Login langsung melalui portal resmi Roblox (`apis.roblox.com/oauth/v1/authorize`).
+- HttpOnly Session Cookies: Token sesi server-side disimpan dalam cookie httpOnly `bb_session` (anti-pencurian via XSS).
+- Distributed Rate Limiting (Upstash Redis): Pembatasan frekuensi request global per-IP dan per-user untuk melindungi endpoint sensitif dan proxy Roblox dari serangan DoS/amplifikasi.
+- Zero-Trust Server-Side Identity: Hak akses setiap mutasi data (reviews, logs, lists, comments) divalidasi langsung dari token sesi server, mencegah kerentanan Broken Object Level Authorization (BOLA/IDOR).
+
+### 7. Integrasi Mendalam Roblox Open Cloud
+- Badges & Achievements Resmi: Menampilkan daftar badge resmi game langsung dari `badges.roblox.com`, lengkap dengan statistik win rate dan jumlah pemain peraih.
+- Galeri Screenshot Sinematik: Slideshow gambar resolusi tinggi langsung dari endpoint multiget thumbnails Roblox.
+- Auto-Sync Game Favorit: Mengimpor seluruh daftar game favorit akun Roblox pemain ke rak profil Bloxboxd dengan satu kali klik.
 
 ---
 
@@ -217,6 +224,11 @@ Metode standar untuk pembaruan berkelanjutan (Continuous Deployment):
 | :--- | :--- | :--- |
 | `TURSO_DATABASE_URL` | Ya (Production) | URL endpoint basis data Turso LibSQL Cloud. |
 | `TURSO_AUTH_TOKEN` | Ya (Production) | Token otentikasi JWT yang diterbitkan oleh Turso CLI atau dashboard Turso. |
+| `ROBLOX_CLIENT_ID` | Ya (OAuth) | Client ID aplikasi OAuth 2.0 dari Roblox Creator Dashboard. |
+| `ROBLOX_CLIENT_SECRET` | Ya (OAuth) | Client Secret aplikasi OAuth 2.0 dari Roblox Creator Dashboard. |
+| `ROBLOX_REDIRECT_URI` | Opsional | Callback URI OAuth (default otomatis mengacu ke domain/host aktif). |
+| `UPSTASH_REDIS_REST_URL` | Opsional | Endpoint Upstash Redis untuk distributed rate limiting. |
+| `UPSTASH_REDIS_REST_TOKEN` | Opsional | REST token Upstash Redis untuk distributed rate limiting. |
 | `PORT` | Tidak | Port listening untuk server lokal (nilai default: `3000`). Pada Vercel, port dikelola otomatis oleh runtime serverless. |
 
 ---
@@ -231,9 +243,10 @@ Basis data Bloxboxd dikelola melalui LibSQL Client dengan skema relasional berik
 - `review_likes`: Relasi penanda like antara akun pengguna dan ulasan tertentu.
 - `review_comments`: Balasan atau komentar diskusi bertingkat pada ulasan game.
 - `custom_lists`: Koleksi daftar kurasi yang dibuat oleh pengguna beserta visibilitas publik/privat.
-- `list_items`: Pemetaan game yang terdaftar di dalam custom list.
 - `list_likes`: Apresiasi suka pengguna terhadap daftar kurasi tertentu.
-- `user_profiles`: Profil pengguna (bio, username, URL avatar, PIN terenkripsi, tanggal bergabung).
+- `user_profiles`: Profil pengguna (bio, username, handle, URL avatar headshot & bust, tanggal bergabung, 4 game favorit).
+- `sessions`: Token sesi server-side (httpOnly cookie auth) dengan masa berlaku dan enkripsi token.
+- `login_events`: Catatan jejak audit aktivitas login pengguna.
 - `follows`: Relasi pertemanan antar pengguna (Follower dan Following).
 
 Seluruh tabel kunci dilengkapi dengan indeks B-Tree untuk memastikan waktu eksekusi query tetap stabil di bawah 15 milidetik pada data berskala ratusan ribu baris.

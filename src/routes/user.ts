@@ -48,18 +48,22 @@ app.get('/api/users/search', async (req, res) => {
 // Update profile & top 4 favorites
 app.post('/api/user/profile', async (req, res) => {
   try {
-    const profile = req.body;
-    if (!profile || !profile.id) {
-      return res.status(400).json({ error: 'Valid profile object is required' });
-    }
-    if (!await requireAuth(req, res, profile.id)) return;
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+
+    const profile = req.body || {};
+    // RLS: server enforces that you can only edit your own profile
+    profile.id = actorId;
+    profile.robloxUserId = profile.robloxUserId || Number(String(actorId).replace('user-roblox-', ''));
+
     // Security: Sanitize profile fields (OWASP Input Sanitization)
-    profile.bio = sanitizeText(profile.bio, 500);
-    profile.displayName = sanitizeText(profile.displayName, 80);
-    profile.username = sanitizeText(profile.username, 50);
+    if (profile.bio !== undefined) profile.bio = sanitizeText(profile.bio, 500);
+    if (profile.displayName !== undefined) profile.displayName = sanitizeText(profile.displayName, 80);
+    if (profile.username !== undefined) profile.username = sanitizeText(profile.username, 50);
 
     await upsertUserProfile(profile);
-    return res.json({ success: true, message: 'Profile updated' });
+    const updated = await getUserProfile(actorId);
+    return res.json({ success: true, message: 'Profile updated', profile: updated });
   } catch (err) {
     console.error('Error saving user profile:', err);
     return res.status(500).json({ error: 'Failed to update user profile' });
@@ -70,10 +74,13 @@ app.post('/api/user/profile', async (req, res) => {
 app.post('/api/logs', async (req, res) => {
   try {
     const log = req.body;
-    if (!log || !log.userId || !log.gameId) {
-      return res.status(400).json({ error: 'userId and gameId are required' });
+    if (!log || !log.gameId) {
+      return res.status(400).json({ error: 'gameId is required' });
     }
-    if (!await requireAuth(req, res, log.userId)) return;
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    // RLS: userId is server-derived, never trusted from the client.
+    log.userId = actorId;
     log.reviewText = sanitizeText(log.reviewText, 2500);
 
     await upsertGameLog(log);
@@ -88,12 +95,13 @@ app.post('/api/logs', async (req, res) => {
 app.delete('/api/logs/:id', async (req, res) => {
   try {
     const logId = req.params.id;
-    const userId = (req.query.userId as string)?.trim();
-    if (!logId || !userId) {
-      return res.status(400).json({ error: 'logId and userId query are required' });
+    if (!logId) {
+      return res.status(400).json({ error: 'logId is required' });
     }
-    if (!await requireAuth(req, res, userId)) return;
-    const deleted = await deleteGameLog(userId, logId);
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    // RLS: deleteGameLog only matches rows whose user_id === actorId.
+    const deleted = await deleteGameLog(actorId, logId);
     if (!deleted) {
       return res.status(404).json({ error: 'Log not found' });
     }

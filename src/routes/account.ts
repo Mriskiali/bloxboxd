@@ -3,7 +3,8 @@ import {
   getAccountByUserId,
   deleteSession,
   deleteAllSessions,
-  recordLoginEvent
+  recordLoginEvent,
+  canonicalUserId
 } from '../db/index';
 import { clearSessionCookie, extractSessionToken, requireAuth } from '../lib/auth';
 
@@ -22,6 +23,15 @@ export function registerAccountRoutes(app: Express): void {
     const userId = parseInt(userIdStr, 10);
     if (isNaN(userId)) {
       return res.status(400).json({ error: 'Invalid userId' });
+    }
+
+    // SECURITY: auth-gated — only the account owner can query their own
+    // status, so this endpoint cannot enumerate which Roblox users registered.
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
+    // RLS: only the owner can query their own status.
+    if (canonicalUserId(userId) !== actorId) {
+      return res.status(403).json({ error: 'Can only query your own account status.', code: 'FORBIDDEN' });
     }
 
     try {
@@ -62,17 +72,13 @@ export function registerAccountRoutes(app: Express): void {
   // Logout all sessions (revoke everywhere)
   app.post('/api/roblox/account/logout-all', async (req, res) => {
     try {
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
-      }
-      const authed = await requireAuth(req, res, userId);
-      if (!authed) return;
+      const actorId = await requireAuth(req, res);
+      if (!actorId) return;
 
-      await deleteAllSessions(userId);
+      await deleteAllSessions(actorId);
       clearSessionCookie(res);
       void recordLoginEvent({
-        userId,
+        userId: actorId,
         event: 'logout_all_sessions',
         ip: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress,
         userAgent: req.headers['user-agent']

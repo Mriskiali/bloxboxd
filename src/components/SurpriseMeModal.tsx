@@ -17,16 +17,24 @@ import {
   Crosshair,
   Coffee,
   Gem,
-  Loader2
+  Loader2,
+  Flame,
+  Coins,
+  Footprints,
+  Shield,
+  Award
 } from 'lucide-react';
 import { Game, safeImgSrc } from '../types';
 import { useApp } from '../context/AppContext';
 import { 
   PLAY_STYLES, 
   FOCUSED_CATEGORIES, 
+  DISCOVERY_STRATEGIES,
   PlayStyle, 
   FocusedCategory, 
+  DiscoveryStrategy,
   isGameMatchingFocus, 
+  computeGameRecommendationScore,
   launchRobloxExperience 
 } from '../utils/vibe';
 
@@ -46,6 +54,10 @@ const renderStyleIcon = (name: string) => {
 
 const renderCategoryIcon = (name: string) => {
   switch (name) {
+    case 'Flame': return <Flame className="w-3.5 h-3.5" />;
+    case 'Coins': return <Coins className="w-3.5 h-3.5" />;
+    case 'Footprints': return <Footprints className="w-3.5 h-3.5" />;
+    case 'Shield': return <Shield className="w-3.5 h-3.5" />;
     case 'Ghost': return <Ghost className="w-3.5 h-3.5" />;
     case 'Crosshair': return <Crosshair className="w-3.5 h-3.5" />;
     case 'Coffee': return <Coffee className="w-3.5 h-3.5" />;
@@ -55,25 +67,60 @@ const renderCategoryIcon = (name: string) => {
   }
 };
 
-export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClose }) => {
-  const { games, viewGame, toggleGameStatus, getUserLogForGame, user, language, showToast, addGamesToCatalog } = useApp();
+const renderStrategyIcon = (name: string) => {
+  switch (name) {
+    case 'Flame': return <Flame className="w-3.5 h-3.5 text-orange" />;
+    case 'Star': return <Star className="w-3.5 h-3.5 text-orange fill-orange" />;
+    case 'Gem': return <Gem className="w-3.5 h-3.5 text-blue" />;
+    default: return <Sparkles className="w-3.5 h-3.5" />;
+  }
+};
 
-  const [selectedStyle, setSelectedStyle] = useState<PlayStyle>('coop');
-  const [selectedCategory, setSelectedCategory] = useState<FocusedCategory>('horror');
+const renderBadgeIcon = (name: string) => {
+  switch (name) {
+    case 'Flame': return <Flame className="w-3 h-3 text-orange fill-orange" />;
+    case 'Star': return <Star className="w-3 h-3 text-orange fill-orange" />;
+    case 'Gem': return <Gem className="w-3 h-3 text-blue" />;
+    case 'Users': return <Users className="w-3 h-3 text-green" />;
+    case 'Swords': return <Swords className="w-3 h-3 text-orange" />;
+    default: return <Award className="w-3 h-3 text-green" />;
+  }
+};
+
+export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClose }) => {
+  const { games, viewGame, toggleGameStatus, getUserLogForGame, user, language, showToast, addGameToCatalog } = useApp();
+
+  const [selectedStyle, setSelectedStyle] = useState<PlayStyle>('all');
+  const [selectedCategory, setSelectedCategory] = useState<FocusedCategory>('all');
+  const [selectedStrategy, setSelectedStrategy] = useState<DiscoveryStrategy>('hits');
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const [isLoadingLive, setIsLoadingLive] = useState(false);
+  const [livePool, setLivePool] = useState<Game[]>([]);
   const pageTokensRef = useRef<Record<string, string | undefined>>({});
-  const lastFetchedCatRef = useRef<string | null>(null);
 
-  // Fetch live batch from Roblox Discover/Omni-Search API
-  const fetchLiveCategoryBatch = useCallback(async (cat: FocusedCategory) => {
+  // Fetch live batch from Roblox Discover/Omni-Search API matching category and playstyle
+  const fetchLiveCategoryBatch = useCallback(async (cat: FocusedCategory, style: PlayStyle, forceNext = false) => {
     let apiGenre = 'All';
-    if (cat === 'horror') apiGenre = 'Survival';
-    else if (cat === 'fps') apiGenre = 'Shooter';
-    else if (cat === 'cozy') apiGenre = 'Roleplay & Avatar Sim';
-    else if (cat === 'story') apiGenre = 'RPG';
+    if (style === 'pvp') {
+      apiGenre = cat === 'fps' ? 'Shooter' : 'Action';
+    } else {
+      const genreMap: Record<FocusedCategory, string> = {
+        'all': 'All',
+        'action': 'Action',
+        'horror': 'Horror',
+        'fps': 'Shooter',
+        'tycoon': 'Simulation',
+        'obby': 'Obby & Platformer',
+        'strategy': 'Strategy',
+        'cozy': 'Roleplay & Avatar Sim',
+        'story': 'RPG',
+        'hidden-gem': 'Party & Casual'
+      };
+      apiGenre = genreMap[cat] || 'All';
+    }
 
-    const currentToken = pageTokensRef.current[cat];
+    const key = `${cat}::${style}`;
+    const currentToken = forceNext ? pageTokensRef.current[key] : undefined;
     setIsLoadingLive(true);
     try {
       const url = `/api/roblox/discover?genre=${encodeURIComponent(apiGenre)}&limit=35${currentToken ? `&pageToken=${encodeURIComponent(currentToken)}` : ''}`;
@@ -81,9 +128,16 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.games) && data.games.length > 0) {
-          addGamesToCatalog(data.games);
+          setLivePool(prev => {
+            const map = new Map<string, Game>();
+            const combined = forceNext ? [...prev, ...data.games] : data.games;
+            for (const g of combined) {
+              if (g?.id) map.set(g.id, g);
+            }
+            return Array.from(map.values());
+          });
           if (data.nextPageToken) {
-            pageTokensRef.current[cat] = data.nextPageToken;
+            pageTokensRef.current[key] = data.nextPageToken;
           }
         }
       }
@@ -92,57 +146,59 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
     } finally {
       setIsLoadingLive(false);
     }
-  }, [addGamesToCatalog]);
+  }, []);
 
-  // Pull fresh batch when modal opens or category changes
+  // Pull fresh batch when modal opens or category/style changes
   useEffect(() => {
     if (!isOpen) return;
-    if (lastFetchedCatRef.current !== selectedCategory) {
-      lastFetchedCatRef.current = selectedCategory;
-      fetchLiveCategoryBatch(selectedCategory);
-    }
-  }, [isOpen, selectedCategory, fetchLiveCategoryBatch]);
+    setLivePool([]);
+    fetchLiveCategoryBatch(selectedCategory, selectedStyle, false);
+  }, [isOpen, selectedCategory, selectedStyle, fetchLiveCategoryBatch]);
 
   const matchingGames = useMemo(() => {
-    return games.filter(g => isGameMatchingFocus(g, selectedStyle, selectedCategory));
-  }, [games, selectedStyle, selectedCategory]);
+    const pool = livePool.length > 0 ? livePool : games;
+    const filtered = pool.filter(g => isGameMatchingFocus(g, selectedStyle, selectedCategory));
+    return filtered.length > 0 ? filtered : pool;
+  }, [livePool, games, selectedStyle, selectedCategory]);
 
-  // True diverse shuffle: picks 3 distinct games from the entire pool
-  // Gives small, indie, and 0-player games a fair chance to appear alongside popular ones
+  // Algorithmic Recommendation Selection based on intent & quality scoring
   const showcaseGames = useMemo(() => {
     if (matchingGames.length === 0) return [];
-    if (matchingGames.length <= 3) return matchingGames;
 
-    const pool = [...matchingGames];
-    const picked: Game[] = [];
-    const usedIndices = new Set<number>();
+    const scored = matchingGames.map(game => {
+      const rec = computeGameRecommendationScore(game, selectedCategory, selectedStyle, selectedStrategy, shuffleSeed);
+      return { game, ...rec };
+    });
 
-    for (let i = 0; i < 3; i++) {
-      let idx = Math.abs((shuffleSeed * 7 + i * 11 + 3)) % pool.length;
-      let attempts = 0;
-      while (usedIndices.has(idx) && attempts < pool.length) {
-        idx = (idx + 1) % pool.length;
-        attempts++;
+    scored.sort((a, b) => b.score - a.score);
+
+    // Pick top 3 diverse candidates
+    const seen = new Set<string>();
+    const picked: { game: Game; reasonBadge: string; reasonBadgeEn: string; badgeIcon: 'Flame' | 'Star' | 'Gem' | 'Users' | 'Swords' | 'Award' }[] = [];
+
+    for (const item of scored) {
+      if (!seen.has(item.game.id)) {
+        seen.add(item.game.id);
+        picked.push(item);
+        if (picked.length >= 3) break;
       }
-      usedIndices.add(idx);
-      picked.push(pool[idx]);
     }
 
     return picked;
-  }, [matchingGames, shuffleSeed]);
+  }, [matchingGames, selectedCategory, selectedStyle, selectedStrategy, shuffleSeed]);
 
   if (!isOpen) return null;
 
   const handleShuffle = () => {
     setShuffleSeed(prev => prev + 1);
-    // Continuously pull next page from Roblox live API
-    if (matchingGames.length < (shuffleSeed + 2) * 3) {
-      fetchLiveCategoryBatch(selectedCategory);
+    if (livePool.length < 50) {
+      fetchLiveCategoryBatch(selectedCategory, selectedStyle, true);
     }
   };
 
   const handleSaveBacklog = (e: React.MouseEvent, game: Game) => {
     e.stopPropagation();
+    addGameToCatalog(game);
     if (!user) {
       showToast(language === 'id' ? 'Masuk dulu untuk simpan game ini' : 'Sign in to save this game', 'info');
       return;
@@ -157,8 +213,9 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
     );
   };
 
-  const handleViewDetail = (gameId: string) => {
-    viewGame(gameId);
+  const handleViewDetail = (game: Game) => {
+    addGameToCatalog(game);
+    viewGame(game.id);
     onClose();
   };
 
@@ -268,12 +325,43 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
               })}
             </div>
           </div>
+
+          {/* Step 3: Preferensi Kurasi */}
+          <div className="space-y-1.5 pt-2 border-t border-line/60">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-green block">
+              {language === 'id' ? '3. Preferensi kurasi' : '3. Curation preference'}
+            </span>
+            <div className="grid grid-cols-3 gap-1.5">
+              {DISCOVERY_STRATEGIES.map(strat => {
+                const active = selectedStrategy === strat.id;
+                return (
+                  <button
+                    key={strat.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedStrategy(strat.id);
+                      setShuffleSeed(0);
+                    }}
+                    className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-[2px] text-xs font-semibold transition-all cursor-pointer text-center truncate ${
+                      active
+                        ? 'bg-green text-black font-bold shadow-[0_2px_8px_rgba(0,224,84,0.25)]'
+                        : 'bg-panel hover:bg-panel-2 text-ink hover:text-white border border-line'
+                    }`}
+                    title={language === 'id' ? strat.descId : strat.descEn}
+                  >
+                    <span className="flex-shrink-0">{renderStrategyIcon(strat.iconName)}</span>
+                    <span className="truncate">{language === 'id' ? strat.labelId : strat.labelEn}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Results Showcase Area */}
         <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {showcaseGames.length > 0 ? (
-            showcaseGames.map((game, index) => {
+            showcaseGames.map(({ game, reasonBadge, reasonBadgeEn, badgeIcon }, index) => {
               const isBacklog = getUserLogForGame(game.id)?.status === 'backlog';
               const totalVotes = (game.upVotes || 0) + (game.downVotes || 0);
               const likePct = totalVotes > 0 ? Math.round(((game.upVotes || 0) / totalVotes) * 100) : null;
@@ -285,7 +373,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
                   className="p-3 rounded-[3px] bg-bg border border-line hover:border-line-soft transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
                 >
                   <div 
-                    onClick={() => handleViewDetail(game.id)}
+                    onClick={() => handleViewDetail(game)} 
                     className="flex items-center gap-3.5 min-w-0 flex-1 cursor-pointer"
                   >
                     <img
@@ -294,13 +382,17 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
                       className="w-13 h-13 rounded-[3px] object-cover border border-line flex-shrink-0 bg-black group-hover:border-green/50 transition-colors"
                     />
                     <div className="min-w-0 flex-1 space-y-0.5">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-bold text-green uppercase tracking-wider bg-green/10 border border-green/20 px-1.5 py-0.2 rounded-[2px]">
                           #{index + 1}
                         </span>
                         <h4 className="text-xs sm:text-sm font-bold text-white line-clamp-1 group-hover:text-green transition-colors">
                           {game.name}
                         </h4>
+                        <span className="text-[10px] font-semibold text-green bg-green/10 border border-green/20 px-1.5 py-0.5 rounded-[2px] inline-flex items-center gap-1 ml-auto sm:ml-0">
+                          {renderBadgeIcon(badgeIcon)}
+                          <span>{language === 'id' ? reasonBadge : reasonBadgeEn}</span>
+                        </span>
                       </div>
 
                       <p className="text-[11px] text-muted truncate">
@@ -350,7 +442,10 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
 
                     <button
                       type="button"
-                      onClick={() => launchRobloxExperience(game.rootPlaceId)}
+                      onClick={() => {
+                        addGameToCatalog(game);
+                        launchRobloxExperience(game.rootPlaceId);
+                      }}
                       className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-[2px] bg-green hover:bg-[#00c94b] text-black font-bold text-xs shadow-[0_2px_8px_rgba(0,224,84,0.25)] transition-all cursor-pointer whitespace-nowrap"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
@@ -391,7 +486,7 @@ export const SurpriseMeModal: React.FC<SurpriseMeModalProps> = ({ isOpen, onClos
 
           <button
             type="button"
-            disabled={isLoadingLive}
+            disabled={isLoadingLive && matchingGames.length === 0}
             onClick={handleShuffle}
             className="flex items-center gap-1.5 text-xs font-semibold text-ink hover:text-green disabled:opacity-50 transition-colors cursor-pointer min-h-[38px] px-2 py-1"
           >

@@ -4,7 +4,6 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { Game } from '../types';
-import { INITIAL_GAMES } from '../data/initialGames';
 
 dotenv.config();
 
@@ -254,41 +253,6 @@ export async function initDatabase(): Promise<void> {
   } catch (err) {
     console.warn('[Database] userId normalisation skipped:', err);
   }
-
-  // Auto-seed initial catalog into database if table is empty
-  try {
-    const gameCountRes = await db.execute('SELECT COUNT(*) as count FROM games');
-    const gameCount = Number(gameCountRes.rows[0]?.count || 0);
-    if (gameCount === 0 && INITIAL_GAMES.length > 0) {
-      console.log(`[Database] Seeding ${INITIAL_GAMES.length} initial games into database...`);
-      await bulkUpsertGames(INITIAL_GAMES);
-      console.log(`[Database] Seeded initial games successfully.`);
-    }
-  } catch (err) {
-    console.warn('[Database] Failed to check/seed initial games:', err);
-  }
-
-  // Auto-migrate legacy registeredAccounts.json if exists
-  const legacyAccountsFile = path.join(process.cwd(), 'src/data/registeredAccounts.json');
-  if (fs.existsSync(legacyAccountsFile)) {
-    try {
-      const legacyData: Record<string, any> = JSON.parse(fs.readFileSync(legacyAccountsFile, 'utf8'));
-      for (const [key, val] of Object.entries(legacyData)) {
-        if (val && val.userId && val.pinHash) {
-          await db.execute({
-            sql: `
-              INSERT OR IGNORE INTO accounts (user_id, username, pin_hash, salt, verified_at)
-              VALUES (?, ?, ?, ?, ?)
-            `,
-            args: [val.userId, val.username || 'RobloxPlayer', val.pinHash, val.salt || '', val.verifiedAt || new Date().toISOString()]
-          });
-        }
-      }
-      console.log('[Database] Legacy registeredAccounts.json migrated to database.');
-    } catch (err) {
-      console.warn('[Database] Failed to migrate legacy accounts:', err);
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -354,6 +318,22 @@ export async function isValidSession(token: string | undefined, userId: string |
     args: [token, canonicalUserId(userId), new Date().toISOString()]
   });
   return result.rows.length > 0;
+}
+
+/**
+ * RLS-style resolution: derive the acting userId from the session token
+ * alone, ignoring any client-supplied userId claim. Returns the canonical
+ * user_id (`user-roblox-<n>`) for a valid, unexpired session, else null.
+ * This is the single source of truth for "who is making this request".
+ */
+export async function resolveSessionUser(token: string | undefined): Promise<string | null> {
+  if (!token) return null;
+  const result = await db.execute({
+    sql: `SELECT user_id FROM sessions WHERE token = ? AND expires_at > ?`,
+    args: [token, new Date().toISOString()]
+  });
+  const row = result.rows[0] as { user_id?: string } | undefined;
+  return row?.user_id ?? null;
 }
 
 export async function deleteSession(token: string): Promise<void> {
@@ -547,6 +527,12 @@ export async function getUserGameLogs(userId: string): Promise<any[]> {
 }
 
 export async function upsertGameLog(log: any): Promise<void> {
+  const canonicalId = canonicalUserId(log.userId);
+  // Deterministic unique log ID bound to user and game to prevent any ID collisions in fast loops
+  const logId = log.id && !log.id.startsWith('log-')
+    ? log.id
+    : `log-${canonicalId}-${log.gameId}`;
+
   await db.execute({
     sql: `
       INSERT INTO game_logs (
@@ -565,8 +551,8 @@ export async function upsertGameLog(log: any): Promise<void> {
         updated_at = excluded.updated_at
     `,
     args: [
-      log.id || `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      canonicalUserId(log.userId),
+      logId,
+      canonicalId,
       log.gameId,
       log.status,
       log.rating ?? null,
@@ -687,6 +673,9 @@ export async function getUserReviews(userId: string): Promise<any[]> {
 }
 
 export async function upsertReview(rev: any): Promise<void> {
+  const canonicalId = canonicalUserId(rev.userId);
+  const revId = rev.id || `rev-${canonicalId}-${rev.gameId}`;
+
   await db.execute({
     sql: `
       INSERT INTO reviews (
@@ -704,11 +693,11 @@ export async function upsertReview(rev: any): Promise<void> {
       WHERE reviews.user_id = excluded.user_id
     `,
     args: [
-      rev.id || `rev-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      revId,
       rev.gameId,
       rev.gameTitle || '',
       rev.gameIcon || '',
-      canonicalUserId(rev.userId),
+      canonicalId,
       rev.username,
       rev.userAvatar || '',
       rev.rating ?? null,
@@ -723,36 +712,29 @@ export async function upsertReview(rev: any): Promise<void> {
 }
 
 export async function toggleReviewLike(userId: string, reviewId: string): Promise<{ liked: boolean; likesCount: number }> {
-  const existing = await db.execute({
-    sql: `SELECT 1 FROM review_likes WHERE user_id = ? AND review_id = ?`,
-    args: [userId, reviewId]
+  const uid = canonicalUserId(userId);
+  // L2: atomic toggle — INSERT ON CONFLICT DO NOTHING serialises on the PK so
+  // two concurrent "like" requests cannot create a duplicate or desync the
+  // counter. The count mutation runs in a write transaction with the mutation.
+  const ins = await db.execute({
+    sql: `INSERT INTO review_likes (user_id, review_id) VALUES (?, ?) ON CONFLICT DO NOTHING`,
+    args: [uid, reviewId]
   });
 
-  if (existing.rows.length > 0) {
-    // Already liked -> remove like
-    await db.execute({
-      sql: `DELETE FROM review_likes WHERE user_id = ? AND review_id = ?`,
-      args: [userId, reviewId]
-    });
-    await db.execute({
-      sql: `UPDATE reviews SET likes_count = MAX(0, likes_count - 1) WHERE id = ?`,
-      args: [reviewId]
-    });
-    const rev = await db.execute({ sql: `SELECT likes_count FROM reviews WHERE id = ?`, args: [reviewId] });
-    return { liked: false, likesCount: Number(rev.rows[0]?.likes_count || 0) };
-  } else {
-    // Not liked yet -> add like
-    await db.execute({
-      sql: `INSERT INTO review_likes (user_id, review_id) VALUES (?, ?)`,
-      args: [userId, reviewId]
-    });
-    await db.execute({
-      sql: `UPDATE reviews SET likes_count = likes_count + 1 WHERE id = ?`,
-      args: [reviewId]
-    });
+  if (ins.rowsAffected > 0) {
+    await db.batch([
+      { sql: `UPDATE reviews SET likes_count = likes_count + 1 WHERE id = ?`, args: [reviewId] }
+    ], 'write');
     const rev = await db.execute({ sql: `SELECT likes_count FROM reviews WHERE id = ?`, args: [reviewId] });
     return { liked: true, likesCount: Number(rev.rows[0]?.likes_count || 1) };
   }
+
+  await db.batch([
+    { sql: `DELETE FROM review_likes WHERE user_id = ? AND review_id = ?`, args: [uid, reviewId] },
+    { sql: `UPDATE reviews SET likes_count = MAX(0, likes_count - 1) WHERE id = ?`, args: [reviewId] }
+  ], 'write');
+  const rev = await db.execute({ sql: `SELECT likes_count FROM reviews WHERE id = ?`, args: [reviewId] });
+  return { liked: false, likesCount: Number(rev.rows[0]?.likes_count || 0) };
 }
 
 // ---------------------------------------------------------------------------
@@ -825,43 +807,36 @@ export async function upsertCustomList(list: any): Promise<void> {
 }
 
 export async function deleteCustomList(userId: string, listId: string): Promise<boolean> {
+  // L4: canonicalise userId so numeric/raw client ids match stored rows.
   const result = await db.execute({
     sql: `DELETE FROM custom_lists WHERE id = ? AND user_id = ?`,
-    args: [listId, userId]
+    args: [listId, canonicalUserId(userId)]
   });
   return result.rowsAffected > 0;
 }
 
 export async function toggleListLike(userId: string, listId: string): Promise<{ liked: boolean; likesCount: number }> {
-  userId = canonicalUserId(userId);
-  const existing = await db.execute({
-    sql: `SELECT 1 FROM list_likes WHERE user_id = ? AND list_id = ?`,
-    args: [userId, listId]
+  const uid = canonicalUserId(userId);
+  // L2: atomic toggle, same pattern as toggleReviewLike.
+  const ins = await db.execute({
+    sql: `INSERT INTO list_likes (user_id, list_id) VALUES (?, ?) ON CONFLICT DO NOTHING`,
+    args: [uid, listId]
   });
 
-  if (existing.rows.length > 0) {
-    await db.execute({
-      sql: `DELETE FROM list_likes WHERE user_id = ? AND list_id = ?`,
-      args: [userId, listId]
-    });
-    await db.execute({
-      sql: `UPDATE custom_lists SET likes_count = MAX(0, likes_count - 1) WHERE id = ?`,
-      args: [listId]
-    });
-    const item = await db.execute({ sql: `SELECT likes_count FROM custom_lists WHERE id = ?`, args: [listId] });
-    return { liked: false, likesCount: Number(item.rows[0]?.likes_count || 0) };
-  } else {
-    await db.execute({
-      sql: `INSERT INTO list_likes (user_id, list_id) VALUES (?, ?)`,
-      args: [userId, listId]
-    });
-    await db.execute({
-      sql: `UPDATE custom_lists SET likes_count = likes_count + 1 WHERE id = ?`,
-      args: [listId]
-    });
+  if (ins.rowsAffected > 0) {
+    await db.batch([
+      { sql: `UPDATE custom_lists SET likes_count = likes_count + 1 WHERE id = ?`, args: [listId] }
+    ], 'write');
     const item = await db.execute({ sql: `SELECT likes_count FROM custom_lists WHERE id = ?`, args: [listId] });
     return { liked: true, likesCount: Number(item.rows[0]?.likes_count || 1) };
   }
+
+  await db.batch([
+    { sql: `DELETE FROM list_likes WHERE user_id = ? AND list_id = ?`, args: [uid, listId] },
+    { sql: `UPDATE custom_lists SET likes_count = MAX(0, likes_count - 1) WHERE id = ?`, args: [listId] }
+  ], 'write');
+  const item = await db.execute({ sql: `SELECT likes_count FROM custom_lists WHERE id = ?`, args: [listId] });
+  return { liked: false, likesCount: Number(item.rows[0]?.likes_count || 0) };
 }
 
 // ---------------------------------------------------------------------------
@@ -915,29 +890,39 @@ export async function getFollowStatus(currentUserId: string, targetUserId: strin
 }
 
 export async function getCommunityFeed(userId?: string): Promise<any[]> {
-  // Activity feed: combining latest reviews, high ratings, and created custom lists
-  const reviewsRes = await db.execute(`
-    SELECT r.id, r.game_id, r.game_title, r.game_icon, r.user_id,
-           COALESCE(p.display_name, p.username, r.username) as username,
-           COALESCE(p.avatar_url, r.user_avatar) as user_avatar,
-           r.rating, r.review_text, r.likes_count, r.created_at,
-           'review' as activity_type
-    FROM reviews r
-    LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.roblox_user_id = r.user_id)
-    ORDER BY r.created_at DESC LIMIT 30
-  `);
+  const canonicalId = userId ? canonicalUserId(userId) : null;
 
-  const listsRes = await db.execute(`
-    SELECT l.id, l.user_id,
-           COALESCE(p.display_name, p.username, l.user_name) as username,
-           COALESCE(p.avatar_url, l.user_avatar) as user_avatar,
-           l.title, l.description, l.items, l.likes_count, l.created_at,
-           'list' as activity_type
-    FROM custom_lists l
-    LEFT JOIN user_profiles p ON (p.id = l.user_id OR p.roblox_user_id = l.user_id)
-    WHERE l.is_public = 1
-    ORDER BY l.created_at DESC LIMIT 20
-  `);
+  // Activity feed: friends' activities prioritized first, followed by global community
+  const reviewsRes = await db.execute({
+    sql: `
+      SELECT r.id, r.game_id, r.game_title, r.game_icon, r.user_id,
+             COALESCE(p.display_name, p.username, r.username) as username,
+             COALESCE(p.avatar_url, r.user_avatar) as user_avatar,
+             r.rating, r.review_text, r.likes_count, r.created_at,
+             'review' as activity_type,
+             CASE WHEN ? IS NOT NULL AND r.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?) THEN 1 ELSE 0 END as is_friend
+      FROM reviews r
+      LEFT JOIN user_profiles p ON (p.id = r.user_id OR p.id = 'user-roblox-' || r.user_id)
+      ORDER BY is_friend DESC, r.created_at DESC LIMIT 35
+    `,
+    args: [canonicalId, canonicalId]
+  });
+
+  const listsRes = await db.execute({
+    sql: `
+      SELECT l.id, l.user_id,
+             COALESCE(p.display_name, p.username, l.user_name) as username,
+             COALESCE(p.avatar_url, l.user_avatar) as user_avatar,
+             l.title, l.description, l.items, l.likes_count, l.created_at,
+             'list' as activity_type,
+             CASE WHEN ? IS NOT NULL AND l.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?) THEN 1 ELSE 0 END as is_friend
+      FROM custom_lists l
+      LEFT JOIN user_profiles p ON (p.id = l.user_id OR p.id = 'user-roblox-' || l.user_id)
+      WHERE l.is_public = 1
+      ORDER BY is_friend DESC, l.created_at DESC LIMIT 25
+    `,
+    args: [canonicalId, canonicalId]
+  });
 
   const activities: any[] = [];
   for (const r of reviewsRes.rows as any[]) {
@@ -1137,7 +1122,7 @@ function mapRowToGame(row: any): Game {
   };
 }
 
-export async function getAllGames(limit: number = 500): Promise<Game[]> {
+export async function getAllGames(limit: number = 2000): Promise<Game[]> {
   const result = await db.execute({
     sql: 'SELECT * FROM games ORDER BY player_count DESC, updated_at DESC LIMIT ?',
     args: [limit]
@@ -1156,6 +1141,19 @@ export async function getGameById(id: string): Promise<Game | null> {
 }
 
 export async function upsertGame(g: Game): Promise<void> {
+  if (!g || !g.id) return;
+
+  // Check if game already exists in Turso DB (avoid redundant writes)
+  try {
+    const existing = await db.execute({
+      sql: 'SELECT 1 FROM games WHERE id = ? LIMIT 1',
+      args: [g.id]
+    });
+    if (existing.rows.length > 0) {
+      return; // Already cached in Turso
+    }
+  } catch (e) {}
+
   const ratingHistJson = JSON.stringify(g.ratingHistogram || {});
   const tagsJson = JSON.stringify(g.tags || []);
   const now = Date.now();
@@ -1169,28 +1167,7 @@ export async function upsertGame(g: Game): Promise<void> {
         rating_count, rating_histogram, tags, updated_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        universe_id = COALESCE(excluded.universe_id, games.universe_id),
-        root_place_id = COALESCE(excluded.root_place_id, games.root_place_id),
-        name = excluded.name,
-        description = excluded.description,
-        creator_name = excluded.creator_name,
-        creator_type = excluded.creator_type,
-        icon_url = excluded.icon_url,
-        banner_url = COALESCE(excluded.banner_url, games.banner_url),
-        genre = excluded.genre,
-        player_count = excluded.player_count,
-        total_visits = excluded.total_visits,
-        raw_visits = excluded.raw_visits,
-        favorited_count = excluded.favorited_count,
-        up_votes = excluded.up_votes,
-        down_votes = excluded.down_votes,
-        release_year = excluded.release_year,
-        rating_average = excluded.rating_average,
-        rating_count = excluded.rating_count,
-        rating_histogram = excluded.rating_histogram,
-        tags = excluded.tags,
-        updated_at = excluded.updated_at
+      ON CONFLICT(id) DO NOTHING
     `,
     args: [
       g.id,
@@ -1222,11 +1199,42 @@ export async function upsertGame(g: Game): Promise<void> {
 export async function bulkUpsertGames(games: Game[]): Promise<void> {
   if (!games || games.length === 0) return;
 
+  const validGames = games.filter(g => g && g.id);
+  if (validGames.length === 0) return;
+
+  // 1. Check which game IDs already exist in Turso DB
+  const ids = validGames.map(g => g.id);
+  const existingIds = new Set<string>();
+  const CHECK_BATCH = 50;
+
+  for (let i = 0; i < ids.length; i += CHECK_BATCH) {
+    const chunkIds = ids.slice(i, i + CHECK_BATCH);
+    const placeholders = chunkIds.map(() => '?').join(',');
+    try {
+      const res = await db.execute({
+        sql: `SELECT id FROM games WHERE id IN (${placeholders})`,
+        args: chunkIds
+      });
+      for (const r of res.rows as any[]) {
+        if (r?.id) existingIds.add(String(r.id));
+      }
+    } catch (err) {
+      console.warn('[Database] Pre-insert check error:', err);
+    }
+  }
+
+  // 2. Filter: only insert games that do NOT exist in Turso yet!
+  const newGames = validGames.filter(g => !existingIds.has(g.id));
+  if (newGames.length === 0) {
+    // All games already present in Turso — zero unnecessary writes!
+    return;
+  }
+
   const BATCH_SIZE = 25;
   const now = Date.now();
 
-  for (let i = 0; i < games.length; i += BATCH_SIZE) {
-    const chunk = games.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < newGames.length; i += BATCH_SIZE) {
+    const chunk = newGames.slice(i, i + BATCH_SIZE);
     const statements = chunk.map(g => ({
       sql: `
         INSERT INTO games (
@@ -1236,28 +1244,7 @@ export async function bulkUpsertGames(games: Game[]): Promise<void> {
           rating_count, rating_histogram, tags, updated_at
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          universe_id = COALESCE(excluded.universe_id, games.universe_id),
-          root_place_id = COALESCE(excluded.root_place_id, games.root_place_id),
-          name = excluded.name,
-          description = excluded.description,
-          creator_name = excluded.creator_name,
-          creator_type = excluded.creator_type,
-          icon_url = excluded.icon_url,
-          banner_url = COALESCE(excluded.banner_url, games.banner_url),
-          genre = excluded.genre,
-          player_count = excluded.player_count,
-          total_visits = excluded.total_visits,
-          raw_visits = excluded.raw_visits,
-          favorited_count = excluded.favorited_count,
-          up_votes = excluded.up_votes,
-          down_votes = excluded.down_votes,
-          release_year = excluded.release_year,
-          rating_average = excluded.rating_average,
-          rating_count = excluded.rating_count,
-          rating_histogram = excluded.rating_histogram,
-          tags = excluded.tags,
-          updated_at = excluded.updated_at
+        ON CONFLICT(id) DO NOTHING
       `,
       args: [
         g.id,
@@ -1288,12 +1275,12 @@ export async function bulkUpsertGames(games: Game[]): Promise<void> {
     try {
       await db.batch(statements, 'write');
     } catch (e) {
-      console.warn('[Database] batch upsert chunk error, falling back to sequential:', e);
+      console.warn('[Database] batch insert chunk error, falling back to sequential:', e);
       for (const stmt of statements) {
         try {
           await db.execute(stmt);
         } catch (singleErr) {
-          console.warn('[Database] Failed to upsert single game:', singleErr);
+          console.warn('[Database] Failed to insert single game:', singleErr);
         }
       }
     }

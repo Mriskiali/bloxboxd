@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { initDatabase } from './src/db/index';
 import { installRobloxFetchFailover } from './src/lib/roblox';
+import { globalIpRateLimit, strictRobloxRateLimit } from './src/lib/rateLimit';
 import { registerRobloxRoutes } from './src/routes/roblox';
 import { registerAccountRoutes } from './src/routes/account';
 import { registerOAuthRoutes } from './src/routes/oauth';
@@ -47,6 +48,13 @@ if (!process.env.VERCEL) {
   });
 }
 
+// S3: Distributed rate limiting (Upstash Redis). Global per-IP ceiling on every
+// route, plus a stricter limit on the expensive Roblox ingestion/proxy routes
+// (discover/search/resolve/batch fan out to many upstream Roblox calls).
+// No-op when UPSTASH_REDIS_REST_URL/TOKEN are unset (local dev).
+app.use(globalIpRateLimit);
+app.use('/api/roblox', strictRobloxRateLimit);
+
 // Auto-initialize DB on first request & preserve URL path in Vercel serverless rewrites
 let isDbInitialized = false;
 let dbInitPromise: Promise<void> | null = null;
@@ -66,7 +74,9 @@ app.use(async (req, res, next) => {
         })
         .catch(err => {
           console.error('[Database Init Error]:', err);
-          isDbInitialized = true;
+          // L1: do NOT mark as initialized on failure — reset so the next
+          // request re-attempts init instead of serving against a broken DB.
+          dbInitPromise = null;
         });
     }
     await dbInitPromise;

@@ -11,7 +11,7 @@ export function registerCatalogRoutes(app: Express): void {
 // Get all games in catalog from Turso database
 app.get('/api/games', async (req, res) => {
   try {
-    const limit = Math.max(1, Math.min(1000, parseInt((req.query.limit as string) || '500', 10)));
+    const limit = Math.max(1, Math.min(10000, parseInt((req.query.limit as string) || '2000', 10)));
     const games = await getAllGames(limit);
     return res.json({ games, count: games.length });
   } catch (err) {
@@ -39,9 +39,10 @@ app.get('/api/games/:id', async (req, res) => {
 app.post('/api/games', async (req, res) => {
   try {
     const body = req.body;
-    // Auth: catalog writes are user-contributed; block anonymous spam/overwrite
-    const actingUser = Array.isArray(body) ? ((req.query.userId as string) || '').trim() : (body?.userId || '').trim();
-    if (!await requireAuth(req, res, actingUser)) return;
+    // Auth: catalog writes are user-contributed; block anonymous spam/overwrite.
+    // RLS: actor derived from the session token.
+    const actorId = await requireAuth(req, res);
+    if (!actorId) return;
     if (Array.isArray(body)) {
       await bulkUpsertGames(body);
       return res.json({ success: true, count: body.length });

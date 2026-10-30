@@ -42,7 +42,11 @@ export const ProfileView: React.FC = () => {
     selectedUserId,
     setSelectedUserId,
     language,
-    t
+    t,
+    addGamesToCatalog,
+    updateUserProfile,
+    showToast,
+    saveGameLog
   } = useApp();
 
   const isViewingSelf = !selectedUserId || (user && (selectedUserId === user.id || selectedUserId.replace('user-roblox-', '') === user.id.replace('user-roblox-')));
@@ -57,6 +61,56 @@ export const ProfileView: React.FC = () => {
   const [targetError, setTargetError] = useState<string | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isTogglingFollow, setIsTogglingFollow] = useState(false);
+  const [isSyncingFavorites, setIsSyncingFavorites] = useState(false);
+
+  const handleSyncRobloxFavorites = async () => {
+    if (!user?.robloxUserId) return;
+    setIsSyncingFavorites(true);
+    try {
+      const res = await fetch(`/api/roblox/user/${user.robloxUserId}/favorites`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.games) && data.games.length > 0) {
+          addGamesToCatalog(data.games);
+          const top4Ids = data.games.slice(0, 4).map((g: any) => g.id);
+
+          // 1. Sync Top 4 pinned favorite games to Profile & Turso DB
+          await updateUserProfile({ favoriteGameIds: top4Ids });
+
+          // 2. Automatically log synced favorite games into user's shelf & Turso
+          const today = new Date().toISOString().split('T')[0];
+          for (const fav of data.games) {
+            saveGameLog({
+              gameId: fav.id,
+              status: 'played',
+              isFavorite: true,
+              isLiked: true,
+              loggedDate: today
+            });
+          }
+
+          showToast(
+            language === 'id' 
+              ? `Berhasil sinkron ${data.games.length} game favorit ke profil dan rak kamu!` 
+              : `Successfully synced ${data.games.length} favorite games to your profile & shelf!`, 
+            'success'
+          );
+        } else {
+          showToast(
+            language === 'id' 
+              ? 'Tidak ada game favorit publik di akun Roblox kamu.' 
+              : 'No public favorite games found on your Roblox profile.', 
+            'info'
+          );
+        }
+      }
+    } catch (e) {
+      console.warn('Sync error:', e);
+      showToast(language === 'id' ? 'Gagal menyinkronkan favorit.' : 'Failed to sync favorites.', 'error');
+    } finally {
+      setIsSyncingFavorites(false);
+    }
+  };
 
   useEffect(() => {
     if (isOwnProfile) {
@@ -371,6 +425,22 @@ export const ProfileView: React.FC = () => {
             <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
               {isOwnProfile ? (
                 <>
+                  {user?.robloxUserId && (
+                    <button
+                      onClick={handleSyncRobloxFavorites}
+                      disabled={isSyncingFavorites}
+                      className="bb-btn bb-btn-secondary"
+                      title={language === 'id' ? 'Impor game favorit dari akun Roblox kamu' : 'Import favorite games from your Roblox account'}
+                    >
+                      {isSyncingFavorites ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-green" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5 text-green" />
+                      )}
+                      <span>{language === 'id' ? 'Sinkron Favorit Roblox' : 'Sync Roblox Favorites'}</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => setLoginModalOpen(true)}
                     className="bb-btn bb-btn-secondary"

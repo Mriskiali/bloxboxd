@@ -19,7 +19,12 @@ import {
   ThumbsUp,
   Play,
   Pencil,
-  ChevronDown
+  ChevronDown,
+  Award,
+  Trophy,
+  Images,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { RatingStars } from './RatingStars';
@@ -57,8 +62,27 @@ export const GameDetailView: React.FC = () => {
   const [activeReviewFilter, setActiveReviewFilter] = useState<'top' | 'recent'>('top');
   const [activeReviewComments, setActiveReviewComments] = useState<Review | null>(null);
 
+  const [badges, setBadges] = useState<any[]>([]);
+  const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+
   const game = selectedGameId ? getGameById(selectedGameId) : null;
   const userLog = selectedGameId ? getUserLogForGame(selectedGameId) : undefined;
+
+  // Auto-fetch badges & screenshots from official Roblox API
+  useEffect(() => {
+    if (!game?.universeId) return;
+    setActiveMediaIndex(0);
+    fetch(`/api/roblox/games/${game.universeId}/badges`)
+      .then(res => res.json())
+      .then(data => setBadges(Array.isArray(data.badges) ? data.badges : []))
+      .catch(() => {});
+
+    fetch(`/api/roblox/games/${game.universeId}/screenshots`)
+      .then(res => res.json())
+      .then(data => setScreenshots(Array.isArray(data.screenshots) ? data.screenshots : []))
+      .catch(() => {});
+  }, [game?.universeId]);
 
   // Auto-fetch live Roblox API stats if missing for this game
   useEffect(() => {
@@ -440,6 +464,131 @@ export const GameDetailView: React.FC = () => {
                 </div>
               );
             })()}
+
+            {/* Official Roblox Media Gallery */}
+            {screenshots.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between border-b border-line pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Images className="w-4 h-4 text-green" />
+                    <h2 className="bb-label">
+                      {language === 'id' ? 'Galeri Screenshot Resmi' : 'Official Screenshots'}
+                    </h2>
+                  </div>
+                  <span className="text-[11px] text-faint">
+                    {activeMediaIndex + 1} / {screenshots.length}
+                  </span>
+                </div>
+
+                <div className="relative aspect-video w-full rounded-[3px] overflow-hidden bg-black/60 border border-line group">
+                  <img
+                    src={screenshots[activeMediaIndex]}
+                    alt={`${game.name} screenshot ${activeMediaIndex + 1}`}
+                    className="w-full h-full object-cover transition-opacity duration-200"
+                    loading="lazy"
+                  />
+
+                  {screenshots.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setActiveMediaIndex(prev => (prev - 1 + screenshots.length) % screenshots.length)}
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 p-2 rounded-[2px] bg-black/75 hover:bg-black text-white border border-line opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveMediaIndex(prev => (prev + 1) % screenshots.length)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-[2px] bg-black/75 hover:bg-black text-white border border-line opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Thumbnails strip */}
+                {screenshots.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+                    {screenshots.map((s, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setActiveMediaIndex(idx)}
+                        className={`relative flex-shrink-0 w-20 aspect-video rounded-[2px] overflow-hidden border transition-all cursor-pointer ${
+                          idx === activeMediaIndex ? 'border-green shadow-[0_0_8px_rgba(0,224,84,0.4)]' : 'border-line opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={s} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Official Roblox Badges & Achievements */}
+            {badges.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between border-b border-line pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-orange" />
+                    <h2 className="bb-label">
+                      {language === 'id' ? 'Pencapaian & Badge Resmi' : 'Badges & Achievements'}
+                    </h2>
+                  </div>
+                  <span className="text-[11px] tabular-nums text-faint">
+                    {badges.length} {language === 'id' ? 'Badge' : 'Badges'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {badges.map(b => {
+                    const winPct = b.winRatePercentage ? (b.winRatePercentage * 100).toFixed(1) : null;
+                    return (
+                      <div
+                        key={b.id}
+                        className="p-3 rounded-[3px] bg-panel border border-line flex items-start gap-3 hover:border-line-soft transition-colors"
+                      >
+                        {b.iconUrl ? (
+                          <img
+                            src={b.iconUrl}
+                            alt={b.name}
+                            className="w-11 h-11 rounded-[3px] object-cover flex-shrink-0 bg-bg border border-line"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-11 h-11 rounded-[3px] bg-bg border border-line flex items-center justify-center flex-shrink-0 text-faint">
+                            <Award className="w-5 h-5 text-orange/70" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="text-xs font-bold text-white truncate">{b.name}</h4>
+                            {winPct && (
+                              <span className="text-[10px] font-semibold text-green/90 bg-green/10 border border-green/20 px-1.5 py-0.2 rounded-[2px] flex-shrink-0">
+                                {winPct}%
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted line-clamp-2 leading-relaxed">
+                            {b.description || (language === 'id' ? 'Pencapaian rahasia dalam game.' : 'Secret in-game achievement.')}
+                          </p>
+                          {b.awardedCount > 0 && (
+                            <p className="text-[10px] text-faint pt-0.5">
+                              {b.awardedCount.toLocaleString()} {language === 'id' ? 'pemain dapat' : 'won'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Community Reviews Section (PRD Section 6.2 #1) */}
             <div className="space-y-4 pt-2">
