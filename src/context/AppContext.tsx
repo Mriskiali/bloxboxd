@@ -289,11 +289,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    setToasts((prev: Toast[]) => [...prev.slice(-3), { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev: Toast[]) => prev.filter((t: Toast) => t.id !== id));
-    }, 3800);
+    setToasts((prev: Toast[]) => {
+      // Prevent identical duplicate toasts from stacking
+      if (prev.some(t => t.message === message)) return prev;
+      const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      setTimeout(() => {
+        setToasts((current: Toast[]) => current.filter((t: Toast) => t.id !== id));
+      }, 3800);
+      return [...prev.slice(-2), { id, message, type }];
+    });
   }, []);
 
   const showConfirm = useCallback((options: ConfirmDialogOptions) => {
@@ -479,10 +483,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
+  // Keep ref to deduplicate cross-window auth broadcast (postMessage + BroadcastChannel + storage event)
+  const lastAuthHandledRef = useRef<{ key?: string; timestamp: number }>({ timestamp: 0 });
+
   // Listen for OAuth callback messages across all cross-window channels (postMessage, BroadcastChannel, storage event)
   useEffect(() => {
     const handleUserData = (u: any) => {
       if (!u || !u.robloxUserId) return;
+
+      const authKey = u.sessionToken || String(u.robloxUserId);
+      const now = Date.now();
+      if (lastAuthHandledRef.current.key === authKey && now - lastAuthHandledRef.current.timestamp < 4000) {
+        return;
+      }
+      lastAuthHandledRef.current = { key: authKey, timestamp: now };
+
       loginWithRobloxAccount({
         userId: u.robloxUserId,
         username: u.username || u.robloxUsername,
