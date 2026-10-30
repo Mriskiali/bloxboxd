@@ -2899,7 +2899,15 @@ async function getUserProfile(userId) {
   };
 }
 async function upsertUserProfile(profile) {
-  const favJson = JSON.stringify(profile.favoriteGameIds || []);
+  const profileId = profile.id ? canonicalUserId(profile.id) : profile.id;
+  const robloxUserId = profile.robloxUserId || profile.robloxUserId === 0 ? profile.robloxUserId : profileId ? Number(String(profileId).replace("user-roblox-", "")) : null;
+  const favJson = Array.isArray(profile.favoriteGameIds) ? JSON.stringify(profile.favoriteGameIds) : null;
+  const username = profile.username || "RobloxPlayer";
+  const handle = profile.handle || `@${username.replace(/^@+/, "")}`;
+  const bio = typeof profile.bio === "string" ? profile.bio : null;
+  const displayName = profile.displayName || profile.robloxDisplayName || profile.username || null;
+  const avatarUrl = profile.avatarUrl || null;
+  const avatarBustUrl = profile.avatarBustUrl || null;
   await db.execute({
     sql: `
       INSERT INTO user_profiles (
@@ -2908,27 +2916,30 @@ async function upsertUserProfile(profile) {
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
-        username = excluded.username,
-        handle = excluded.handle,
-        display_name = excluded.display_name,
-        avatar_url = excluded.avatar_url,
-        avatar_bust_url = excluded.avatar_bust_url,
-        bio = excluded.bio,
-        friends_count = excluded.friends_count,
-        favorite_game_ids = excluded.favorite_game_ids
+        roblox_user_id = COALESCE(excluded.roblox_user_id, user_profiles.roblox_user_id),
+        username = CASE WHEN excluded.username != 'RobloxPlayer' THEN excluded.username ELSE user_profiles.username END,
+        handle = CASE WHEN excluded.handle != '@RobloxPlayer' THEN excluded.handle ELSE user_profiles.handle END,
+        display_name = COALESCE(excluded.display_name, user_profiles.display_name),
+        avatar_url = COALESCE(NULLIF(excluded.avatar_url, ''), user_profiles.avatar_url),
+        avatar_bust_url = COALESCE(NULLIF(excluded.avatar_bust_url, ''), user_profiles.avatar_bust_url),
+        bio = COALESCE(excluded.bio, user_profiles.bio),
+        joined_date = COALESCE(user_profiles.joined_date, excluded.joined_date),
+        roblox_joined_date = COALESCE(user_profiles.roblox_joined_date, excluded.roblox_joined_date),
+        friends_count = COALESCE(excluded.friends_count, user_profiles.friends_count),
+        favorite_game_ids = CASE WHEN excluded.favorite_game_ids IS NOT NULL THEN excluded.favorite_game_ids ELSE user_profiles.favorite_game_ids END
     `,
     args: [
-      profile.id,
-      profile.robloxUserId || null,
-      profile.username,
-      profile.handle || `@${profile.username}`,
-      profile.robloxDisplayName || profile.displayName || profile.username,
-      profile.avatarUrl || "",
-      profile.avatarBustUrl || "",
-      profile.bio || "",
+      profileId,
+      robloxUserId ? Number(robloxUserId) : null,
+      username,
+      handle,
+      displayName,
+      avatarUrl,
+      avatarBustUrl,
+      bio,
       profile.joinedDate || (/* @__PURE__ */ new Date()).toISOString(),
       profile.robloxJoinedDate || "",
-      profile.robloxFriendsCount ?? profile.friendsCount ?? 0,
+      profile.friendsCount ?? profile.robloxFriendsCount ?? 0,
       favJson
     ]
   });
@@ -3018,10 +3029,22 @@ async function upsertGameLog(log) {
 async function deleteGameLog(userId, logId) {
   const variants = userIdVariants(userId);
   const where = variants.map(() => "user_id = ?").join(" OR ");
+  const logRow = await db.execute({
+    sql: `SELECT game_id FROM game_logs WHERE id = ? AND (${where})`,
+    args: [logId, ...variants]
+  });
   const result = await db.execute({
     sql: `DELETE FROM game_logs WHERE id = ? AND (${where})`,
     args: [logId, ...variants]
   });
+  if (logRow.rows.length > 0 && logRow.rows[0].game_id) {
+    const gameId = String(logRow.rows[0].game_id);
+    await db.execute({
+      sql: `DELETE FROM reviews WHERE game_id = ? AND (${where})`,
+      args: [gameId, ...variants]
+    }).catch(() => {
+    });
+  }
   return result.rowsAffected > 0;
 }
 async function getAllReviews(gameId) {
@@ -4731,6 +4754,21 @@ function registerAccountRoutes(app2) {
 
 // src/routes/oauth.ts
 import crypto3 from "crypto";
+
+// src/lib/security.ts
+function sanitizeText(input, maxLength = 2e3) {
+  if (!input || typeof input !== "string") return "";
+  return input.trim().replace(/[<>]/g, "").slice(0, maxLength);
+}
+function escapeHtml(input) {
+  const amp = String.fromCharCode(38);
+  return String(input ?? "").replace(/&/g, amp + "amp;").replace(/</g, amp + "lt;").replace(/>/g, amp + "gt;").replace(/["]/g, amp + "quot;").replace(/[']/g, amp + "#39;");
+}
+function safeJsonForScript(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+// src/routes/oauth.ts
 var OAUTH_COOKIE = "roblox_oauth_state";
 function getRedirectUri(req) {
   if (process.env.ROBLOX_REDIRECT_URI) {
@@ -4788,7 +4826,7 @@ function registerOAuthRoutes(app2) {
         <html>
           <body style="background:#14181c;color:#fff;font-family:sans-serif;padding:40px;text-align:center;">
             <h2>Login Roblox Dibatalkan atau Gagal</h2>
-            <p style="color:#ff6b6b;">${String(error_description || error)}</p>
+            <p style="color:#ff6b6b;">${escapeHtml(error_description || error)}</p>
             <p><a href="/" style="color:#00e054;">Kembali ke Beranda</a></p>
           </body>
         </html>
@@ -4840,7 +4878,7 @@ function registerOAuthRoutes(app2) {
       if (!tokenRes.ok) {
         const errText = await tokenRes.text();
         console.error("[OAuth] Token exchange failed:", errText);
-        return res.status(502).send("Gagal menukarkan token dengan server Roblox: " + errText);
+        return res.status(502).send("Gagal menukarkan token dengan server Roblox: " + escapeHtml(errText));
       }
       const tokenData = await tokenRes.json();
       const accessToken = tokenData.access_token;
@@ -4863,8 +4901,8 @@ function registerOAuthRoutes(app2) {
         verifiedAt: (/* @__PURE__ */ new Date()).toISOString()
       });
       const profileId = `user-roblox-${userId}`;
-      const existingProfile = await getUserProfile(profileId);
-      if (!existingProfile) {
+      let profile = await getUserProfile(profileId);
+      if (!profile) {
         await upsertUserProfile({
           id: profileId,
           robloxUserId: userId,
@@ -4872,14 +4910,17 @@ function registerOAuthRoutes(app2) {
           handle: `@${username}`,
           displayName,
           avatarUrl,
-          joinedDate: (/* @__PURE__ */ new Date()).toISOString()
+          joinedDate: (/* @__PURE__ */ new Date()).toISOString(),
+          favoriteGameIds: []
         });
-      } else if (avatarUrl && !existingProfile.avatarUrl) {
+        profile = await getUserProfile(profileId);
+      } else if (avatarUrl && !profile.avatarUrl) {
         await upsertUserProfile({
-          ...existingProfile,
+          ...profile,
           avatarUrl,
-          displayName: displayName || existingProfile.displayName
+          displayName: profile.displayName || displayName
         });
+        profile = await getUserProfile(profileId);
       }
       const sessionToken = await createSession(userId);
       setSessionCookie(res, sessionToken);
@@ -4894,10 +4935,16 @@ function registerOAuthRoutes(app2) {
         id: profileId,
         robloxUserId: userId,
         robloxUsername: username,
-        username,
-        displayName,
-        handle: `@${username}`,
-        avatarUrl,
+        username: profile?.username || username,
+        displayName: profile?.displayName || displayName,
+        handle: profile?.handle || `@${username}`,
+        avatarUrl: profile?.avatarUrl || avatarUrl,
+        avatarBustUrl: profile?.avatarBustUrl || "",
+        bio: profile?.bio || "",
+        joinedDate: profile?.joinedDate || (/* @__PURE__ */ new Date()).toISOString(),
+        robloxJoinedDate: profile?.robloxJoinedDate || "",
+        friendsCount: profile?.friendsCount || 0,
+        favoriteGameIds: profile?.favoriteGameIds || [],
         isRobloxVerified: true,
         sessionToken
       };
@@ -4965,7 +5012,7 @@ function registerOAuthRoutes(app2) {
             <button id="closeBtn" onclick="window.close(); window.location.href='/';">Tutup Jendela</button>
           </div>
           <script>
-            const user = ${JSON.stringify(clientUserData)};
+            const user = ${safeJsonForScript(clientUserData)};
             
             // 1. Sync directly to localStorage
             try {
@@ -5066,12 +5113,6 @@ function registerCatalogRoutes(app2) {
       return res.status(500).json({ error: "Failed to save game to database" });
     }
   });
-}
-
-// src/lib/security.ts
-function sanitizeText(input, maxLength = 2e3) {
-  if (!input || typeof input !== "string") return "";
-  return input.trim().replace(/[<>]/g, "").slice(0, maxLength);
 }
 
 // src/routes/user.ts

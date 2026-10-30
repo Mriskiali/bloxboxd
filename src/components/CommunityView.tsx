@@ -355,7 +355,7 @@ export const CommunityView: React.FC = () => {
                             <MessageSquare className="w-3.5 h-3.5 text-blue" />
                             <span>{t('community_comment')}</span>
                           </button>
-                          {user && (rev.userId === user.id || rev.userId === `user-roblox-${user.robloxUserId}`) && (
+                          {user && (rev.userId === user.id || rev.userId.replace('user-roblox-', '') === user.id.replace('user-roblox-')) && (
                             <button
                               onClick={() => {
                                 const g = getGameById(rev.gameId);

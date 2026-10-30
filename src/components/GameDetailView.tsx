@@ -530,7 +530,7 @@ export const GameDetailView: React.FC = () => {
 
                           {/* Like & Comments buttons */}
                           <div className="flex items-center gap-2">
-                            {user && (rev.userId === user.id || rev.userId === `user-roblox-${user.robloxUserId}`) && (
+                            {user && (rev.userId === user.id || rev.userId.replace('user-roblox-', '') === user.id.replace('user-roblox-')) && (
                               <button
                                 onClick={() => openLogModal(game)}
                                 className="flex items-center gap-1 px-2 py-1 rounded-[2px] text-xs font-medium bg-panel text-muted hover:text-white hover:bg-panel-2 transition-colors cursor-pointer"

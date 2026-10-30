@@ -273,7 +273,7 @@ export const ListsView: React.FC = () => {
                 <span>{currentList.likesCount} {t('lists_like')}</span>
               </button>
 
-              {user && currentList.userId === user.id && (
+              {user && (currentList.userId === user.id || currentList.userId?.replace('user-roblox-', '') === user.id?.replace('user-roblox-')) && (
                 <>
                   <button
                     onClick={() => handleOpenEdit(currentList)}
@@ -416,25 +416,6 @@ export const ListsView: React.FC = () => {
             <span>{t('lists_back_catalog')}</span>
           </button>
 
-          {customLists.length > 0 && (
-            <button
-              onClick={() => {
-                showConfirm({
-                  title: language === 'id' ? 'Bersihkan Semua List' : 'Clear All Lists',
-                  message: t('lists_clear_confirm'),
-                  confirmText: language === 'id' ? 'Ya, Bersihkan' : 'Yes, Clear All',
-                  isDestructive: true,
-                  onConfirm: () => clearAllLists()
-                });
-              }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-[3px] bg-panel hover:bg-red-500/20 border border-line hover:border-red-500/40 text-xs font-semibold text-ink hover:text-red-400 transition-colors cursor-pointer"
-              title={language === 'id' ? 'Hapus semua list' : 'Clear all lists'}
-            >
-              <Trash2 className="w-3.5 h-3.5 text-red-400" />
-              <span>{language === 'id' ? 'Bersihkan List' : 'Clear Lists'}</span>
-            </button>
-          )}
-
           <button
             onClick={() => {
               if (!user) {
@@ -554,7 +535,7 @@ export const ListsView: React.FC = () => {
                     <Heart className={`w-3.5 h-3.5 ${list.isLiked ? 'fill-orange text-orange' : ''}`} />
                     <span>{list.likesCount}</span>
                   </button>
-                  {user && list.userId === user.id && (
+                  {user && (list.userId === user.id || list.userId?.replace('user-roblox-', '') === user.id?.replace('user-roblox-')) && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => {

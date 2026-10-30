@@ -107,10 +107,13 @@ interface AppContextType {
     displayName: string;
     avatarHeadshotUrl: string;
     avatarBustUrl?: string;
+    bio?: string;
     description?: string;
     created?: string;
     friendsCount?: number;
+    favoriteGameIds?: string[];
     isVerifiedOwner?: boolean;
+    sessionToken?: string;
   }) => void;
   logoutRobloxAccount: () => void;
   backToCatalog: () => void;
@@ -396,7 +399,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const data = await res.json();
           setUserLogs(Array.isArray(data.logs) ? data.logs : []);
           if (data.profile) {
-            setUser(prev => prev ? ({ ...prev, ...data.profile }) : data.profile);
+            setUser(prev => {
+              if (!prev) return data.profile;
+              const merged = {
+                ...prev,
+                ...data.profile,
+                favoriteGameIds: Array.isArray(data.profile.favoriteGameIds)
+                  ? data.profile.favoriteGameIds
+                  : prev.favoriteGameIds,
+                sessionToken: prev.sessionToken
+              };
+              localStorage.setItem('bloxboxd_user', JSON.stringify(merged));
+              return merged;
+            });
           }
         }
       } catch (err) {
@@ -470,9 +485,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!u || !u.robloxUserId) return;
       loginWithRobloxAccount({
         userId: u.robloxUserId,
-        username: u.robloxUsername || u.username,
+        username: u.username || u.robloxUsername,
         displayName: u.displayName || u.username,
         avatarHeadshotUrl: u.avatarUrl,
+        avatarBustUrl: u.avatarBustUrl,
+        bio: u.bio,
+        created: u.joinedDate,
+        friendsCount: u.friendsCount,
+        favoriteGameIds: u.favoriteGameIds,
         isVerifiedOwner: true,
         sessionToken: u.sessionToken
       });
@@ -703,20 +723,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (logData.isFavorite) {
       if (!user.favoriteGameIds.includes(logData.gameId)) {
         updatedFavs = [logData.gameId, ...user.favoriteGameIds].slice(0, 4);
-        setUser(prev => prev ? ({ ...prev, favoriteGameIds: updatedFavs! }) : null);
       }
     } else {
       if (user.favoriteGameIds.includes(logData.gameId)) {
         updatedFavs = user.favoriteGameIds.filter(id => id !== logData.gameId);
-        setUser(prev => prev ? ({ ...prev, favoriteGameIds: updatedFavs! }) : null);
       }
     }
 
     if (updatedFavs) {
+      const updatedUser = { ...user, favoriteGameIds: updatedFavs };
+      setUser(updatedUser);
+      localStorage.setItem('bloxboxd_user', JSON.stringify(updatedUser));
       fetch('/api/user/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ ...user, favoriteGameIds: updatedFavs })
+        body: JSON.stringify(updatedUser)
       }).catch(e => console.warn('Failed to sync favorites to database:', e));
     }
 
@@ -728,14 +749,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const log = userLogs.find(l => l.id === logId);
     if (log) {
       setUserLogs(prev => prev.filter(l => l.id !== logId));
-      setReviews(prev => prev.filter(r => !(r.gameId === log.gameId && r.userId === user.id)));
+      setReviews(prev => prev.filter(r => !(r.gameId === log.gameId && (r.userId === user.id || r.userId.replace('user-roblox-', '') === user.id.replace('user-roblox-')))));
       if (user.favoriteGameIds.includes(log.gameId)) {
         const remainingFavs = user.favoriteGameIds.filter(id => id !== log.gameId);
-        setUser(prev => prev ? ({ ...prev, favoriteGameIds: remainingFavs }) : null);
+        const updatedUser = { ...user, favoriteGameIds: remainingFavs };
+        setUser(updatedUser);
+        localStorage.setItem('bloxboxd_user', JSON.stringify(updatedUser));
         fetch('/api/user/profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders() },
-          body: JSON.stringify({ ...user, favoriteGameIds: remainingFavs })
+          body: JSON.stringify(updatedUser)
         }).catch(() => {});
       }
 
@@ -775,17 +798,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const syncFavoritesToDb = useCallback((favs: string[]) => {
-    if (!user) return;
-    // Fire-and-forget persist favorites. Auth headers read from localStorage so
-    // no stale-closure on sessionToken here.
-    fetch('/api/user/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ ...user, favoriteGameIds: favs })
-    }).catch(e => console.warn('[AppContext] Failed to sync favorites to DB:', e));
-  }, [user]);
-
   const toggleFavorite = (gameId: string) => {
     if (!user) {
       setLoginModalOpen(true);
@@ -795,35 +807,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let newFavs: string[];
     if (isCurrentlyFav) {
       newFavs = user.favoriteGameIds.filter(id => id !== gameId);
-      setUser(prev => prev ? ({ ...prev, favoriteGameIds: newFavs }) : null);
-      const log = getUserLogForGame(gameId);
-      if (log) {
-        saveGameLog({ ...log, isFavorite: false });
-      } else {
-        // No log row: persist favorite state directly so logout keeps it
-        syncFavoritesToDb(newFavs);
-      }
     } else {
       if (user.favoriteGameIds.length >= 4) {
         newFavs = [gameId, ...user.favoriteGameIds.slice(0, 3)];
       } else {
         newFavs = [...user.favoriteGameIds, gameId];
       }
-      setUser(prev => prev ? ({ ...prev, favoriteGameIds: newFavs }) : null);
-      const log = getUserLogForGame(gameId);
-      if (log) {
-        saveGameLog({ ...log, isFavorite: true });
-      } else {
-        // No log row: persist favorite state directly so logout keeps it
-        saveGameLog({
-          gameId,
-          status: 'played',
-          isFavorite: true,
-          loggedDate: new Date().toISOString().split('T')[0]
-        });
-        // Belt-and-suspenders: ensure favoriteGameIds column on user_profiles is synced
-        syncFavoritesToDb(newFavs);
-      }
+    }
+
+    const updatedUser = { ...user, favoriteGameIds: newFavs };
+    setUser(updatedUser);
+    localStorage.setItem('bloxboxd_user', JSON.stringify(updatedUser));
+
+    // Persist immediately to Turso DB
+    fetch('/api/user/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(updatedUser)
+    }).catch(e => console.warn('[AppContext] Failed to sync favorites to DB:', e));
+
+    const log = getUserLogForGame(gameId);
+    if (log) {
+      saveGameLog({ ...log, isFavorite: !isCurrentlyFav });
     }
   };
 
@@ -845,16 +850,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateUserProfile = (data: Partial<UserProfile>) => {
-    if (!user) return;
+  const updateUserProfile = async (data: Partial<UserProfile>) => {
+    if (!user) {
+      setLoginModalOpen(true);
+      return;
+    }
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
-    fetch('/api/user/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify(updatedUser)
-    }).catch(e => console.warn('Failed to update profile in database:', e));
-    showToast(language === 'id' ? 'Profil berhasil diperbarui!' : 'Profile updated successfully!', 'success');
+    localStorage.setItem('bloxboxd_user', JSON.stringify(updatedUser));
+
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(updatedUser)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'Gagal menyimpan profil ke database.', 'error');
+        return;
+      }
+      showToast(language === 'id' ? 'Profil berhasil diperbarui!' : 'Profile updated successfully!', 'success');
+    } catch (e) {
+      console.warn('Failed to update profile in database:', e);
+      showToast('Gagal menghubungi server.', 'error');
+    }
   };
 
   const loginWithRobloxAccount = (robloxData: {
@@ -863,9 +883,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     displayName: string;
     avatarHeadshotUrl: string;
     avatarBustUrl?: string;
+    bio?: string;
     description?: string;
     created?: string;
     friendsCount?: number;
+    favoriteGameIds?: string[];
     isVerifiedOwner?: boolean;
     sessionToken?: string;
   }) => {
@@ -884,13 +906,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       sessionToken: robloxData.sessionToken,
       avatarUrl: newAvatar || DEFAULT_AVATAR_URL,
       avatarBustUrl: robloxData.avatarBustUrl,
-      bio: robloxData.description || 'Penggemar game Roblox.',
-      joinedDate: robloxData.created
-        ? `Bergabung Roblox ${new Date(robloxData.created).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`
-        : 'Bergabung 2026',
+      bio: robloxData.bio ?? robloxData.description ?? 'Penggemar game Roblox.',
+      joinedDate: robloxData.created || 'Bergabung 2026',
       robloxJoinedDate: robloxData.created,
       robloxFriendsCount: robloxData.friendsCount,
-      favoriteGameIds: []
+      favoriteGameIds: Array.isArray(robloxData.favoriteGameIds) ? robloxData.favoriteGameIds : []
     };
 
     // Cleanly isolate session: reset logs for new user account
@@ -912,43 +932,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       userAvatar: newAvatar || l.userAvatar
     } : l));
 
-    // Sync profile to database FIRST and await it so favoriteGameIds is committed
-    // before we re-read the row back from the DB below.
-    const saveProfile = async () => {
-      try {
-        const res = await fetch('/api/user/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...authHeaders() },
-          body: JSON.stringify(newUser)
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      } catch (e) {
-        console.warn('Failed to save profile to database:', e);
-      }
-    };
-
-    // Fetch user logs & updated profile from database AFTER save
-    const fetchUserData = async () => {
-      try {
-        const res = await fetch(`/api/user/data?userId=${encodeURIComponent(newUser.id)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setUserLogs(Array.isArray(data?.logs) ? data.logs : []);
-          // Rehydrate favoriteGameIds & bio from DB so logout->login persists them
-          if (data?.profile) {
-            setUser(prev => prev ? ({
-              ...prev,
-              favoriteGameIds: Array.isArray(data.profile.favoriteGameIds) ? data.profile.favoriteGameIds : prev.favoriteGameIds,
-              bio: data.profile.bio || prev.bio
-            }) : prev);
-          }
+    // Fetch user logs & authoritative profile from Turso database (no phantom write!)
+    fetch(`/api/user/data?userId=${encodeURIComponent(newUser.id)}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (Array.isArray(data?.logs)) {
+          setUserLogs(data.logs);
         }
-      } catch (e) {
-        console.warn('Failed to fetch user data from database:', e);
-      }
-    };
-
-    saveProfile().then(fetchUserData);
+        if (data?.profile) {
+          setUser(prev => {
+            if (!prev) return data.profile;
+            const merged = {
+              ...prev,
+              ...data.profile,
+              favoriteGameIds: Array.isArray(data.profile.favoriteGameIds)
+                ? data.profile.favoriteGameIds
+                : prev.favoriteGameIds,
+              sessionToken: prev.sessionToken
+            };
+            localStorage.setItem('bloxboxd_user', JSON.stringify(merged));
+            return merged;
+          });
+        }
+      })
+      .catch(e => console.warn('Failed to fetch user data after login:', e));
 
     showToast(language === 'id' ? `Berhasil masuk sebagai @${robloxData.username}!` : `Signed in as @${robloxData.username}!`, 'success');
   };
@@ -1147,6 +1154,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const likeReview = (reviewId: string) => {
+    if (!user) {
+      setLoginModalOpen(true);
+      return;
+    }
     setReviews(prev => prev.map(r => {
       if (r.id === reviewId) {
         const isLiked = !r.isLiked;

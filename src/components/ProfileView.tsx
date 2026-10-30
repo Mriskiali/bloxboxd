@@ -45,7 +45,8 @@ export const ProfileView: React.FC = () => {
     t
   } = useApp();
 
-  const isOwnProfile = !selectedUserId || (user && selectedUserId === user.id);
+  const isViewingSelf = !selectedUserId || (user && (selectedUserId === user.id || selectedUserId.replace('user-roblox-', '') === user.id.replace('user-roblox-')));
+  const isOwnProfile = Boolean(user && isViewingSelf);
 
   const [shelfFilter, setShelfFilter] = useState<'all' | ShelfStatus | 'favorites'>('all');
   const [followStats, setFollowStats] = useState({ followersCount: 0, followingCount: 0 });
@@ -171,7 +172,7 @@ export const ProfileView: React.FC = () => {
     );
   }
 
-  if (isOwnProfile && !user) {
+  if (isViewingSelf && !user) {
     return (
       <div className="mx-auto max-w-[1280px] px-4 pt-10 sm:px-6">
         <div className="mx-auto max-w-xl border-y border-line py-14 text-center">

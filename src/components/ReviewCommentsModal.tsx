@@ -208,7 +208,7 @@ export const ReviewCommentsModal: React.FC<ReviewCommentsModalProps> = ({ review
                       <span className="text-[10px] text-faint">
                         {new Date(c.createdAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                       </span>
-                      {user && (c.userId === user.id || c.userId === `user-roblox-${user.robloxUserId}`) && (
+                      {user && (c.userId === user.id || c.userId.replace('user-roblox-', '') === user.id.replace('user-roblox-')) && (
                         <button
                           type="button"
                           onClick={() => handleDeleteComment(c.id)}

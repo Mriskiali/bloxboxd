@@ -173,8 +173,8 @@ export function registerOAuthRoutes(app: Express): void {
       });
 
       const profileId = `user-roblox-${userId}`;
-      const existingProfile = await getUserProfile(profileId);
-      if (!existingProfile) {
+      let profile = await getUserProfile(profileId);
+      if (!profile) {
         await upsertUserProfile({
           id: profileId,
           robloxUserId: userId,
@@ -182,14 +182,17 @@ export function registerOAuthRoutes(app: Express): void {
           handle: `@${username}`,
           displayName,
           avatarUrl,
-          joinedDate: new Date().toISOString()
+          joinedDate: new Date().toISOString(),
+          favoriteGameIds: []
         });
-      } else if (avatarUrl && !existingProfile.avatarUrl) {
+        profile = await getUserProfile(profileId);
+      } else if (avatarUrl && !profile.avatarUrl) {
         await upsertUserProfile({
-          ...existingProfile,
+          ...profile,
           avatarUrl,
-          displayName: displayName || existingProfile.displayName
+          displayName: profile.displayName || displayName
         });
+        profile = await getUserProfile(profileId);
       }
 
       // 4. Create session & cookie
@@ -208,10 +211,16 @@ export function registerOAuthRoutes(app: Express): void {
         id: profileId,
         robloxUserId: userId,
         robloxUsername: username,
-        username,
-        displayName,
-        handle: `@${username}`,
-        avatarUrl,
+        username: profile?.username || username,
+        displayName: profile?.displayName || displayName,
+        handle: profile?.handle || `@${username}`,
+        avatarUrl: profile?.avatarUrl || avatarUrl,
+        avatarBustUrl: profile?.avatarBustUrl || '',
+        bio: profile?.bio || '',
+        joinedDate: profile?.joinedDate || new Date().toISOString(),
+        robloxJoinedDate: profile?.robloxJoinedDate || '',
+        friendsCount: profile?.friendsCount || 0,
+        favoriteGameIds: profile?.favoriteGameIds || [],
         isRobloxVerified: true,
         sessionToken
       };

@@ -440,8 +440,18 @@ export async function upsertUserProfile(profile: any): Promise<void> {
   const robloxUserId = profile.robloxUserId || profile.robloxUserId === 0
     ? profile.robloxUserId
     : profileId ? Number(String(profileId).replace('user-roblox-', '')) : null;
-  const favJson = JSON.stringify(profile.favoriteGameIds || []);
-  const handle = profile.handle || (profile.username ? `@${profile.username}` : null);
+
+  // If favoriteGameIds is provided as an array, serialize it; if undefined/null, pass null so COALESCE preserves existing
+  const favJson = Array.isArray(profile.favoriteGameIds)
+    ? JSON.stringify(profile.favoriteGameIds)
+    : null;
+
+  const username = profile.username || 'RobloxPlayer';
+  const handle = profile.handle || `@${username.replace(/^@+/, '')}`;
+  const bio = typeof profile.bio === 'string' ? profile.bio : null;
+  const displayName = profile.displayName || profile.robloxDisplayName || profile.username || null;
+  const avatarUrl = profile.avatarUrl || null;
+  const avatarBustUrl = profile.avatarBustUrl || null;
 
   await db.execute({
     sql: `
@@ -452,26 +462,26 @@ export async function upsertUserProfile(profile: any): Promise<void> {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         roblox_user_id = COALESCE(excluded.roblox_user_id, user_profiles.roblox_user_id),
-        username = excluded.username,
-        handle = COALESCE(excluded.handle, user_profiles.handle),
+        username = CASE WHEN excluded.username != 'RobloxPlayer' THEN excluded.username ELSE user_profiles.username END,
+        handle = CASE WHEN excluded.handle != '@RobloxPlayer' THEN excluded.handle ELSE user_profiles.handle END,
         display_name = COALESCE(excluded.display_name, user_profiles.display_name),
-        avatar_url = COALESCE(excluded.avatar_url, user_profiles.avatar_url),
-        avatar_bust_url = COALESCE(excluded.avatar_bust_url, user_profiles.avatar_bust_url),
+        avatar_url = COALESCE(NULLIF(excluded.avatar_url, ''), user_profiles.avatar_url),
+        avatar_bust_url = COALESCE(NULLIF(excluded.avatar_bust_url, ''), user_profiles.avatar_bust_url),
         bio = COALESCE(excluded.bio, user_profiles.bio),
-        joined_date = COALESCE(excluded.joined_date, user_profiles.joined_date),
-        roblox_joined_date = COALESCE(excluded.roblox_joined_date, user_profiles.roblox_joined_date),
+        joined_date = COALESCE(user_profiles.joined_date, excluded.joined_date),
+        roblox_joined_date = COALESCE(user_profiles.roblox_joined_date, excluded.roblox_joined_date),
         friends_count = COALESCE(excluded.friends_count, user_profiles.friends_count),
-        favorite_game_ids = excluded.favorite_game_ids
+        favorite_game_ids = CASE WHEN excluded.favorite_game_ids IS NOT NULL THEN excluded.favorite_game_ids ELSE user_profiles.favorite_game_ids END
     `,
     args: [
       profileId,
       robloxUserId ? Number(robloxUserId) : null,
-      profile.username,
+      username,
       handle,
-      profile.robloxDisplayName || profile.displayName || profile.username,
-      profile.avatarUrl || '',
-      profile.avatarBustUrl || '',
-      profile.bio || '',
+      displayName,
+      avatarUrl,
+      avatarBustUrl,
+      bio,
       profile.joinedDate || new Date().toISOString(),
       profile.robloxJoinedDate || '',
       profile.friendsCount ?? profile.robloxFriendsCount ?? 0,
@@ -575,10 +585,25 @@ export async function deleteGameLog(userId: string, logId: string): Promise<bool
   const variants = userIdVariants(userId);
   const where = variants.map(() => 'user_id = ?').join(' OR ');
 
+  // Fetch the log first to also delete associated review if any
+  const logRow = await db.execute({
+    sql: `SELECT game_id FROM game_logs WHERE id = ? AND (${where})`,
+    args: [logId, ...variants]
+  });
+
   const result = await db.execute({
     sql: `DELETE FROM game_logs WHERE id = ? AND (${where})`,
     args: [logId, ...variants]
   });
+
+  if (logRow.rows.length > 0 && logRow.rows[0].game_id) {
+    const gameId = String(logRow.rows[0].game_id);
+    await db.execute({
+      sql: `DELETE FROM reviews WHERE game_id = ? AND (${where})`,
+      args: [gameId, ...variants]
+    }).catch(() => {});
+  }
+
   return result.rowsAffected > 0;
 }
 
