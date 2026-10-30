@@ -2,10 +2,39 @@
 
 Bloxboxd adalah platform pelacakan, pencatatan (logging), ulasan, dan penemuan pengalaman Roblox yang terinspirasi dari arsitektur media logging Letterboxd. Platform ini menghubungkan pemain dengan data resmi dari API Roblox secara langsung dan menyimpan interaksi komunitas ke dalam database cloud terdistribusi Turso LibSQL.
 
+🌐 **Live Website**: [https://www.riskiali.my.id/](https://www.riskiali.my.id/) | [https://bloxboxd.vercel.app/](https://bloxboxd.vercel.app/)
+
+---
+
+## Tangkapan Layar (Screenshots)
+
+<div align="center">
+
+### Katalog & Champion Spotlight Slideshow
+![Bloxboxd Home Catalog](docs/screenshots/home-catalog.png)
+
+<br />
+
+<table width="100%">
+  <tr>
+    <td width="50%" align="center">
+      <b>Smart Discovery ("Lagi Mau Main Apa?")</b><br />
+      <img src="docs/screenshots/smart-discovery.png" alt="Smart Discovery Engine" width="100%" />
+    </td>
+    <td width="50%" align="center">
+      <b>Detail Game & Open Cloud Integration</b><br />
+      <img src="docs/screenshots/game-detail.png" alt="Roblox Game Detail & Badges" width="100%" />
+    </td>
+  </tr>
+</table>
+
+</div>
+
 ---
 
 ## Daftar Isi
 
+- [Tangkapan Layar (Screenshots)](#tangkapan-layar-screenshots)
 - [Fitur Utama](#fitur-utama)
 - [Arsitektur dan Teknologi](#arsitektur-dan-teknologi)
 - [Kinerja dan Standar Keamanan](#kinerja-dan-standar-keamanan)
