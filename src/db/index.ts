@@ -19,6 +19,14 @@ const localDbPath = process.env.VERCEL
   ? path.join('/tmp', 'bloxboxd.db')
   : path.join(process.cwd(), 'bloxboxd.db');
 
+// Fail-fast: production deployments (Vercel or NODE_ENV=production) must not
+// silently fall back to local SQLite — Turso is required for data safety.
+if (!isTursoCloud && (process.env.VERCEL || process.env.NODE_ENV === 'production')) {
+  const err = new Error('Production requires TURSO_DATABASE_URL; falling back to local SQLite is not permitted.');
+  err.name = 'CONFIG_ERROR';
+  throw err;
+}
+
 export const db: Client = createClient({
   url: isTursoCloud ? tursoUrl! : `file:${localDbPath}`,
   authToken: isTursoCloud ? tursoToken : undefined,
@@ -34,13 +42,11 @@ console.log(
  * Initializes all database tables and performs legacy JSON migrations
  */
 export async function initDatabase(): Promise<void> {
-  // 1. Accounts table (Roblox verified credentials & PIN hash)
+  // 1. Accounts table (Roblox verified credentials)
   await db.execute(`
     CREATE TABLE IF NOT EXISTS accounts (
       user_id INTEGER PRIMARY KEY,
       username TEXT NOT NULL,
-      pin_hash TEXT NOT NULL,
-      salt TEXT NOT NULL,
       verified_at TEXT NOT NULL
     )
   `);
@@ -261,7 +267,7 @@ export async function initDatabase(): Promise<void> {
 
 export async function getAccountByUserId(userId: number): Promise<any | null> {
   const result = await db.execute({
-    sql: 'SELECT user_id as userId, username, pin_hash as pinHash, salt, verified_at as verifiedAt FROM accounts WHERE user_id = ?',
+    sql: 'SELECT user_id as userId, username, verified_at as verifiedAt FROM accounts WHERE user_id = ?',
     args: [userId]
   });
   if (result.rows.length === 0) return null;
@@ -271,21 +277,17 @@ export async function getAccountByUserId(userId: number): Promise<any | null> {
 export async function saveAccount(data: {
   userId: number;
   username: string;
-  pinHash?: string;
-  salt?: string;
   verifiedAt: string;
 }): Promise<void> {
   await db.execute({
     sql: `
-      INSERT INTO accounts (user_id, username, pin_hash, salt, verified_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO accounts (user_id, username, verified_at)
+      VALUES (?, ?, ?)
       ON CONFLICT(user_id) DO UPDATE SET
         username = excluded.username,
-        pin_hash = COALESCE(NULLIF(excluded.pin_hash, 'oauth'), accounts.pin_hash),
-        salt = COALESCE(NULLIF(excluded.salt, 'oauth'), accounts.salt),
         verified_at = excluded.verified_at
     `,
-    args: [data.userId, data.username, data.pinHash || 'oauth', data.salt || 'oauth', data.verifiedAt]
+    args: [data.userId, data.username, data.verifiedAt]
   });
 }
 

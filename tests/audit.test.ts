@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { canonicalUserId, upsertGameLog } from '../src/db/index';
 import { isSameOrigin, parseCookies } from '../src/lib/auth';
+import { safeImgSrc, safeAvatarSrc, DEFAULT_ICON_URL, DEFAULT_AVATAR_URL } from '../src/types';
 import { sanitizeText, escapeHtml } from '../src/lib/security';
 import { checkLimit } from '../src/lib/rateLimit';
 
@@ -72,6 +73,15 @@ assert.equal(isSameOrigin(crossSiteReq), false);
 // 4. Input sanitization
 assert.equal(sanitizeText('<script>alert(1)</script>hello'), 'scriptalert(1)/scripthello');
 assert.equal(escapeHtml('<div class="x">&'), '&lt;div class=&quot;x&quot;&gt;&amp;');
+
+// 4b. URL sanitization — block javascript: and data:text/html in img src / avatar src
+assert.equal(safeImgSrc('javascript:alert(1)', DEFAULT_ICON_URL), DEFAULT_ICON_URL);
+assert.equal(safeImgSrc('data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==', DEFAULT_ICON_URL), DEFAULT_ICON_URL);
+assert.equal(safeImgSrc('data:image/png;base64,iVBORw0KGgo=', DEFAULT_ICON_URL), 'data:image/png;base64,iVBORw0KGgo=');
+assert.equal(safeImgSrc('https://example.com/img.png'), 'https://example.com/img.png');
+assert.equal(safeImgSrc('/relative/path.png'), '/relative/path.png');
+assert.equal(safeAvatarSrc('javascript:steal()'), DEFAULT_AVATAR_URL);
+assert.equal(safeAvatarSrc(''), DEFAULT_AVATAR_URL);
 
 // 5. Rate limiter fallback (no Redis configured -> allows)
 const mockRes: any = {

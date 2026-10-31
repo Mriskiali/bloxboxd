@@ -16,6 +16,11 @@ var isTursoCloud = Boolean(
   tursoUrl && (tursoUrl.startsWith("libsql://") || tursoUrl.startsWith("https://"))
 );
 var localDbPath = process.env.VERCEL ? path.join("/tmp", "bloxboxd.db") : path.join(process.cwd(), "bloxboxd.db");
+if (!isTursoCloud && (process.env.VERCEL || process.env.NODE_ENV === "production")) {
+  const err = new Error("Production requires TURSO_DATABASE_URL; falling back to local SQLite is not permitted.");
+  err.name = "CONFIG_ERROR";
+  throw err;
+}
 var db = createClient({
   url: isTursoCloud ? tursoUrl : `file:${localDbPath}`,
   authToken: isTursoCloud ? tursoToken : void 0
@@ -28,8 +33,6 @@ async function initDatabase() {
     CREATE TABLE IF NOT EXISTS accounts (
       user_id INTEGER PRIMARY KEY,
       username TEXT NOT NULL,
-      pin_hash TEXT NOT NULL,
-      salt TEXT NOT NULL,
       verified_at TEXT NOT NULL
     )
   `);
@@ -216,7 +219,7 @@ async function initDatabase() {
 }
 async function getAccountByUserId(userId) {
   const result = await db.execute({
-    sql: "SELECT user_id as userId, username, pin_hash as pinHash, salt, verified_at as verifiedAt FROM accounts WHERE user_id = ?",
+    sql: "SELECT user_id as userId, username, verified_at as verifiedAt FROM accounts WHERE user_id = ?",
     args: [userId]
   });
   if (result.rows.length === 0) return null;
@@ -225,15 +228,13 @@ async function getAccountByUserId(userId) {
 async function saveAccount(data) {
   await db.execute({
     sql: `
-      INSERT INTO accounts (user_id, username, pin_hash, salt, verified_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO accounts (user_id, username, verified_at)
+      VALUES (?, ?, ?)
       ON CONFLICT(user_id) DO UPDATE SET
         username = excluded.username,
-        pin_hash = COALESCE(NULLIF(excluded.pin_hash, 'oauth'), accounts.pin_hash),
-        salt = COALESCE(NULLIF(excluded.salt, 'oauth'), accounts.salt),
         verified_at = excluded.verified_at
     `,
-    args: [data.userId, data.username, data.pinHash || "oauth", data.salt || "oauth", data.verifiedAt]
+    args: [data.userId, data.username, data.verifiedAt]
   });
 }
 var SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1e3;
@@ -2366,22 +2367,24 @@ async function requireAuth(req, res) {
 
 // src/routes/account.ts
 function registerAccountRoutes(app2) {
+  app2.get("/api/me", async (req, res) => {
+    try {
+      const token = extractSessionToken(req);
+      const actorId = token ? await resolveSessionUser(token) : null;
+      if (!actorId) return res.json({ user: null });
+      const profile = await getUserProfile(actorId);
+      return res.json({ user: profile });
+    } catch (err) {
+      console.error("/api/me error:", err);
+      return res.json({ user: null });
+    }
+  });
   app2.get("/api/roblox/account/status", async (req, res) => {
-    const userIdStr = req.query.userId?.toString();
-    if (!userIdStr) {
-      return res.status(400).json({ error: "userId is required" });
-    }
-    const userId = parseInt(userIdStr, 10);
-    if (isNaN(userId)) {
-      return res.status(400).json({ error: "Invalid userId" });
-    }
     const actorId = await requireAuth(req, res);
     if (!actorId) return;
-    if (canonicalUserId(userId) !== actorId) {
-      return res.status(403).json({ error: "Can only query your own account status.", code: "FORBIDDEN" });
-    }
+    const robloxNum = Number(String(actorId).replace(/^user-roblox-/, ""));
     try {
-      const account = await getAccountByUserId(userId);
+      const account = await getAccountByUserId(robloxNum);
       if (account) {
         return res.json({
           registered: true,
@@ -2695,9 +2698,11 @@ function registerOAuthRoutes(app2) {
           <script>
             const user = ${safeJsonForScript(clientUserData)};
             
-            // 1. Sync directly to localStorage
+            // Broadcast an OAuth event for cross-tab sign-on (consumed by AppContext
+            // storage listener). No localStorage identity persist: auth principal
+            // is resolved from the cookie session via /api/me, so a spoofed
+            // bloxboxd_user entry can no longer be trusted by the client.
             try {
-              localStorage.setItem('bloxboxd_user', JSON.stringify(user));
               localStorage.setItem('bloxboxd_oauth_event', JSON.stringify({ user, t: Date.now() }));
             } catch (e) {
               console.error(e);

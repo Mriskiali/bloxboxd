@@ -136,7 +136,7 @@ export const ProfileView: React.FC = () => {
 
     Promise.all([
       fetch(`/api/user/data?userId=${encodeURIComponent(selectedUserId)}`).then(r => r.ok ? r.json() : null),
-      fetch(`/api/users/${encodeURIComponent(selectedUserId)}/follow-status?currentUserId=${encodeURIComponent(user?.id || '')}`).then(r => r.ok ? r.json() : null)
+      fetch(`/api/users/${encodeURIComponent(selectedUserId)}/follow-status`).then(r => r.ok ? r.json() : null)
     ])
       .then(([userData, followData]) => {
         if (userData && userData.profile) {

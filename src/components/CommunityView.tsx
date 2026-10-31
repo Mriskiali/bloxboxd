@@ -32,8 +32,9 @@ export const CommunityView: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'feed') {
       setIsLoadingFeed(true);
-      const url = user?.id ? `/api/community/feed?userId=${encodeURIComponent(user.id)}` : '/api/community/feed';
-      fetch(url)
+      // No userId param: friend-highlighting is derived server-side from the
+      // cookie session principal, so a client-supplied userId is spoofable.
+      fetch('/api/community/feed')
         .then(res => res.ok ? res.json() : { feed: [] })
         .then(data => {
           if (Array.isArray(data.feed)) {

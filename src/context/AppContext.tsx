@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { Game, GameLog, Review, UserProfile, CustomList, ShelfStatus, SortOption, DEFAULT_AVATAR_URL } from '../types';
+import { Game, GameLog, Review, UserProfile, CustomList, ShelfStatus, SortOption } from '../types';
 import { Language, TranslationKey, getTranslation } from '../utils/translations';
+import {
+  authHeaders,
+  buildUserProfile,
+  mergeUserProfile,
+  fetchUserData,
+  useAuthCrossWindowSync,
+  useSessionSync,
+} from './auth';
 
 export const deduplicateGames = (gameList: Game[]): Game[] => {
   const seenIds = new Set<string>();
@@ -32,8 +40,10 @@ export const deduplicateGames = (gameList: Game[]): Game[] => {
  * is never read by JS and never stored in localStorage, so an XSS payload
  * cannot exfiltrate it. We therefore send no Authorization header from the
  * client. Server-side `extractSessionToken` reads the cookie first.
+ *
+ * Re-exported from the auth module for backward compatibility.
  */
-export const authHeaders = (): Record<string, string> => ({});
+export { authHeaders };
 
 export interface Toast {
   id: string;
@@ -155,32 +165,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return [];
   });
 
-  const [user, setUser] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem('bloxboxd_user');
-    if (saved) {
-      try {
-        const parsed: UserProfile = JSON.parse(saved);
-        if (parsed && parsed.robloxUserId) {
-          return parsed;
-        }
-      } catch (e) { /* ignore */ }
-    }
-    return null;
-  });
+  const [user, setUser] = useState<UserProfile | null>(null);  // seeded from /api/me on mount
 
   const [userLogs, setUserLogs] = useState<GameLog[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [customLists, setCustomLists] = useState<CustomList[]>([]);
-
-  // Cleanup legacy offline mirrors once on mount (A2: online-only)
-  useEffect(() => {
-    try {
-      localStorage.removeItem('bloxboxd_logs');
-      localStorage.removeItem('bloxboxd_reviews');
-      localStorage.removeItem('bloxboxd_lists');
-      localStorage.removeItem('bloxboxd_clean_v6');
-    } catch {}
-  }, []);
 
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('bloxboxd_lang');
@@ -253,14 +242,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMinPlayers(0);
   }, []);
 
-  // Sync profile metadata cache with LocalStorage (display purposes only)
+  // Cleanup legacy offline mirrors once on mount (A2: online-only)
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('bloxboxd_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('bloxboxd_user');
-    }
-  }, [user]);
+    try {
+      localStorage.removeItem('bloxboxd_logs');
+      localStorage.removeItem('bloxboxd_reviews');
+      localStorage.removeItem('bloxboxd_lists');
+      localStorage.removeItem('bloxboxd_clean_v6');
+    } catch {}
+  }, []);
+
+  // --- Auth: session reconciliation + cross-window sync (extracted to auth module) ---
+
+  // useSessionSync: /api/me on mount + /api/user/data on user.id change
+  const { fetchUserLogsAndProfile } = useSessionSync({
+    user,
+    setUser,
+    setUserLogs,
+    setReviews: (updater: (prev: Review[]) => Review[]) => setReviews(updater),
+    setCustomLists: (updater: (prev: CustomList[]) => CustomList[]) => setCustomLists(updater),
+    language,
+  });
+
+  // useAuthCrossWindowSync: postMessage + BroadcastChannel + storage event listener
+  useAuthCrossWindowSync({
+    user,
+    showToast,
+    setUser,
+    setUserLogs,
+    setLoginModalOpen,
+    language,
+    fetchUserLogsAndProfile,
+  });
+
+  // Auth principal is resolved from /api/me on mount; no localStorage
+  // cache of the user object is maintained client-side, preventing stored-spoof
+  // of identity between visits.
 
   // 1. Fetch catalog games, community reviews, and public custom lists from Turso database
   useEffect(() => {
@@ -296,42 +313,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     fetchCommunityData();
   }, []);
-
-  // 2. Fetch logged-in user data (profile & logs) from Turso database
-  useEffect(() => {
-    if (!user || !user.id) {
-      setUserLogs([]);
-      return;
-    }
-
-    const fetchUserData = async () => {
-      try {
-        const res = await fetch(`/api/user/data?userId=${encodeURIComponent(user.id)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setUserLogs(Array.isArray(data.logs) ? data.logs : []);
-          if (data.profile) {
-            setUser(prev => {
-              if (!prev) return data.profile;
-              const merged = {
-                ...prev,
-                ...data.profile,
-                favoriteGameIds: Array.isArray(data.profile.favoriteGameIds)
-                  ? data.profile.favoriteGameIds
-                  : prev.favoriteGameIds
-              };
-              localStorage.setItem('bloxboxd_user', JSON.stringify(merged));
-              return merged;
-            });
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to sync user data from database:', err);
-      }
-    };
-
-    fetchUserData();
-  }, [user?.id]);
 
   // Keep a ref of current games to avoid stale closures in periodic polling
   const gamesRef = useRef(games);
@@ -388,75 +369,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       setIsRealtimeSyncing(false);
     }
-  }, []);
-
-  // Keep ref to deduplicate cross-window auth broadcast (postMessage + BroadcastChannel + storage event)
-  const lastAuthHandledRef = useRef<{ key?: string; timestamp: number }>({ timestamp: 0 });
-
-  // Listen for OAuth callback messages across all cross-window channels (postMessage, BroadcastChannel, storage event)
-  useEffect(() => {
-    const handleUserData = (u: any) => {
-      if (!u || !u.robloxUserId) return;
-
-      const authKey = String(u.robloxUserId);
-      const now = Date.now();
-      if (lastAuthHandledRef.current.key === authKey && now - lastAuthHandledRef.current.timestamp < 4000) {
-        return;
-      }
-      lastAuthHandledRef.current = { key: authKey, timestamp: now };
-
-      loginWithRobloxAccount({
-        userId: u.robloxUserId,
-        username: u.username || u.robloxUsername,
-        displayName: u.displayName || u.username,
-        avatarHeadshotUrl: u.avatarUrl,
-        avatarBustUrl: u.avatarBustUrl,
-        bio: u.bio,
-        created: u.joinedDate,
-        friendsCount: u.friendsCount,
-        favoriteGameIds: u.favoriteGameIds,
-        isVerifiedOwner: true
-      });
-      setLoginModalOpen(false);
-    };
-
-    const handleAuthMessage = (e: MessageEvent) => {
-      // SECURITY: only accept auth broadcasts from our own origin.
-      if (e.origin !== window.location.origin) return;
-      if (e.data?.type === 'BLOXBOXD_AUTH_SUCCESS' && e.data.user) {
-        handleUserData(e.data.user);
-      }
-    };
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'bloxboxd_oauth_event' && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (parsed?.user) handleUserData(parsed.user);
-        } catch {}
-      }
-    };
-
-    window.addEventListener('message', handleAuthMessage);
-    window.addEventListener('storage', handleStorage);
-
-    let bc: BroadcastChannel | null = null;
-    if (typeof BroadcastChannel !== 'undefined') {
-      try {
-        bc = new BroadcastChannel('bloxboxd_auth');
-        bc.onmessage = (e) => {
-          if (e.data?.type === 'BLOXBOXD_AUTH_SUCCESS' && e.data.user) {
-            handleUserData(e.data.user);
-          }
-        };
-      } catch {}
-    }
-
-    return () => {
-      window.removeEventListener('message', handleAuthMessage);
-      window.removeEventListener('storage', handleStorage);
-      if (bc) bc.close();
-    };
   }, []);
 
   // Initial sync on mount and auto-refresh every 90 seconds (interval aman dari rate limit Roblox)
@@ -668,7 +580,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (updatedFavs) {
       const updatedUser = { ...user, favoriteGameIds: updatedFavs };
       setUser(updatedUser);
-      localStorage.setItem('bloxboxd_user', JSON.stringify(updatedUser));
       fetch('/api/user/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -689,7 +600,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const remainingFavs = user.favoriteGameIds.filter(id => id !== log.gameId);
         const updatedUser = { ...user, favoriteGameIds: remainingFavs };
         setUser(updatedUser);
-        localStorage.setItem('bloxboxd_user', JSON.stringify(updatedUser));
         fetch('/api/user/profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -760,7 +670,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updatedUser = { ...user, favoriteGameIds: newFavs };
     setUser(updatedUser);
-    localStorage.setItem('bloxboxd_user', JSON.stringify(updatedUser));
 
     // Persist immediately to Turso DB
     fetch('/api/user/profile', {
@@ -801,7 +710,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
-    localStorage.setItem('bloxboxd_user', JSON.stringify(updatedUser));
 
     try {
       const res = await fetch('/api/user/profile', {
@@ -835,70 +743,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     favoriteGameIds?: string[];
     isVerifiedOwner?: boolean;
   }) => {
-    const newUsername = robloxData.displayName || robloxData.username;
-    const newAvatar = robloxData.avatarHeadshotUrl;
-    const userIdStr = `user-roblox-${robloxData.userId}`;
-
-    const newUser: UserProfile = {
-      id: userIdStr,
-      username: newUsername,
-      handle: robloxData.username.toLowerCase(),
-      robloxUsername: robloxData.username,
-      robloxDisplayName: robloxData.displayName,
-      robloxUserId: robloxData.userId,
-      isRobloxVerified: Boolean(robloxData.isVerifiedOwner),
-      avatarUrl: newAvatar || DEFAULT_AVATAR_URL,
-      avatarBustUrl: robloxData.avatarBustUrl,
-      bio: robloxData.bio ?? robloxData.description ?? 'Penggemar game Roblox.',
-      joinedDate: robloxData.created || 'Bergabung 2026',
-      robloxJoinedDate: robloxData.created,
-      robloxFriendsCount: robloxData.friendsCount,
-      favoriteGameIds: Array.isArray(robloxData.favoriteGameIds) ? robloxData.favoriteGameIds : []
-    };
+    const newUser: UserProfile = buildUserProfile(robloxData);
 
     // Cleanly isolate session: reset logs for new user account
     setUserLogs([]);
     setUser(newUser);
-    localStorage.setItem('bloxboxd_user', JSON.stringify(newUser));
+    // No localStorage persist of user identity: auth principal is resolved
+    // from the cookie session via /api/me on every mount.
 
     // Seamlessly update active user author fields on reviews & custom lists
     setReviews(prev => prev.map(r => r.userId === newUser.id ? {
       ...r,
-      username: newUsername,
-      userAvatar: newAvatar || r.userAvatar
+      username: newUser.username,
+      userAvatar: newUser.avatarUrl || r.userAvatar
     } : r));
 
     setCustomLists(prev => prev.map(l => l.userId === newUser.id ? {
       ...l,
-      userName: newUsername,
-      userAvatar: newAvatar || l.userAvatar
+      userName: newUser.username,
+      userAvatar: newUser.avatarUrl || l.userAvatar
     } : l));
 
     // Fetch user logs & authoritative profile from Turso database (no phantom write!)
-    fetch(`/api/user/data?userId=${encodeURIComponent(newUser.id)}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (Array.isArray(data?.logs)) {
-          setUserLogs(data.logs);
+    fetchUserData(newUser.id)
+      .then(result => {
+        if (!result) return;
+        if (result.logs.length > 0) {
+          setUserLogs(result.logs);
         }
-        if (data?.profile) {
-          setUser(prev => {
-            if (!prev) return data.profile;
-            const merged = {
-              ...prev,
-              ...data.profile,
-              favoriteGameIds: Array.isArray(data.profile.favoriteGameIds)
-                ? data.profile.favoriteGameIds
-                : prev.favoriteGameIds
-            };
-            localStorage.setItem('bloxboxd_user', JSON.stringify(merged));
-            return merged;
-          });
+        if (result.profile) {
+          setUser(prev => mergeUserProfile(prev, result.profile));
         }
       })
       .catch(e => console.warn('Failed to fetch user data after login:', e));
 
     showToast(language === 'id' ? `Berhasil masuk sebagai @${robloxData.username}!` : `Signed in as @${robloxData.username}!`, 'success');
+    setLoginModalOpen(false);
   };
 
   const logoutRobloxAccount = () => {

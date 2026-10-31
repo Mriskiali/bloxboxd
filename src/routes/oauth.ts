@@ -294,9 +294,11 @@ export function registerOAuthRoutes(app: Express): void {
           <script>
             const user = ${safeJsonForScript(clientUserData)};
             
-            // 1. Sync directly to localStorage
+            // Broadcast an OAuth event for cross-tab sign-on (consumed by AppContext
+            // storage listener). No localStorage identity persist: auth principal
+            // is resolved from the cookie session via /api/me, so a spoofed
+            // bloxboxd_user entry can no longer be trusted by the client.
             try {
-              localStorage.setItem('bloxboxd_user', JSON.stringify(user));
               localStorage.setItem('bloxboxd_oauth_event', JSON.stringify({ user, t: Date.now() }));
             } catch (e) {
               console.error(e);

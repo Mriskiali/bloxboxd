@@ -122,15 +122,36 @@ export const DEFAULT_ICON_URL = `data:image/svg+xml;utf8,${encodeURIComponent(`
 `.trim())}`;
 
 /**
+ * Scheme-level gate for URL attributes (img src, etc.).
+ * Blocks javascript:, data:text/html, and tab-obfuscated non-http schemes.
+ * Allows: https:, http:, // (protocol-relative), / (root-relative), data:image/*.
+ */
+const ALLOWED_URL_SCHEMES = /^(\/\/\/|[a-z][a-z0-9+\-.]*:)/i;
+const isSafeUrl = (url: string): boolean => {
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  // Reject empty-hash / javascript: schemes and any data: that isn't image/*
+  if (/^data:/i.test(trimmed)) {
+    return /^data:image\/[a-z0-9.+]+(?:;base64)?,/i.test(trimmed);
+  }
+  if (/^javascript:/i.test(trimmed)) return false;
+  if (/^\s*</i.test(trimmed)) return false; // tab-obfuscation / control chars
+  return true;
+};
+
+/**
  * Returns a guaranteed non-empty image src string.
  * Avoids browser warning: An empty string ("") was passed to the src attribute.
+ * Also blocks javascript: and data:text/html to prevent XSS via iconUrl/avatarUrl.
  */
 export const safeImgSrc = (url?: string | null, fallback: string = DEFAULT_ICON_URL): string => {
   if (!url || typeof url !== 'string' || !url.trim()) return fallback;
-  return url.trim();
+  const candidate = url.trim();
+  return isSafeUrl(candidate) ? candidate : fallback;
 };
 
 export const safeAvatarSrc = (url?: string | null): string => {
   if (!url || typeof url !== 'string' || !url.trim()) return DEFAULT_AVATAR_URL;
-  return url.trim();
+  const candidate = url.trim();
+  return isSafeUrl(candidate) ? candidate : DEFAULT_AVATAR_URL;
 };

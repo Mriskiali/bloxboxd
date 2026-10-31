@@ -1,10 +1,11 @@
 import type { Express } from 'express';
 import {
   getAccountByUserId,
+  getUserProfile,
+  resolveSessionUser,
   deleteSession,
   deleteAllSessions,
-  recordLoginEvent,
-  canonicalUserId
+  recordLoginEvent
 } from '../db/index';
 import { clearSessionCookie, extractSessionToken, requireAuth } from '../lib/auth';
 
@@ -13,29 +14,34 @@ import { clearSessionCookie, extractSessionToken, requireAuth } from '../lib/aut
  * Authentication is handled by official Roblox OAuth 2.0 (src/routes/oauth.ts).
  */
 export function registerAccountRoutes(app: Express): void {
-  // Check if a Roblox account is registered
+  // Canonical auth-status endpoint: resolves the caller's identity from the
+  // httpOnly session cookie so the client can seed `user` from the server
+  // instead of trusting localStorage. Never 401s — anonymous callers get null.
+  app.get('/api/me', async (req, res) => {
+    try {
+      const token = extractSessionToken(req);
+      const actorId = token ? await resolveSessionUser(token) : null;
+      if (!actorId) return res.json({ user: null });
+      const profile = await getUserProfile(actorId);
+      return res.json({ user: profile });
+    } catch (err) {
+      console.error('/api/me error:', err);
+      return res.json({ user: null });
+    }
+  });
+
+  // Check if the authenticated Roblox account is registered.
+  // Subject is derived SOLELY from the session cookie principal — no
+  // client-supplied userId param is accepted, so the caller can only ever
+  // read their own status (no enumeration / no IDOR surface).
   app.get('/api/roblox/account/status', async (req, res) => {
-    const userIdStr = req.query.userId?.toString();
-    if (!userIdStr) {
-      return res.status(400).json({ error: 'userId is required' });
-    }
-
-    const userId = parseInt(userIdStr, 10);
-    if (isNaN(userId)) {
-      return res.status(400).json({ error: 'Invalid userId' });
-    }
-
-    // SECURITY: auth-gated — only the account owner can query their own
-    // status, so this endpoint cannot enumerate which Roblox users registered.
     const actorId = await requireAuth(req, res);
     if (!actorId) return;
-    // RLS: only the owner can query their own status.
-    if (canonicalUserId(userId) !== actorId) {
-      return res.status(403).json({ error: 'Can only query your own account status.', code: 'FORBIDDEN' });
-    }
+
+    const robloxNum = Number(String(actorId).replace(/^user-roblox-/, ''));
 
     try {
-      const account = await getAccountByUserId(userId);
+      const account = await getAccountByUserId(robloxNum);
       if (account) {
         return res.json({
           registered: true,
